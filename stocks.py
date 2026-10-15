@@ -37,6 +37,12 @@ AD.AS|Ahold Delhaize;BN.PA|Danone;ENI.MI|Eni;STLAM.MI|Stellantis;SGO.PA|Saint-Go
 WKL.AS|Wolters Kluwer;DHL.DE|DHL Group;VOW3.DE|Volkswagen;BAYN.DE|Bayer;ABI.BR|AB InBev;ENR.DE|Siemens Energy;DBK.DE|Deutsche Bank"""
 
 
+# Dow Jones als Ersatz, falls Wikipedia keine Liste liefert
+DOW = """AAPL|Apple;AMGN|Amgen;AMZN|Amazon;AXP|American Express;BA|Boeing;CAT|Caterpillar;CRM|Salesforce;CSCO|Cisco;CVX|Chevron;
+DIS|Disney;GS|Goldman Sachs;HD|Home Depot;HON|Honeywell;IBM|IBM;JNJ|Johnson & Johnson;JPM|JPMorgan Chase;KO|Coca-Cola;
+MCD|McDonald's;MMM|3M;MRK|Merck & Co.;MSFT|Microsoft;NKE|Nike;NVDA|Nvidia;PG|Procter & Gamble;SHW|Sherwin-Williams;
+TRV|Travelers;UNH|UnitedHealth;V|Visa;VZ|Verizon;WMT|Walmart"""
+
 # TecDAX als Ersatz, falls Wikipedia keine Liste liefert (Stand Mitte 2026, ohne Gewähr)
 TECDAX = """AIXA.DE|Aixtron;BC8.DE|Bechtle;AFX.DE|Carl Zeiss Meditec;DTE.DE|Deutsche Telekom;EUZ.DE|Eckert & Ziegler;ELG.DE|Elmos;
 EVT.DE|Evotec;FNTN.DE|Freenet;HAG.DE|Hensoldt;IFX.DE|Infineon;IOS.DE|Ionos;JEN.DE|Jenoptik;KTN.DE|Kontron;NEM.DE|Nemetschek;
@@ -52,7 +58,11 @@ def clean(x):
 def wiki_members(url, suffix):
     html = requests.get(url, headers=UA, timeout=30).text
     best = None
-    for t in pd.read_html(io.StringIO(html)):
+    try:  # Wikipedia markiert die aktuelle Zusammensetzung meist mit id="constituents"
+        tables = pd.read_html(io.StringIO(html), attrs={"id": "constituents"})
+    except Exception:
+        tables = pd.read_html(io.StringIO(html))
+    for t in tables:
         cols = {c: " ".join(map(str, c)).lower() if isinstance(c, tuple) else str(c).lower() for c in t.columns}
         tc = next((c for c, l in cols.items() if "ticker" in l or l.startswith("symbol")), None)
         nc = next((c for c, l in cols.items() if any(k in l for k in ("company", "security", "name"))), None)
@@ -98,14 +108,16 @@ def main():
                 members[k] = [{"y": a, "n": b, "sec": ""} for a, b in (p.split("|") for p in SX5E.replace("\n", "").split(";"))]
             else:
                 members[k] = wiki_members(ix["wiki"], ix["suffix"])
-            if len(members[k]) < 10 and k == "tecdax":
-                raise ValueError("zu wenige Werte")
+            need = {"tecdax": 25, "dow": 28, "ndx": 90, "spx": 450, "dax": 38, "mdax": 45}.get(k, 10)
+            if len(members[k]) < need:
+                raise ValueError(f"nur {len(members[k])} Werte")
             print(k, len(members[k]), "Werte")
         except Exception as e:
             print(k, "Wikipedia fehlgeschlagen:", e)
             members[k] = [{"y": s["y"], "n": s["n"], "sec": s.get("sec", "")} for s in old.get("indices", {}).get(k, {}).get("items", [])]
-            if not members[k] and k == "tecdax":
-                members[k] = [{"y": a, "n": b, "sec": ""} for a, b in (p.split("|") for p in TECDAX.replace("\n", "").split(";"))]
+            fb = {"tecdax": TECDAX, "dow": DOW}.get(k)
+            if fb and len(members[k]) < 10:
+                members[k] = [{"y": a, "n": b, "sec": ""} for a, b in (p.split("|") for p in fb.replace("\n", "").split(";"))]
 
     tickers = sorted({m["y"] for v in members.values() for m in v} | {ix["bench"] for ix in INDICES.values()})
     closes, vols = {}, {}
@@ -136,7 +148,13 @@ def main():
             if t.startswith("^"):
                 continue
             try:
-                v = yf.Ticker(t).fast_info.get("market_cap")
+                fi = yf.Ticker(t).fast_info
+                v = getattr(fi, "market_cap", None)
+                if not v:
+                    try:
+                        v = fi["marketCap"]
+                    except Exception:
+                        v = None
                 if v:
                     vals[t] = float(v)
             except Exception:
