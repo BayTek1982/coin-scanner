@@ -13,8 +13,9 @@ import yfinance as yf
 
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
       "Accept": "text/csv,application/json,text/html,*/*", "Accept-Language": "en-US,en;q=0.9"}
-IWM = ("https://www.ishares.com/us/products/239710/ishares-russell-2000-etf/1467271812596.ajax"
-       "?fileType=csv&fileName=IWM_holdings&dataType=fund")
+IWM_URLS = ["https://www.ishares.com/us/products/239710/ishares-russell-2000-etf/latest-holdings.csv",
+            "https://www.ishares.com/us/products/239710/ishares-russell-2000-etf/1467271812596.ajax"
+            "?fileType=csv&fileName=IWM_holdings&dataType=fund"]
 VTWO = "https://investor.vanguard.com/investment-products/etfs/profile/api/VTWO/portfolio-holding/stock"
 OUT = "data/russell.json"
 CACHE = "data/russell_members.json"
@@ -30,7 +31,18 @@ def clean(t):
 
 
 def from_ishares():
-    r = requests.get(IWM, headers=UA, timeout=60)
+    for url in IWM_URLS:
+        try:
+            out = ishares_csv(url)
+            if len(out) >= 1000:
+                return out
+        except Exception as e:
+            print("iShares-Variante fehlgeschlagen:", repr(e)[:200])
+    return []
+
+
+def ishares_csv(url):
+    r = requests.get(url, headers=UA, timeout=60)
     txt = r.content.decode("utf-8-sig", "replace")
     print("iShares: Status", r.status_code, "Länge", len(txt), "Anfang:", txt[:120].replace("\n", " | "))
     lines = txt.splitlines()
