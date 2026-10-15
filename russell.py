@@ -11,31 +11,79 @@ import pandas as pd
 import requests
 import yfinance as yf
 
-UA = {"User-Agent": "Mozilla/5.0 (compatible; bayazit-coin-scanner/1.0)"}
+UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+      "Accept": "text/csv,application/json,text/html,*/*", "Accept-Language": "en-US,en;q=0.9"}
 IWM = ("https://www.ishares.com/us/products/239710/ishares-russell-2000-etf/1467271812596.ajax"
        "?fileType=csv&fileName=IWM_holdings&dataType=fund")
+VTWO = "https://investor.vanguard.com/investment-products/etfs/profile/api/VTWO/portfolio-holding/stock"
 OUT = "data/russell.json"
+CACHE = "data/russell_members.json"
 
 
 def num(x, d=2):
     return None if x is None or (isinstance(x, float) and (math.isnan(x) or math.isinf(x))) else round(float(x), d)
 
 
-def members():
-    txt = requests.get(IWM, headers=UA, timeout=60).text
+def clean(t):
+    t = str(t or "").strip().strip('"').replace(".", "-").replace(" ", "-").replace("/", "-")
+    return "" if t in ("", "-", "nan", "None") else t
+
+
+def from_ishares():
+    r = requests.get(IWM, headers=UA, timeout=60)
+    txt = r.content.decode("utf-8-sig", "replace")
+    print("iShares: Status", r.status_code, "Länge", len(txt), "Anfang:", txt[:120].replace("\n", " | "))
     lines = txt.splitlines()
-    start = next(i for i, l in enumerate(lines) if l.startswith("Ticker"))
+    start = next(i for i, l in enumerate(lines) if l.lstrip('\ufeff"').startswith("Ticker"))
     df = pd.read_csv(io.StringIO("\n".join(lines[start:])), on_bad_lines="skip")
     if "Asset Class" in df.columns:
         df = df[df["Asset Class"].astype(str).str.contains("Equity", na=False)]
-    out, seen = [], set()
-    for _, r in df.iterrows():
-        t = str(r.get("Ticker", "")).strip().replace(".", "-").replace(" ", "-")
-        if not t or t in ("-", "nan") or t in seen:
-            continue
-        seen.add(t)
-        out.append({"y": t, "n": str(r.get("Name", t)).strip().title(), "sec": str(r.get("Sector", "")).strip()})
+    return [{"y": clean(r.get("Ticker")), "n": str(r.get("Name", "")).strip().title(), "sec": str(r.get("Sector", "")).strip()}
+            for _, r in df.iterrows()]
+
+
+def from_vanguard():
+    out, start = [], 1
+    while True:
+        r = requests.get(VTWO, params={"start": start, "count": 500}, headers=UA, timeout=60)
+        print("Vanguard: Status", r.status_code, "Start", start)
+        j = r.json()
+        rows = j.get("fund", {}).get("entity", []) if isinstance(j, dict) else []
+        if not rows:
+            break
+        for e in rows:
+            out.append({"y": clean(e.get("ticker")), "n": str(e.get("longName") or e.get("shortName") or "").strip().title(),
+                        "sec": str(e.get("sectorName") or "").strip()})
+        if len(rows) < 500:
+            break
+        start += 500
     return out
+
+
+def members():
+    for name, fn in (("iShares IWM", from_ishares), ("Vanguard VTWO", from_vanguard)):
+        try:
+            raw = fn()
+        except Exception as e:
+            print(name, "nicht abrufbar:", repr(e)[:300])
+            continue
+        out, seen = [], set()
+        for m in raw:
+            if m["y"] and m["y"] not in seen:
+                seen.add(m["y"])
+                m["n"] = m["n"] or m["y"]
+                out.append(m)
+        print(name, "liefert", len(out), "Werte")
+        if len(out) >= 1000:
+            os.makedirs("data", exist_ok=True)
+            with open(CACHE, "w", encoding="utf-8") as f:
+                json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+            return out
+    if os.path.exists(CACHE):
+        print("Nutze gespeicherte Bestandsliste.")
+        with open(CACHE, encoding="utf-8") as f:
+            return json.load(f)
+    return []
 
 
 def main():
