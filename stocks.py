@@ -22,6 +22,9 @@ INDICES = {
     "mdax":   {"name": "MDAX",          "wiki": "https://en.wikipedia.org/wiki/MDAX",   "suffix": ".DE", "bench": "^MDAXI",   "cur": "€"},
     "tecdax": {"name": "TecDAX",        "wiki": "https://en.wikipedia.org/wiki/TecDAX", "suffix": ".DE", "bench": "^TECDAX",  "cur": "€"},
     "sx5e":   {"name": "Euro Stoxx 50", "wiki": None,                                   "suffix": None,  "bench": "^STOXX50E", "cur": "€"},
+    "hsi":    {"name": "Hang Seng · Top 50", "wiki": None, "suffix": None, "bench": "^HSI",  "cur": "HK$", "static": "HSI"},
+    "nky":    {"name": "Nikkei 225 · Top 50", "wiki": None, "suffix": None, "bench": "^N225", "cur": "¥",   "static": "NKY"},
+    "kospi":  {"name": "KOSPI · Top 30",  "wiki": None, "suffix": None, "bench": "^KS11", "cur": "₩",   "static": "KOSPI"},
     "spx":    {"name": "S&P 500",       "wiki": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", "alt": "https://www.slickcharts.com/sp500", "suffix": "", "bench": "^GSPC", "cur": "$"},
     "ndx":    {"name": "Nasdaq 100",    "wiki": "https://en.wikipedia.org/wiki/Nasdaq-100", "alt": "https://www.slickcharts.com/nasdaq100", "suffix": "", "bench": "^NDX", "cur": "$"},
     "dow":    {"name": "Dow Jones 30",  "wiki": "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average", "alt": "https://www.slickcharts.com/dowjones", "suffix": "", "bench": "^DJI", "cur": "$"},
@@ -49,6 +52,34 @@ EVT.DE|Evotec;FNTN.DE|Freenet;HAG.DE|Hensoldt;IFX.DE|Infineon;IOS.DE|Ionos;JEN.D
 NDX1.DE|Nordex;QIA.DE|Qiagen;SAP.DE|SAP;SRT3.DE|Sartorius;SHL.DE|Siemens Healthineers;S92.DE|SMA Solar;WAF.DE|Siltronic;
 SMHN.DE|Suss MicroTec;TMV.DE|TeamViewer;UTDI.DE|United Internet;1U1.DE|1&1;AOF.DE|Atoss Software;COK.DE|Cancom;
 DRW3.DE|Drägerwerk;GFT.DE|GFT Technologies"""
+
+
+# Asien: größte Werte fest hinterlegt (Yahoo-Kürzel), Stand Mitte 2026, ohne Gewähr
+HSI = """0700.HK|Tencent;9988.HK|Alibaba;3690.HK|Meituan;1299.HK|AIA;0005.HK|HSBC;0939.HK|China Construction Bank;1398.HK|ICBC;
+3988.HK|Bank of China;0941.HK|China Mobile;1810.HK|Xiaomi;9618.HK|JD.com;2318.HK|Ping An;0388.HK|HKEX;1211.HK|BYD;0883.HK|CNOOC;
+0857.HK|PetroChina;0386.HK|Sinopec;9999.HK|NetEase;9888.HK|Baidu;1024.HK|Kuaishou;2020.HK|Anta Sports;0027.HK|Galaxy Entertainment;
+1928.HK|Sands China;0016.HK|Sun Hung Kai Properties;1113.HK|CK Asset;0001.HK|CK Hutchison;0002.HK|CLP;0003.HK|HK & China Gas;
+0006.HK|Power Assets;0066.HK|MTR;0823.HK|Link REIT;2628.HK|China Life;2382.HK|Sunny Optical;0981.HK|SMIC;1088.HK|China Shenhua;
+0688.HK|China Overseas Land;1109.HK|China Resources Land;2331.HK|Li Ning;0291.HK|China Resources Beer;2319.HK|Mengniu;
+0669.HK|Techtronic;0175.HK|Geely;2015.HK|Li Auto;9868.HK|XPeng;9961.HK|Trip.com;1876.HK|Budweiser APAC;0267.HK|CITIC;
+0762.HK|China Unicom;2269.HK|WuXi Biologics;0012.HK|Henderson Land"""
+NKY = """7203.T|Toyota;6758.T|Sony;8306.T|Mitsubishi UFJ;6861.T|Keyence;9984.T|SoftBank Group;8035.T|Tokyo Electron;9983.T|Fast Retailing;
+6098.T|Recruit;4063.T|Shin-Etsu Chemical;8316.T|Sumitomo Mitsui;6501.T|Hitachi;9432.T|NTT;9433.T|KDDI;4502.T|Takeda;
+8058.T|Mitsubishi Corp;8001.T|Itochu;8031.T|Mitsui & Co;7974.T|Nintendo;6367.T|Daikin;6857.T|Advantest;6954.T|Fanuc;7267.T|Honda;
+6902.T|Denso;4568.T|Daiichi Sankyo;4519.T|Chugai Pharma;8766.T|Tokio Marine;8411.T|Mizuho;6981.T|Murata;7741.T|Hoya;6594.T|Nidec;
+6273.T|SMC;4661.T|Oriental Land;7011.T|Mitsubishi Heavy;6503.T|Mitsubishi Electric;6702.T|Fujitsu;6752.T|Panasonic;4543.T|Terumo;
+2914.T|Japan Tobacco;3382.T|Seven & i;8801.T|Mitsui Fudosan;8802.T|Mitsubishi Estate;9020.T|JR East;9022.T|JR Central;
+5108.T|Bridgestone;7751.T|Canon;6971.T|Kyocera;6762.T|TDK;4503.T|Astellas;8053.T|Sumitomo Corp;7733.T|Olympus"""
+KOSPI = """005930.KS|Samsung Electronics;000660.KS|SK Hynix;373220.KS|LG Energy Solution;207940.KS|Samsung Biologics;
+005380.KS|Hyundai Motor;000270.KS|Kia;068270.KS|Celltrion;035420.KS|Naver;105560.KS|KB Financial;055550.KS|Shinhan Financial;
+005490.KS|POSCO Holdings;012330.KS|Hyundai Mobis;035720.KS|Kakao;006400.KS|Samsung SDI;051910.KS|LG Chem;028260.KS|Samsung C&T;
+032830.KS|Samsung Life;012450.KS|Hanwha Aerospace;329180.KS|HD Hyundai Heavy;086790.KS|Hana Financial;015760.KS|KEPCO;
+066570.KS|LG Electronics;017670.KS|SK Telecom;034020.KS|Doosan Enerbility;009540.KS|HD Korea Shipbuilding;138040.KS|Meritz Financial;
+316140.KS|Woori Financial;003550.KS|LG Corp;034730.KS|SK Inc;010130.KS|Korea Zinc"""
+
+
+def parse_static(txt):
+    return [{"y": a.strip(), "n": b.strip(), "sec": ""} for a, b in (p.split("|") for p in txt.replace("\n", "").split(";"))]
 
 
 def clean(x):
@@ -105,7 +136,9 @@ def main():
     for k, ix in INDICES.items():
         try:
             if k == "sx5e":
-                members[k] = [{"y": a, "n": b, "sec": ""} for a, b in (p.split("|") for p in SX5E.replace("\n", "").split(";"))]
+                members[k] = parse_static(SX5E)
+            elif ix.get("static"):
+                members[k] = parse_static(globals()[ix["static"]])
             else:
                 try:
                     members[k] = wiki_members(ix["wiki"], ix["suffix"])
