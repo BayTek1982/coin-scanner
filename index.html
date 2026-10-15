@@ -599,6 +599,9 @@ Vonovia|XETR:VNA
 Zalando|XETR:ZAL`},
  mdax:{name:"MDAX",heat:null,note:"Die 50 mittelgroßen deutschen Werte.",list:""},
  tecdax:{name:"TecDAX",heat:null,note:"Die 30 größten deutschen Technologiewerte.",list:""},
+ hsi:{name:"Hang Seng",heat:null,note:"Die 50 größten Werte aus Hongkong. Kurse in HK-Dollar.",list:""},
+ nky:{name:"Nikkei 225",heat:null,note:"Die 50 größten Werte aus Japan. Kurse in Yen.",list:""},
+ kospi:{name:"KOSPI",heat:null,note:"Die 30 größten Werte aus Südkorea. Kurse in Won.",list:""},
  sx5e:{name:"Euro Stoxx 50",heat:null,note:"Die großen Werte der Eurozone.",list:`ASML|EURONEXT:ASML
 SAP|XETR:SAP
 LVMH|EURONEXT:MC
@@ -701,8 +704,8 @@ let STK=null,stkLoading=false;
 async function loadStocks(){if(stkLoading)return;stkLoading=true;
   try{const r=await fetch("data/stocks.json?t="+Date.now());if(r.ok)STK=await r.json()}catch(e){}
   stkLoading=false;showIndex()}
-const YEX={DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
-function ySym(y){const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+m[1].replace(/-/g,"_");return y.replace(/-/g,".")}
+const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
+function ySym(y){const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+(m[2]==="HK"?m[1].replace(/^0+/,""):m[1].replace(/-/g,"_"));return y.replace(/-/g,".")}
 function stockRows(k){const ix=STK?.indices?.[k];if(!ix)return null;const b=ix.bench||{};
   const list=ix.items.map(c=>Object.assign({},c,{score:c.w!=null&&c.m!=null&&b.w!=null?0.5*(c.w-b.w)+0.5*(c.m-b.m):null}));
   const f=S.stf||"score";return list.sort((a,c)=>(c[f]??-1e12)-(a[f]??-1e12))}
