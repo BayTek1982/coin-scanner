@@ -37,6 +37,14 @@ AD.AS|Ahold Delhaize;BN.PA|Danone;ENI.MI|Eni;STLAM.MI|Stellantis;SGO.PA|Saint-Go
 WKL.AS|Wolters Kluwer;DHL.DE|DHL Group;VOW3.DE|Volkswagen;BAYN.DE|Bayer;ABI.BR|AB InBev;ENR.DE|Siemens Energy;DBK.DE|Deutsche Bank"""
 
 
+# TecDAX als Ersatz, falls Wikipedia keine Liste liefert (Stand Mitte 2026, ohne Gewähr)
+TECDAX = """AIXA.DE|Aixtron;BC8.DE|Bechtle;AFX.DE|Carl Zeiss Meditec;DTE.DE|Deutsche Telekom;EUZ.DE|Eckert & Ziegler;ELG.DE|Elmos;
+EVT.DE|Evotec;FNTN.DE|Freenet;HAG.DE|Hensoldt;IFX.DE|Infineon;IOS.DE|Ionos;JEN.DE|Jenoptik;KTN.DE|Kontron;NEM.DE|Nemetschek;
+NDX1.DE|Nordex;QIA.DE|Qiagen;SAP.DE|SAP;SRT3.DE|Sartorius;SHL.DE|Siemens Healthineers;S92.DE|SMA Solar;WAF.DE|Siltronic;
+SMHN.DE|Suss MicroTec;TMV.DE|TeamViewer;UTDI.DE|United Internet;1U1.DE|1&1;AOF.DE|Atoss Software;COK.DE|Cancom;
+DRW3.DE|Drägerwerk;GFT.DE|GFT Technologies"""
+
+
 def clean(x):
     return re.sub(r"\[.*?\]", "", str(x)).strip()
 
@@ -90,10 +98,14 @@ def main():
                 members[k] = [{"y": a, "n": b, "sec": ""} for a, b in (p.split("|") for p in SX5E.replace("\n", "").split(";"))]
             else:
                 members[k] = wiki_members(ix["wiki"], ix["suffix"])
+            if len(members[k]) < 10 and k == "tecdax":
+                raise ValueError("zu wenige Werte")
             print(k, len(members[k]), "Werte")
         except Exception as e:
             print(k, "Wikipedia fehlgeschlagen:", e)
             members[k] = [{"y": s["y"], "n": s["n"], "sec": s.get("sec", "")} for s in old.get("indices", {}).get(k, {}).get("items", [])]
+            if not members[k] and k == "tecdax":
+                members[k] = [{"y": a, "n": b, "sec": ""} for a, b in (p.split("|") for p in TECDAX.replace("\n", "").split(";"))]
 
     tickers = sorted({m["y"] for v in members.values() for m in v} | {ix["bench"] for ix in INDICES.values()})
     closes, vols = {}, {}
