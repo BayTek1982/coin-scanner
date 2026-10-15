@@ -22,9 +22,9 @@ INDICES = {
     "mdax":   {"name": "MDAX",          "wiki": "https://en.wikipedia.org/wiki/MDAX",   "suffix": ".DE", "bench": "^MDAXI",   "cur": "€"},
     "tecdax": {"name": "TecDAX",        "wiki": "https://en.wikipedia.org/wiki/TecDAX", "suffix": ".DE", "bench": "^TECDAX",  "cur": "€"},
     "sx5e":   {"name": "Euro Stoxx 50", "wiki": None,                                   "suffix": None,  "bench": "^STOXX50E", "cur": "€"},
-    "spx":    {"name": "S&P 500",       "wiki": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", "suffix": "", "bench": "^GSPC", "cur": "$"},
-    "ndx":    {"name": "Nasdaq 100",    "wiki": "https://en.wikipedia.org/wiki/Nasdaq-100", "suffix": "", "bench": "^NDX", "cur": "$"},
-    "dow":    {"name": "Dow Jones 30",  "wiki": "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average", "suffix": "", "bench": "^DJI", "cur": "$"},
+    "spx":    {"name": "S&P 500",       "wiki": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", "alt": "https://www.slickcharts.com/sp500", "suffix": "", "bench": "^GSPC", "cur": "$"},
+    "ndx":    {"name": "Nasdaq 100",    "wiki": "https://en.wikipedia.org/wiki/Nasdaq-100", "alt": "https://www.slickcharts.com/nasdaq100", "suffix": "", "bench": "^NDX", "cur": "$"},
+    "dow":    {"name": "Dow Jones 30",  "wiki": "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average", "alt": "https://www.slickcharts.com/dowjones", "suffix": "", "bench": "^DJI", "cur": "$"},
 }
 
 # Euro Stoxx 50 fest hinterlegt (Yahoo-Kürzel), Stand Mitte 2026
@@ -107,7 +107,15 @@ def main():
             if k == "sx5e":
                 members[k] = [{"y": a, "n": b, "sec": ""} for a, b in (p.split("|") for p in SX5E.replace("\n", "").split(";"))]
             else:
-                members[k] = wiki_members(ix["wiki"], ix["suffix"])
+                try:
+                    members[k] = wiki_members(ix["wiki"], ix["suffix"])
+                except Exception as e:
+                    print(k, "Wikipedia:", e)
+                    members[k] = []
+                need0 = {"dow": 28, "ndx": 90, "spx": 450}.get(k)
+                if need0 and len(members[k]) < need0 and ix.get("alt"):
+                    print(k, "Wikipedia lieferte", len(members[k]), "Werte, versuche Ersatzquelle")
+                    members[k] = wiki_members(ix["alt"], ix["suffix"])
             need = {"tecdax": 25, "dow": 28, "ndx": 90, "spx": 450, "dax": 38, "mdax": 45}.get(k, 10)
             if len(members[k]) < need:
                 raise ValueError(f"nur {len(members[k])} Werte")
