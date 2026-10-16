@@ -86,7 +86,7 @@ textarea{width:100%;min-height:64px;font:.78rem var(--f-num);background:var(--bg
 .liq{max-height:340px;overflow-y:auto;display:grid;gap:2px;font:.8rem var(--f-num)}
 .liq div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
 .linkbox{gap:10px}.linkbox summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;list-style:none}.linkbox summary::-webkit-details-marker{display:none}.linkbox summary::before{content:"▸";color:var(--muted)}.linkbox[open] summary::before{content:"▾"}
-.fg{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center}
+.fg{display:grid;grid-template-columns:1fr auto 1fr;gap:18px 36px;align-items:center;max-width:980px;margin:0 auto;width:100%}
 .fgcol{display:grid;gap:12px}.fgcol .lab{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
 .fgi{display:flex;align-items:center;gap:10px;background:none;border:0;color:var(--fg);cursor:pointer;padding:2px;font:inherit;text-align:left}
 #fgL .fgi{flex-direction:row-reverse;text-align:right}#fgL{justify-items:end}#fgL .lab{text-align:right}
@@ -993,8 +993,8 @@ const FG_C=[
   sc:v=>clamp(50+v/20),fmt:v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("de-DE",{maximumFractionDigits:0})+" Mio. $"},
  {k:"stb",side:"R",n:"Stablecoin-Zufluss",w:1,info:"Veränderung der gesamten Stablecoin-Menge in 7 Tagen. Wachstum = frisches Geld steht bereit (Gier). ±1 % = 0 bzw. 100 Punkte.",
   sc:v=>clamp(50+v*50),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:2})+" %"},
- {k:"cbp",side:"R",n:"Coinbase-Premium",w:1,info:"Preisunterschied BTC Coinbase gegenüber Binance. Positiv = US-Anleger kaufen stärker (Gier). ±0,1 % = 0 bzw. 100 Punkte.",
-  sc:v=>clamp(50+v*500),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:3})+" %"},
+ {k:"cbp",side:"R",n:"Coinbase-Premium",w:1,info:"Preisunterschied BTC Coinbase gegenüber Binance. Positiv = US-Anleger kaufen stärker (Gier). ±0,2 % = 0 bzw. 100 Punkte.",
+  sc:v=>clamp(50+v*250),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:3})+" %"},
  {k:"vix",side:"R",n:"VIX",w:1,info:"Angstbarometer des US-Aktienmarkts. Niedrig = Ruhe (Gier), hoch = Panik (Angst). 10 = 100 Punkte, 32 = 0 Punkte.",
   sc:v=>clamp(100-(v-10)*4.5),fmt:v=>v.toLocaleString("de-DE",{maximumFractionDigits:1})},
  {k:"dxy",side:"R",n:"DXY-Trend",w:1,info:"Veränderung des US-Dollar-Index in 30 Tagen. Ein stärker werdender Dollar bremst Krypto meist (Angst). +5 % = 0 Punkte, −5 % = 100 Punkte.",

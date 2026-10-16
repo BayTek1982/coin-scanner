@@ -268,23 +268,39 @@ def world():
 def etf_flows():
     """Tägliche Summe der US-Bitcoin-ETF-Flüsse (Mio. $) von farside.co.uk."""
     import re
-    html = requests.get("https://farside.co.uk/btc/", headers={"User-Agent": "Mozilla/5.0"}, timeout=40).text
-    out = []
-    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S):
-        cells = [re.sub(r"<[^>]+>|&nbsp;", " ", c).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S)]
-        if len(cells) < 4 or not re.match(r"^\d{1,2} [A-Za-z]{3} \d{4}$", cells[0]):
-            continue
-        if sum(c in ("-", "") for c in cells[1:-1]) >= len(cells) - 3:
-            continue  # Tag noch ohne Meldungen
-        t = cells[-1].replace(",", "")
-        neg = t.startswith("(")
-        try:
-            v = float(t.strip("()"))
-        except ValueError:
-            continue
-        d = dt.datetime.strptime(cells[0], "%d %b %Y").strftime("%Y-%m-%d")
-        out.append([d, -v if neg else v])
-    return out[-60:]
+    hdr = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+           "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-GB,en;q=0.9"}
+    norm = lambda c: " ".join(re.sub(r"<[^>]+>|&nbsp;|&#160;", " ", c).split())
+    for url in ("https://farside.co.uk/btc/", "https://farside.co.uk/bitcoin-etf-flow-all-data/"):
+        r = requests.get(url, headers=hdr, timeout=40)
+        html = r.text
+        rows = re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S | re.I)
+        print("Farside", url, "Status", r.status_code, "Länge", len(html), "Zeilen", len(rows), "Anfang:", norm(html[:150]))
+        tot = None
+        out = {}
+        for row in rows:
+            cells = [norm(c) for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)]
+            if tot is None and "Total" in cells:
+                tot = cells.index("Total")
+                continue
+            if len(cells) < 4:
+                continue
+            try:
+                d = dt.datetime.strptime(cells[0], "%d %b %Y").strftime("%Y-%m-%d")
+            except ValueError:
+                continue
+            i = tot if tot is not None and tot < len(cells) else len(cells) - 1
+            if sum(c in ("-", "") for c in cells[1:i]) >= max(1, i - 2):
+                continue  # Tag noch ohne Meldungen
+            t = cells[i].replace(",", "")
+            try:
+                v = float(t.strip("()"))
+            except ValueError:
+                continue
+            out[d] = -v if t.startswith("(") else v
+        if out:
+            return sorted(out.items())[-90:]
+    return []
 
 
 def macro():
@@ -299,7 +315,7 @@ def macro():
         except Exception as e:
             print(key, "fehlgeschlagen:", e)
     try:
-        res["etf"] = etf_flows()
+        res["etf"] = [list(x) for x in etf_flows()]
         print("ETF-Tage:", len(res["etf"]))
     except Exception as e:
         print("ETF-Flüsse fehlgeschlagen:", e)
