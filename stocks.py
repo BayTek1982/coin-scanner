@@ -234,5 +234,40 @@ def main():
         json.dump(result, f, ensure_ascii=False, separators=(",", ":"))
 
 
+WORLD = [  # Indizes, die TradingView auf fremden Seiten nicht anzeigen darf -> eigene Kurse von Yahoo
+    {"k": "kospi", "n": "KOSPI", "r": "Südkorea", "y": "^KS11", "tv": "KRX:KOSPI"},
+    {"k": "hsi", "n": "Hang Seng", "r": "Hongkong", "y": "^HSI", "tv": "HSI:HSI"},
+    {"k": "nifty", "n": "Nifty 50", "r": "Indien", "y": "^NSEI", "tv": "NSE:NIFTY"},
+    {"k": "asx", "n": "ASX 200", "r": "Australien", "y": "^AXJO", "tv": "ASX:XJO"},
+    {"k": "bist", "n": "BIST 100", "r": "Türkei", "y": "XU100.IS", "tv": "BIST:XU100"},
+]
+
+
+def world():
+    df = yf.download([w["y"] for w in WORLD], period="45d", interval="1d", group_by="ticker",
+                     auto_adjust=False, threads=True, progress=False)
+    items = []
+    for w in WORLD:
+        try:
+            c = df[w["y"]]["Close"].dropna()
+        except Exception:
+            continue
+        if len(c) < 2:
+            continue
+        perf = lambda back: (c.iloc[-1] / c.iloc[-1 - back] - 1) * 100 if len(c) > back else None
+        items.append({**w, "p": num(c.iloc[-1]), "d": num(perf(1)), "w": num(perf(5)), "m": num(perf(21)),
+                      "t": c.index[-1].strftime("%Y-%m-%d")})
+    print("Welt-Indizes:", len(items))
+    if items:
+        os.makedirs("data", exist_ok=True)
+        with open("data/world.json", "w", encoding="utf-8") as f:
+            json.dump({"updated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "items": items},
+                      f, ensure_ascii=False, separators=(",", ":"))
+
+
 if __name__ == "__main__":
     main()
+    try:
+        world()
+    except Exception as e:
+        print("Welt-Indizes fehlgeschlagen:", e)

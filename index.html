@@ -208,6 +208,9 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       <h2>Welt-Überblick</h2>
       <p class="hint">Die wichtigsten Indizes je Region. Antippen öffnet TradingView. Bei einigen Börsen zeigt TradingView in eingebetteten Ansichten verzögerte oder gar keine Kurse, das liegt an deren Lizenzen.</p>
       <div class="tvbox" id="tvWorld" style="min-height:420px;border:0"></div>
+      <h2 style="margin-top:6px">Weitere Märkte · Schlusskurse</h2>
+      <table class="mini"><thead><tr><th class="l" data-dsort="0">Index</th><th class="l" data-dsort="1">Land</th><th data-dsort="2">Stand</th><th data-dsort="3">1T</th><th data-dsort="4">7T</th><th data-dsort="5">30T</th><th data-dsort="6">Datum</th></tr></thead><tbody id="worldBody"><tr><td colspan="7" class="empty">Lädt …</td></tr></tbody></table>
+      <p class="hint">Diese Börsen erlauben TradingView keine Anzeige auf fremden Seiten. Darum kommen die Kurse hier von Yahoo Finance (letzter Schlusskurs, alle 30 Minuten geprüft). Ein Tipp auf den Namen öffnet den Chart bei TradingView.</p>
     </section>
     <section class="panel">
       <h2>Index im Detail</h2>
@@ -745,8 +748,8 @@ Deutsche Bank|XETR:DBK`}
 };
 const WORLD=[
  {name:"USA",symbols:[["FOREXCOM:SPXUSD","S&P 500"],["FOREXCOM:NSXUSD","Nasdaq 100"],["FOREXCOM:DJI","Dow Jones"]]},
- {name:"Europa",symbols:[["INDEX:DEU40","DAX"],["CAPITALCOM:EU50","Euro Stoxx 50"],["FOREXCOM:UKXGBP","FTSE 100"],["EURONEXT:PX1","CAC 40"],["SIX:SMI","SMI"],["EURONEXT:AEX","AEX"],["BME:IBC","IBEX 35"],["MIL:FTSEMIB","FTSE MIB"],["BIST:XU100","BIST 100"]]},
- {name:"Asien & Pazifik",symbols:[["INDEX:NKY","Nikkei 225"],["KRX:KOSPI","KOSPI"],["SSE:000300","CSI 300"],["TVC:HSI","Hang Seng"],["NSE:NIFTY","Nifty 50"],["ASX:XJO","ASX 200"]]},
+ {name:"Europa",symbols:[["INDEX:DEU40","DAX"],["CAPITALCOM:EU50","Euro Stoxx 50"],["FOREXCOM:UKXGBP","FTSE 100"],["EURONEXT:PX1","CAC 40"],["SIX:SMI","SMI"],["EURONEXT:AEX","AEX"],["BME:IBC","IBEX 35"],["MIL:FTSEMIB","FTSE MIB"]]},
+ {name:"Asien & Pazifik",symbols:[["INDEX:NKY","Nikkei 225"],["SSE:000300","CSI 300"]]},
  {name:"Amerika",symbols:[["TSX:TSX","TSX"],["BMFBOVESPA:IBOV","Bovespa"]]}
 ];
 
@@ -776,7 +779,7 @@ function initAktien(){
     symbolsGroups:WORLD.map(g=>({name:g.name,symbols:g.symbols.map(([n,d])=>({name:n,displayName:d}))}))});
   $("idxTabs").innerHTML=Object.entries(IDX).map(([k,v])=>`<button class="tab" data-idx="${k}">${esc(v.name)}</button>`).join("");
   $("idxTabs").addEventListener("click",e=>{const b=e.target.closest("[data-idx]");if(b){S.idx=b.dataset.idx;S.showAll=false;save();showIndex()}});
-  showIndex();ensureTokens().then(showIndex);loadStocks();
+  showIndex();ensureTokens().then(showIndex);loadStocks();loadWorld();
 }
 function showIndex(){
   const k=IDX[S.idx]?S.idx:"spx",ix=IDX[k];
@@ -793,6 +796,9 @@ function showIndex(){
   $("idxBody").innerHTML=L.map(({name,sym,toks})=>{
     return`<tr><td class="l coin" style="font-family:var(--f-body)">${esc(name)}</td><td class="l"><a class="ext" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">${esc(sym.split(":").pop())}</a></td><td class="l">${toks.length?toks.map(t=>`<span class="coinpill">🪙 ${esc(t.sym)} · ${esc(t.issuer)}</span>`).join(""):'<span class="flat">–</span>'}</td></tr>`}).join("");
 }
+async function loadWorld(){try{const r=await fetch("data/world.json?t="+Date.now());if(!r.ok)throw 0;const j=await r.json();
+  $("worldBody").innerHTML=j.items.map(w=>`<tr><td class="l"><a class="ext" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(w.tv)}" target="_blank" rel="noopener">${esc(w.n)}</a></td><td class="l" style="font-family:var(--f-body);color:var(--muted)">${esc(w.r)}</td><td>${w.p!=null?w.p.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}):"–"}</td><td>${pct(w.d)}</td><td>${pct(w.w)}</td><td>${pct(w.m)}</td><td class="flat">${new Date(w.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</td></tr>`).join("")}
+  catch(e){$("worldBody").innerHTML='<tr><td colspan="7" class="empty">Noch keine Daten. Sie kommen mit dem nächsten automatischen Kurs-Lauf.</td></tr>'}}
 let STK=null,stkLoading=false;
 async function loadStocks(){if(stkLoading)return;stkLoading=true;
   try{const r=await fetch("data/stocks.json?t="+Date.now());if(r.ok)STK=await r.json()}catch(e){}
