@@ -19,7 +19,7 @@
   --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;--star:#f5c542;color-scheme:dark}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
-.wrap{max-width:1180px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:grid;gap:16px}
+.wrap{max-width:1800px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:grid;gap:16px}
 header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;justify-content:space-between}
 h1{font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em}
 h2{font-size:1.05rem;margin:0}
@@ -57,7 +57,7 @@ input[type=number]{width:92px;font-family:var(--f-num)}
 table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:860px}
 th,td{padding:7px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
-th[data-sort]{cursor:pointer}th.l,td.l{text-align:left}
+th[data-sort],th[data-ssort],th[data-lsort],th[data-dsort]{cursor:pointer;user-select:none}th[data-sort]:hover,th[data-ssort]:hover,th[data-lsort]:hover,th[data-dsort]:hover{color:var(--fg)}th .arr{font-size:.62rem;margin-left:4px}th.l,td.l{text-align:left}
 td{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 td.coin{font-family:var(--f-body)}td.coin a{color:var(--fg);text-decoration:none;font-weight:600}td.coin a:hover{text-decoration:underline}
 td.coin span{color:var(--muted);font-size:.74rem;margin-left:6px}
@@ -90,6 +90,12 @@ textarea{width:100%;min-height:64px;font:.78rem var(--f-num);background:var(--bg
 .mini td,.mini th{padding:5px 4px}
 footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}footer a{color:var(--muted)}
 a.ext{color:var(--accent)}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.lk{display:inline-flex;align-items:baseline;gap:6px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);text-decoration:none;font:600 .85rem var(--f-body)}
+.lk:hover{border-color:var(--accent)}.lk small{color:var(--muted);font-weight:400;font-size:.74rem}
+td.more a{display:inline-block;font:600 .68rem var(--f-body);padding:2px 6px;border-radius:4px;background:var(--chip);color:var(--fg);text-decoration:none;margin-right:3px}
+td.more a:hover{background:var(--accent);color:var(--accent-ink)}
+@media (min-width:1400px){body{font-size:16px}.mood{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
 </style>
 </head>
 <body>
@@ -115,6 +121,21 @@ a.ext{color:var(--accent)}
     <div class="tile"><span class="label">Top-20-Index · 24 Std.</span><span class="v" id="tT20">–</span><span class="s">Die 20 größten Coins, nach Größe gewichtet</span></div>
     <div class="tile"><span class="label">Altcoin-Index · 30 Tage</span><span class="v" id="tAlt">–</span><div class="meter"><i id="tAltM" style="left:50%"></i></div><span class="s" id="tAltS"></span></div>
     <div class="tile"><span class="label">Angst &amp; Gier</span><div class="gauge"><svg id="fngSvg" width="92" height="54" viewBox="0 0 92 54" aria-hidden="true"></svg><span class="v" id="tFng">–</span></div><span class="s" id="tFngS"></span></div>
+  </section>
+
+  <section class="panel" aria-label="Links für die Morgenanalyse" style="gap:8px">
+    <span class="label">Morgenanalyse · Links (öffnen in neuem Tab)</span>
+    <div class="links">
+      <a class="lk" href="https://cryptobubbles.net/" target="_blank" rel="noopener">🫧 Crypto Bubbles <small>Markt auf einen Blick</small></a>
+      <a class="lk" href="https://coinank.com/liqHeatMapChart" target="_blank" rel="noopener">📊 CoinAnk <small>Liquidations-Heatmap</small></a>
+      <a class="lk" href="https://coinmarketcap.com/" target="_blank" rel="noopener">🪙 CoinMarketCap</a>
+      <a class="lk" href="https://www.coingecko.com/de" target="_blank" rel="noopener">🦎 CoinGecko</a>
+      <a class="lk" href="https://www.coinglass.com/" target="_blank" rel="noopener">🔍 CoinGlass <small>Funding, Open Interest, Long/Short</small></a>
+      <a class="lk" href="https://farside.co.uk/btc/" target="_blank" rel="noopener">🏦 Farside BTC <small>ETF-Flows</small></a>
+      <a class="lk" href="https://farside.co.uk/eth/" target="_blank" rel="noopener">🏦 Farside ETH <small>ETF-Flows</small></a>
+      <a class="lk" href="https://tokenomist.ai/" target="_blank" rel="noopener">🔓 Tokenomist <small>Token-Unlocks</small></a>
+      <a class="lk" href="https://defillama.com/" target="_blank" rel="noopener">🦙 DefiLlama <small>DeFi &amp; Chains</small></a>
+    </div>
   </section>
 
   <div class="tabs" role="group" aria-label="Ansicht">
@@ -155,11 +176,11 @@ a.ext{color:var(--accent)}
     <table>
       <thead><tr>
         <th class="l"></th><th class="l"><input type="checkbox" id="chkAll" aria-label="Alle sichtbaren auswählen"></th>
-        <th class="l" data-sort="r">#</th><th class="l">Coin</th><th>Preis $</th>
+        <th class="l" data-sort="r">#</th><th class="l" data-sort="name">Coin</th><th data-sort="p">Preis $</th>
         <th data-sort="h">1H</th><th data-sort="d">24H</th><th data-sort="w">7T</th><th data-sort="m">30T</th>
-        <th data-sort="score">Score</th><th data-sort="mc">MarketCap</th><th data-sort="v">Volumen 24h</th><th>7 Tage</th><th class="l">Börsen</th>
+        <th data-sort="score">Score</th><th data-sort="mc">MarketCap</th><th data-sort="v">Volumen 24h</th><th data-sort="w">7 Tage</th><th class="l" data-sort="ex">Börsen</th><th class="l">Mehr</th>
       </tr></thead>
-      <tbody id="tb"><tr><td colspan="14" class="empty">Lade Live-Daten …</td></tr></tbody>
+      <tbody id="tb"><tr><td colspan="15" class="empty">Lade Live-Daten …</td></tr></tbody>
     </table>
   </div>
 
@@ -175,7 +196,7 @@ a.ext{color:var(--accent)}
       </div>
       <div class="panel">
         <h2>Open Interest · 24 Std.</h2>
-        <table class="mini"><thead><tr><th class="l">Coin</th><th>Open Interest</th><th>24 Std.</th></tr></thead><tbody id="oiBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
+        <table class="mini"><thead><tr><th class="l" data-dsort="0">Coin</th><th data-dsort="1">Open Interest</th><th data-dsort="2">24 Std.</th></tr></thead><tbody id="oiBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
         <p class="hint">Steigt Open Interest stark, sammelt sich Hebel im Markt. Bei fallendem Kurs drohen dann Long-Liquidationen.</p>
         <p class="hint">Liquidations-Heatmap: <a class="ext" href="https://coinank.com/" target="_blank" rel="noopener">CoinAnk öffnen</a></p>
       </div>
@@ -189,7 +210,7 @@ a.ext{color:var(--accent)}
 
   <section class="panel" id="exportBox">
     <h2>TradingView-Watchlist</h2>
-    <p class="hint">Coins in der Tabelle anhaken, dann kopieren oder als Datei speichern. In TradingView: Watchlist → „Liste importieren“. Ein Tipp auf den Coin-Namen öffnet direkt den Chart.</p>
+    <p class="hint">Coins in der Tabelle anhaken, dann kopieren oder als Datei speichern. In TradingView: Watchlist → „Liste importieren“. Ein Tipp auf den Coin-Namen öffnet direkt den Chart. Ein Tipp auf eine Spaltenüberschrift sortiert, nochmal tippen dreht die Reihenfolge um.</p>
     <textarea id="wl" readonly aria-label="Watchlist-Symbole"></textarea>
     <div class="bar"><button class="btn" id="copyBtn">Kopieren</button><button class="btn ghost" id="saveBtn">Als .txt speichern</button><button class="btn ghost" id="clearBtn">Auswahl leeren</button><span class="msg" id="wlMsg"></span></div>
   </section>
@@ -200,6 +221,15 @@ a.ext{color:var(--accent)}
       <div class="tvbox" id="tvVix" style="min-height:120px"></div>
       <a class="tile linkcard" href="https://www.tradingview.com/symbols/XETR-V1X/" target="_blank" rel="noopener"><span class="label">VDAX-NEW</span><span class="v">Angstbarometer DAX</span><span class="s">Hoch = Angst, niedrig = Ruhe. Antippen öffnet TradingView.</span></a>
       <a class="tile linkcard" href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener"><span class="label">CNN Fear &amp; Greed</span><span class="v">US-Aktien</span><span class="s">Stimmungsindex 0–100. Antippen öffnet CNN.</span></a>
+    </section>
+    <section class="panel" aria-label="Links für die Morgenanalyse Aktien" style="gap:8px">
+      <span class="label">Morgenanalyse · Links (öffnen in neuem Tab)</span>
+      <div class="links">
+        <a class="lk" href="https://de.investing.com/economic-calendar/" target="_blank" rel="noopener">📅 Wirtschaftskalender <small>Investing.com</small></a>
+        <a class="lk" href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" rel="noopener">🏛️ CME FedWatch <small>Zins-Erwartung</small></a>
+        <a class="lk" href="https://www.earningswhispers.com/calendar" target="_blank" rel="noopener">📈 Earnings Whispers <small>Quartalszahlen</small></a>
+        <a class="lk" href="https://finviz.com/map.ashx" target="_blank" rel="noopener">🟩 Finviz <small>Heatmap USA</small></a>
+      </div>
     </section>
     <section class="panel">
       <h2>Welt-Überblick</h2>
@@ -213,7 +243,7 @@ a.ext{color:var(--accent)}
       <div class="tvbox" id="tvHeat" style="height:460px"></div>
       <div class="bar" id="stkBar"><span class="label">Sortieren</span><button class="chip" data-stf="d">1T</button><button class="chip" data-stf="w">7T</button><button class="chip" data-stf="m">30T</button><button class="chip" data-stf="score">Score</button><button class="chip" data-stf="mc">Börsenwert</button><span class="msg" id="stkStand"></span></div>
       <div class="tablebox"><table id="idxTable" style="min-width:520px"><thead id="idxHead"></thead><tbody id="idxBody"></tbody></table></div>
-      <p class="hint">🪙 zeigt, ob es die Aktie zusätzlich als Token auf Krypto-Börsen gibt (xStock, Ondo, Robinhood, bStocks). Score = Vorsprung (+) oder Rückstand (−) gegenüber dem eigenen Index über 7 und 30 Tage. Kurse werden automatisch etwa alle 30 Minuten aktualisiert (Quelle: Yahoo Finance, verzögert). Ein Tipp auf den Namen öffnet den Chart in TradingView.</p>
+      <p class="hint">🪙 zeigt, ob es die Aktie zusätzlich als Token auf Krypto-Börsen gibt (xStock, Ondo, Robinhood, bStocks). Score = Vorsprung (+) oder Rückstand (−) gegenüber dem eigenen Index über 7 und 30 Tage. Kurse werden automatisch etwa alle 30 Minuten aktualisiert (Quelle: Yahoo Finance, verzögert). Ein Tipp auf den Namen öffnet den Chart in TradingView. Ein Tipp auf eine Spaltenüberschrift sortiert, nochmal tippen dreht die Reihenfolge um.</p>
     </section>
     <section class="panel">
       <h2>TradingView-Watchlist Aktien</h2>
@@ -373,7 +403,13 @@ function source(){
 const key=()=>S.tf;
 function rows(){const k=key(),L=LISTS[S.tab];if(!L)return[];
   const list=source().filter(L.f);if(S.tab==="trend"&&S.tf==="d"&&S.dir===-1&&!S.sorted)return list;
-  return list.slice().sort((a,b)=>{if(k==="r"){const x=a.r??1e9,y=b.r??1e9;return S.dir===-1?x-y:y-x}const x=a[k]??-1e12,y=b[k]??-1e12;return S.dir===-1?y-x:x-y})}
+  return list.slice().sort((a,b)=>{if(k==="r"){const x=a.r??1e9,y=b.r??1e9;return S.dir===-1?x-y:y-x}
+    if(k==="name"){const c=a.sym.localeCompare(b.sym,"de");return S.dir===-1?c:-c}
+    const val=c=>k==="ex"?c.fl.length:c[k];const x=val(a)??-1e12,y=val(b)??-1e12;return S.dir===-1?y-x:x-y})}
+// Pfeil ▲▼ an der gewählten Spaltenüberschrift; Text-Spalten starten mit A–Z / Rang 1
+const ASC_FIRST=new Set(["r","name","n","sec","sym"]);
+function arrows(sel,attr,k,dir){document.querySelectorAll(sel).forEach(th=>{th.querySelector(".arr")?.remove();const on=th.getAttribute(attr)===k;th.classList.toggle("sel",on);
+  if(on){const asc=ASC_FIRST.has(k)?dir===-1:dir===1;th.insertAdjacentHTML("beforeend",`<span class="arr">${asc?"▲":"▼"}</span>`)}})}
 function tvSym(c){const k=["O","B"].find(k=>c.fl.includes(k));return k?`${TV_EX[k]}:${c.sym}USDT`:`${c.sym}USDT`}
 const fmtP=p=>p==null?"–":p>=1000?p.toLocaleString("de-DE",{maximumFractionDigits:0}):p>=1?p.toLocaleString("de-DE",{maximumFractionDigits:2}):p>=0.01?p.toLocaleString("de-DE",{maximumFractionDigits:4}):p.toPrecision(3).replace(".",",");
 function spark(arr,up){if(!arr||arr.length<2)return"";const step=Math.max(1,Math.floor(arr.length/40)),pts=arr.filter((_,i)=>i%step===0);
@@ -383,13 +419,13 @@ function spark(arr,up){if(!arr||arr.length<2)return"";const step=Math.max(1,Math
 
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===S.tab));
-  document.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tf===S.tf));
+  document.querySelectorAll("[data-tf]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tf===S.tf));
   const deriv=S.tab==="deriv";
   $("derivBox").hidden=!deriv;$("tableBox").hidden=deriv;$("filterBar").hidden=deriv||S.tab==="trend"||S.tab==="token"||S.tab==="watch";
   $("eigenPanel").hidden=S.tab!=="eigen";$("exportBox").hidden=deriv;
   $("listHint").textContent=deriv?"Futures-Daten: Wo stecken Hebel und Druck im Markt?":LISTS[S.tab].hint;
   $("rank").value=S.rank;
-  document.querySelectorAll("th[data-sort]").forEach(th=>th.classList.toggle("sel",th.dataset.sort===S.tf));
+  arrows("th[data-sort]","data-sort",S.tf,S.dir);
   if(deriv)return;
   if(S.tab==="token"&&!S.tokenCoins.length){loadToken();return}
   if(!S.coins.length)return;
@@ -405,21 +441,22 @@ function render(){
     <td>${c.mc?fmtB(c.mc):"–"}</td><td>${c.v?fmtB(c.v):"–"}</td>
     <td>${spark(c.spark,(c.w??0)>=0)}</td>
     <td class="l"><span class="ex">${["O","B","U"].map(x=>`<i class="${c.fl.includes(x)?"on":""}">${x}</i>`).join("")}</span></td>
+    <td class="l more"><a href="https://www.coingecko.com/en/coins/${encodeURIComponent(c.id)}" target="_blank" rel="noopener" title="${esc(c.name)} auf CoinGecko">CoinGecko</a><a href="https://www.coinglass.com/currencies/${encodeURIComponent(c.sym)}" target="_blank" rel="noopener" title="${esc(c.sym)} auf CoinGlass">CoinGlass</a></td>
   </tr>`;
   let html="";
   if(S.tab==="token"){const groups=new Map();R.forEach(c=>{const t=tokenInfo(c.name);c.issuer=t.issuer;(groups.get(t.base)||groups.set(t.base,[]).get(t.base)).push(c)});
-    for(const[name,list]of groups){const vals=list.map(c=>c[k==="score"?"d":k]).filter(v=>v!=null);const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-      html+=`<tr class="grp"><td colspan="14">${esc(name)}<span>${list.length} ${list.length===1?"Variante":"Varianten"} · Ø ${pct(avg).replace(/<[^>]+>/g,"")}</span></td></tr>`+list.map(c=>row(c,true)).join("")}}
+    for(const[name,list]of groups){const ak=["h","d","w","m"].includes(k)?k:"d",vals=list.map(c=>c[ak]).filter(v=>v!=null);const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+      html+=`<tr class="grp"><td colspan="15">${esc(name)}<span>${list.length} ${list.length===1?"Variante":"Varianten"} · Ø ${pct(avg).replace(/<[^>]+>/g,"")}</span></td></tr>`+list.map(c=>row(c,true)).join("")}}
   else html=R.map(c=>row(c,false)).join("");
-  $("tb").innerHTML=R.length?html:`<tr><td colspan="14" class="empty">${S.tab==="watch"?"Noch keine Coins markiert. Tippe in einer Liste auf ☆, um einen Coin hier zu sammeln.":S.tab==="token"?"Keine tokenisierten Aktien gefunden.":"Gerade erfüllt kein Coin diese Filter."}</td></tr>`;
+  $("tb").innerHTML=R.length?html:`<tr><td colspan="15" class="empty">${S.tab==="watch"?"Noch keine Coins markiert. Tippe in einer Liste auf ☆, um einen Coin hier zu sammeln.":S.tab==="token"?"Keine tokenisierten Aktien gefunden.":"Gerade erfüllt kein Coin diese Filter."}</td></tr>`;
   updateWL();
 }
 async function loadToken(){
-  $("tb").innerHTML='<tr><td colspan="14" class="empty">Lade tokenisierte Aktien …</td></tr>';
+  $("tb").innerHTML='<tr><td colspan="15" class="empty">Lade tokenisierte Aktien …</td></tr>';
   try{const res=await Promise.allSettled(["tokenized-stock","xstocks-ecosystem"].map(c=>getJSON(MK(c))));
     const seen=new Set(),out=[];res.forEach(r=>{if(r.status==="fulfilled"&&Array.isArray(r.value))r.value.forEach(c=>{if(!seen.has(c.id)&&(c.market_cap||c.total_volume)>0){seen.add(c.id);out.push(c)}})});
     if(!out.length)throw new Error("leer");S.tokenCoins=enrich(out.map(mapCoin));render()}
-  catch(e){$("tb").innerHTML='<tr><td colspan="14" class="empty">CoinGecko antwortet gerade nicht. Bitte gleich erneut versuchen.</td></tr>'}
+  catch(e){$("tb").innerHTML='<tr><td colspan="15" class="empty">CoinGecko antwortet gerade nicht. Bitte gleich erneut versuchen.</td></tr>'}
 }
 function tokenInfo(name){const n=String(name||"");
   const issuer=/ondo/i.test(n)?"Ondo":/robinhood/i.test(n)?"Robinhood":/bstocks?/i.test(n)?"bStocks":/xstock/i.test(n)?"xStock":"Token";
@@ -696,9 +733,12 @@ function showIndex(){
   if(S.heatShown!==k){S.heatShown=k;if(ix.heat){$("tvHeat").hidden=false;tvWidget($("tvHeat"),"embed-widget-stock-heatmap.js",{dataSource:ix.heat,blockSize:"market_cap_basic",blockColor:"change",grouping:"sector",hasTopBar:false,isDataSetEnabled:false,isZoomEnabled:true,hasSymbolTooltip:true,isMonoSize:false,width:"100%",height:"100%"})}else{$("tvHeat").hidden=true;$("tvHeat").innerHTML=""}}
   if(STK&&STK.indices&&STK.indices[k]&&STK.indices[k].items.length){showStocks(k);return}
   $("stkBar").hidden=true;$("idxTable").style.minWidth="520px";
-  $("idxHead").innerHTML='<tr><th class="l">Unternehmen</th><th class="l">Kürzel</th><th class="l">🪙 Tokenisiert handelbar</th></tr>';
+  $("idxHead").innerHTML='<tr><th class="l" data-lsort="n">Unternehmen</th><th class="l" data-lsort="sym">Kürzel</th><th class="l" data-lsort="tk">🪙 Tokenisiert handelbar</th></tr>';
+  const lf=S.lsort||"",ld=S.ldir||-1;if(lf)arrows("#idxHead th[data-lsort]","data-lsort",lf,ld);
   if(!ix.list.trim()){$("idxBody").innerHTML=`<tr><td colspan="3" class="empty">${STK?"Für diesen Index liegen noch keine Kurse vor.":"Kursdaten werden geladen oder sind noch nicht eingerichtet."}</td></tr>`;return}
-  $("idxBody").innerHTML=ix.list.trim().split("\n").map(l=>{const[name,sym]=l.split("|");const toks=tokensFor(name,sym);
+  let L=ix.list.trim().split("\n").map(l=>{const[name,sym]=l.split("|");return{name,sym,toks:tokensFor(name,sym)}});
+  if(lf){L.sort((a,b)=>{const r=lf==="tk"?b.toks.length-a.toks.length:String(lf==="n"?a.name:a.sym).localeCompare(lf==="n"?b.name:b.sym,"de");return ld===-1?r:-r})}
+  $("idxBody").innerHTML=L.map(({name,sym,toks})=>{
     return`<tr><td class="l coin" style="font-family:var(--f-body)">${esc(name)}</td><td class="l"><a class="ext" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">${esc(sym.split(":").pop())}</a></td><td class="l">${toks.length?toks.map(t=>`<span class="coinpill">🪙 ${esc(t.sym)} · ${esc(t.issuer)}</span>`).join(""):'<span class="flat">–</span>'}</td></tr>`}).join("");
 }
 let STK=null,stkLoading=false;
@@ -710,13 +750,17 @@ const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"
 function ySym(y){const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+(m[2]==="HK"?m[1].replace(/^0+/,""):m[1].replace(/-/g,"_"));return y.replace(/-/g,".")}
 function stockRows(k){const ix=STK?.indices?.[k];if(!ix)return null;const b=ix.bench||{};
   const list=ix.items.map(c=>Object.assign({},c,{score:c.w!=null&&c.m!=null&&b.w!=null?0.5*(c.w-b.w)+0.5*(c.m-b.m):null}));
-  const f=S.stf||"score";return list.sort((a,c)=>(c[f]??-1e12)-(a[f]??-1e12))}
+  const f=S.stf||"score",dir=S.sdir||-1;
+  if(f==="tk")list.forEach(c=>{c.tk=tokensFor(c.n,ix.cur==="$"?c.y.replace(/-/g,"."):ySym(c.y)).length});
+  if(f==="n"||f==="sec")return list.sort((a,c)=>{const r=String(a[f]||"").localeCompare(String(c[f]||""),"de");return dir===-1?r:-r});
+  return list.sort((a,c)=>{const x=a[f]??-1e12,y=c[f]??-1e12;return dir===-1?y-x:x-y})}
 function showStocks(k){const ix=STK.indices[k],R=stockRows(k),cur=ix.cur,f=S.stf||"score",b=ix.bench||{};
   if(!S.ssel)S.ssel=new Set();if(!S.sstars)S.sstars=new Set();
   document.querySelectorAll("[data-stf]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.stf===f));
   $("stkBar").hidden=false;$("idxTable").style.minWidth="900px";
   $("stkStand").textContent=`Stand ${new Date(STK.updated).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr · Index: 1T ${b.d!=null?b.d.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %, 30T ${b.m!=null?b.m.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %`;
-  $("idxHead").innerHTML=`<tr><th class="l"></th><th class="l"></th><th class="l">Unternehmen</th><th>Kurs ${cur}</th><th>1T</th><th>7T</th><th>30T</th><th>Score</th><th>Börsenwert</th><th>Umsatz</th><th>30 Tage</th><th class="l">🪙 Token</th><th class="l">Sektor</th></tr>`;
+  $("idxHead").innerHTML=`<tr><th class="l"></th><th class="l"></th><th class="l" data-ssort="n">Unternehmen</th><th data-ssort="p">Kurs ${cur}</th><th data-ssort="d">1T</th><th data-ssort="w">7T</th><th data-ssort="m">30T</th><th data-ssort="score">Score</th><th data-ssort="mc">Börsenwert</th><th data-ssort="v">Umsatz</th><th data-ssort="m">30 Tage</th><th class="l" data-ssort="tk">🪙 Token</th><th class="l" data-ssort="sec">Sektor</th></tr>`;
+  arrows("#idxHead th[data-ssort]","data-ssort",f,S.sdir||-1);
   const LIM=300,more=R.length>LIM&&!S.showAll;const RR=more?R.slice(0,LIM):R;
   $("idxBody").innerHTML=RR.map(c=>{const tv=ySym(c.y),toks=tokensFor(c.n,cur==="$"?c.y.replace(/-/g,"."):tv);const id=k+":"+c.y;
     return`<tr><td class="l"><button class="star${S.sstars.has(c.y)?" on":""}" data-sstar="${esc(c.y)}" aria-label="${esc(c.n)} merken">${S.sstars.has(c.y)?"★":"☆"}</button></td>
@@ -784,7 +828,7 @@ if(!Object.keys(S.filt).length)S.filt={mcMin:"100",vol:"5"};
 
 // ---------- Bedienung ----------
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;S.tf=LISTS[S.tab]?.tf||"d";S.dir=-1;S.sorted=false;save();render();if(S.tab==="deriv")loadDeriv()});
-document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{S.tf=b.dataset.tf;S.dir=-1;S.sorted=true;save();render()});
+document.querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>{S.tf=b.dataset.tf;S.dir=-1;S.sorted=true;save();render()});
 document.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const s=th.dataset.sort;if(S.tf===s)S.dir*=-1;else{S.tf=s;S.dir=-1}S.sorted=true;save();render()});
 $("rank").onchange=e=>{S.rank=+e.target.value;save();render()};
 $("cat").onchange=e=>{S.cat=e.target.value;save();loadAll()};
@@ -798,7 +842,17 @@ $("saveBtn").onclick=()=>{const v=$("wl").value;if(!v){$("wlMsg").textContent="E
 $("liqMin").onchange=drawLiq;
 $("refresh").onclick=()=>{derivLoaded=0;loadAll()};
 document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
-document.querySelectorAll("[data-stf]").forEach(b=>b.onclick=()=>{S.stf=b.dataset.stf;showIndex()});
+document.querySelectorAll("[data-stf]").forEach(b=>b.onclick=()=>{S.stf=b.dataset.stf;S.sdir=-1;showIndex()});
+$("idxHead").addEventListener("click",e=>{const th=e.target.closest("th");if(!th)return;
+  if(th.dataset.ssort){const s=th.dataset.ssort;if((S.stf||"score")===s)S.sdir=-(S.sdir||-1);else{S.stf=s;S.sdir=-1}showIndex()}
+  else if(th.dataset.lsort){const s=th.dataset.lsort;if(S.lsort===s)S.ldir=-(S.ldir||-1);else{S.lsort=s;S.ldir=-1}showIndex()}});
+// einfache Sortierung für kleine Tabellen (Open Interest)
+document.querySelectorAll("th[data-dsort]").forEach(th=>th.onclick=()=>{const tb=th.closest("table").tBodies[0],i=+th.dataset.dsort;
+  const dir=th.dataset.dir==="-1"?1:-1;th.closest("tr").querySelectorAll("th").forEach(x=>{delete x.dataset.dir;x.querySelector(".arr")?.remove();x.classList.remove("sel")});
+  th.dataset.dir=dir;th.classList.add("sel");const txt=i===0;th.insertAdjacentHTML("beforeend",`<span class="arr">${(txt?dir===-1:dir===1)?"▲":"▼"}</span>`);
+  const num=t=>{const m=t.replace(/\./g,"").replace(",",".").match(/[-−+]?\d+(\.\d+)?/);if(!m)return null;let v=parseFloat(m[0].replace("−","-"));if(/Bio/.test(t))v*=1e12;else if(/Mrd/.test(t))v*=1e9;else if(/Mio/.test(t))v*=1e6;return v};
+  const rows=[...tb.rows].filter(r=>r.cells.length>i);rows.sort((a,b)=>{const x=a.cells[i].textContent,y=b.cells[i].textContent;
+    if(txt){const r=x.localeCompare(y,"de");return dir===-1?r:-r}const p=num(x)??-1e18,q=num(y)??-1e18;return dir===-1?q-p:p-q});rows.forEach(r=>tb.appendChild(r))});
 $("idxBody").addEventListener("change",e=>{const y=e.target.dataset.ssel;if(!y)return;e.target.checked?S.ssel.add(y):S.ssel.delete(y);LS("bcsStk",{sel:[...S.ssel],stars:[...S.sstars]});updateSWL()});
 $("idxBody").addEventListener("click",e=>{const b=e.target.closest("[data-sstar]");if(!b)return;const y=b.dataset.sstar;S.sstars.has(y)?S.sstars.delete(y):S.sstars.add(y);LS("bcsStk",{sel:[...S.ssel],stars:[...S.sstars]});showIndex()});
 $("sClear").onclick=()=>{S.ssel=new Set();LS("bcsStk",{sel:[],stars:[...(S.sstars||[])]});showIndex()};
