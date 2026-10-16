@@ -104,7 +104,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
 <div class="wrap">
   <header>
     <div>
-      <div class="label">Krypto, Aktien &amp; Geldflüsse · Live · OKX, Binance, Bitunix, TradingView, DefiLlama</div>
+      <div class="label">Krypto, Aktien &amp; Geldflüsse · Live · OKX, Binance, Coinbase, Bybit, TradingView, DefiLlama</div>
       <h1>Bayazit Coin-Scanner</h1>
     </div>
     <div class="status">
@@ -159,7 +159,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <div class="fgrid">
       <label>MarketCap in Mio. $<span class="row">von <input type="number" id="fMcMin" min="0"> bis <input type="number" id="fMcMax" min="0"></span></label>
       <label>Mindest-Volumen 24h in Mio. $<span class="row"><input type="number" id="fVol" min="0"></span></label>
-      <label>Handelbar auf (mind. eine)<span class="row"><label class="row"><input type="checkbox" id="fExO"> OKX</label><label class="row"><input type="checkbox" id="fExB"> Binance</label><label class="row"><input type="checkbox" id="fExU"> Bitunix</label></span></label>
+      <label>Handelbar auf (mind. eine)<span class="row"><label class="row"><input type="checkbox" id="fExO"> OKX</label><label class="row"><input type="checkbox" id="fExB"> Binance</label></span></label>
       <label>Performance<span class="row"><select id="fTf"><option value="h">1H</option><option value="d">24H</option><option value="w">7T</option><option value="m">30T</option></select> von <input type="number" id="fPMin"> bis <input type="number" id="fPMax"> %</span></label>
       <label>Stärke<span class="row"><label class="row"><input type="checkbox" id="fRs"> nur stärker als Bitcoin (7T + 30T)</label></span></label>
     </div>
@@ -310,8 +310,8 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   </div>
 
   <footer>
-    <span>Börsen: <b>O</b> OKX · <b>B</b> Binance · <b>U</b> Bitunix. Score = Vorsprung (+) oder Rückstand (−) gegenüber Bitcoin über 7 und 30 Tage, in Prozentpunkten. Altcoin-Index = Anteil der Top-50-Coins, die über 30 Tage besser liefen als Bitcoin.</span>
-    <span>Daten: CoinGecko, alternative.me (Angst &amp; Gier), OKX, Binance, Bitunix. Kurse können wenige Minuten verzögert sein.</span>
+    <span>Börsen: <b>O</b> OKX · <b>B</b> Binance. Score = Vorsprung (+) oder Rückstand (−) gegenüber Bitcoin über 7 und 30 Tage, in Prozentpunkten. Altcoin-Index = Anteil der Top-50-Coins, die über 30 Tage besser liefen als Bitcoin.</span>
+    <span>Daten: CoinGecko, alternative.me (Angst &amp; Gier), OKX, Binance. Kurse können wenige Minuten verzögert sein.</span>
     <span>Der Scanner sortiert vor und ist keine Anlageberatung. Einstieg nur nach eigener Chartanalyse.</span>
   </footer>
 </div>
@@ -322,8 +322,7 @@ const CG="https://api.coingecko.com/api/v3";
 const MK=cat=>`${CG}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=true&price_change_percentage=1h,24h,7d,30d${cat?"&category="+encodeURIComponent(cat):""}`;
 const EXCH=[
   {k:"O",name:"OKX",url:"https://www.okx.com/api/v5/market/tickers?instType=SPOT"},
-  {k:"B",name:"Binance",url:"https://data-api.binance.vision/api/v3/ticker/price"},
-  {k:"U",name:"Bitunix",url:"https://fapi.bitunix.com/api/v1/futures/market/tickers"}
+  {k:"B",name:"Binance",url:"https://data-api.binance.vision/api/v3/ticker/price"}
 ];
 const TV_EX={O:"OKX",B:"BINANCE"};
 const SKIP=new Set("USDT USDC DAI FDUSD TUSD USDE USDS PYUSD USD1 RLUSD USDD BUSD USDP GUSD FRAX LUSD EURC EURT XAUT PAXG KAU USDG USDF USD0 USDTB BFUSD GHO USYC USDY OUSG USTB BUIDL USDX USDB SUSDE SUSDS SDAI WBTC WETH STETH WSTETH WEETH EETH CBBTC CBETH RETH BETH LBTC SOLVBTC JITOSOL MSOL BNSOL JUPSOL EZETH RSETH METH OSETH SFRXETH TBTC BTCB CLBTC WBETH BSC-USD WBNB WSOL WTRX WHYPE JLP".split(" "));
@@ -440,7 +439,7 @@ const LISTS={
   eigen:{f:c=>{const f=F(),n=x=>x===""||x==null?null:+x;
       if(n(f.mcMin)!=null&&c.mc<n(f.mcMin)*1e6)return false;if(n(f.mcMax)!=null&&c.mc>n(f.mcMax)*1e6)return false;
       if(n(f.vol)!=null&&c.v<n(f.vol)*1e6)return false;
-      const ex=["O","B","U"].filter(k=>f["ex"+k]);if(ex.length&&!ex.some(k=>c.fl.includes(k)))return false;
+      const ex=["O","B"].filter(k=>f["ex"+k]);if(ex.length&&!ex.some(k=>c.fl.includes(k)))return false;
       const t=f.tf||"d",val=c[t];if(n(f.pMin)!=null&&(val==null||val<n(f.pMin)))return false;if(n(f.pMax)!=null&&(val==null||val>n(f.pMax)))return false;
       if(f.rs&&!(c.score>0&&c.w>S.btc?.w&&c.m>S.btc?.m))return false;return true},tf:"d",
     hint:"Deine eigenen Regeln. Sie gelten zusätzlich zu Rang und Kategorie oben."},
@@ -495,7 +494,7 @@ function render(){
     <td class="${k==="score"?"sel":""}">${pct(c.score,true)}</td>
     <td>${c.mc?fmtB(c.mc):"–"}</td><td>${c.v?fmtB(c.v):"–"}</td>
     <td>${spark(c.spark,(c.w??0)>=0)}</td>
-    <td class="l"><span class="ex">${["O","B","U"].map(x=>`<i class="${c.fl.includes(x)?"on":""}">${x}</i>`).join("")}</span></td>
+    <td class="l"><span class="ex">${["O","B"].map(x=>`<i class="${c.fl.includes(x)?"on":""}">${x}</i>`).join("")}</span></td>
     <td class="l more"><a href="https://www.coingecko.com/en/coins/${encodeURIComponent(c.id)}" target="_blank" rel="noopener" title="${esc(c.name)} auf CoinGecko">CoinGecko</a><a href="https://www.coinglass.com/currencies/${encodeURIComponent(c.sym)}" target="_blank" rel="noopener" title="${esc(c.sym)} auf CoinGlass">CoinGlass</a></td>
   </tr>`;
   let html="";
@@ -847,7 +846,7 @@ function updateWL(){
 let ws=null,liq=[],liqLong=0,liqShort=0,derivLoaded=0;
 function startLiq(){
   if(ws&&ws.readyState<2)return;
-  try{ws=new WebSocket("wss://fstream.binance.com/ws/!forceOrder@arr")}catch(e){$("liqState").textContent="Verbindung nicht möglich";return}
+  try{ws=new WebSocket("wss://fstream.binance.com/market/ws/!forceOrder@arr")}catch(e){$("liqState").textContent="Verbindung nicht möglich";return}
   ws.onopen=()=>{$("liqState").textContent="Live verbunden · warte auf Liquidationen";drawLiq()};
   ws.onclose=()=>{$("liqState").textContent="Getrennt · verbindet neu …";if(S.mode==="flows")setTimeout(startLiq,4000)};
   ws.onerror=()=>$("liqState").textContent="Binance Futures nicht erreichbar";
@@ -884,7 +883,7 @@ const UP=WH_COINS.map(c=>c.toUpperCase());
 const WH_EX=[
  {ex:"Binance",mkt:"Spot",url:"wss://stream.binance.com:9443/stream?streams="+WH_COINS.map(c=>c+"usdt@aggTrade").join("/"),
   parse:j=>{const d=j.data;return d?[{s:d.s.replace(/USDT$/,""),buy:!d.m,p:+d.p,q:+d.q,T:d.T}]:[]}},
- {ex:"Binance",mkt:"Futures",url:"wss://fstream.binance.com/stream?streams="+WH_COINS.map(c=>c+"usdt@aggTrade").join("/"),
+ {ex:"Binance",mkt:"Futures",url:"wss://fstream.binance.com/market/stream?streams="+WH_COINS.map(c=>c+"usdt@aggTrade").join("/"),
   parse:j=>{const d=j.data;return d?[{s:d.s.replace(/USDT$/,""),buy:!d.m,p:+d.p,q:+d.q,T:d.T}]:[]}},
  {ex:"Coinbase",mkt:"Spot",url:"wss://ws-feed.exchange.coinbase.com",
   sub:{type:"subscribe",product_ids:UP.filter(c=>c!=="BNB").map(c=>c+"-USD"),channels:["matches"]},
@@ -954,7 +953,7 @@ async function loadFlows(){
 $("whReset").onclick=()=>{wh=[];drawWhales()};
 
 // ---------- Eigener Filter ----------
-const FF={fMcMin:"mcMin",fMcMax:"mcMax",fVol:"vol",fTf:"tf",fPMin:"pMin",fPMax:"pMax"},FC={fExO:"exO",fExB:"exB",fExU:"exU",fRs:"rs"};
+const FF={fMcMin:"mcMin",fMcMax:"mcMax",fVol:"vol",fTf:"tf",fPMin:"pMin",fPMax:"pMax"},FC={fExO:"exO",fExB:"exB",fRs:"rs"};
 function fillFilter(){for(const[id,k]of Object.entries(FF))$(id).value=S.filt[k]??(k==="tf"?"d":"");for(const[id,k]of Object.entries(FC))$(id).checked=!!S.filt[k]}
 for(const[id,k]of Object.entries(FF))$(id).addEventListener("input",e=>{S.filt[k]=e.target.value;save();render()});
 for(const[id,k]of Object.entries(FC))$(id).addEventListener("change",e=>{S.filt[k]=e.target.checked;save();render()});
