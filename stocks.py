@@ -265,9 +265,57 @@ def world():
                       f, ensure_ascii=False, separators=(",", ":"))
 
 
+def etf_flows():
+    """Tägliche Summe der US-Bitcoin-ETF-Flüsse (Mio. $) von farside.co.uk."""
+    import re
+    html = requests.get("https://farside.co.uk/btc/", headers={"User-Agent": "Mozilla/5.0"}, timeout=40).text
+    out = []
+    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S):
+        cells = [re.sub(r"<[^>]+>|&nbsp;", " ", c).strip() for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S)]
+        if len(cells) < 4 or not re.match(r"^\d{1,2} [A-Za-z]{3} \d{4}$", cells[0]):
+            continue
+        if sum(c in ("-", "") for c in cells[1:-1]) >= len(cells) - 3:
+            continue  # Tag noch ohne Meldungen
+        t = cells[-1].replace(",", "")
+        neg = t.startswith("(")
+        try:
+            v = float(t.strip("()"))
+        except ValueError:
+            continue
+        d = dt.datetime.strptime(cells[0], "%d %b %Y").strftime("%Y-%m-%d")
+        out.append([d, -v if neg else v])
+    return out[-60:]
+
+
+def macro():
+    """VIX, Dollar-Index und ETF-Flüsse für den Krypto-Stimmungsindex."""
+    res = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes")}
+    df = yf.download(["^VIX", "DX-Y.NYB"], period="200d", interval="1d", group_by="ticker",
+                     auto_adjust=False, threads=True, progress=False)
+    for key, t in (("vix", "^VIX"), ("dxy", "DX-Y.NYB")):
+        try:
+            c = df[t]["Close"].dropna()
+            res[key] = [[i.strftime("%Y-%m-%d"), num(v)] for i, v in c.items()]
+        except Exception as e:
+            print(key, "fehlgeschlagen:", e)
+    try:
+        res["etf"] = etf_flows()
+        print("ETF-Tage:", len(res["etf"]))
+    except Exception as e:
+        print("ETF-Flüsse fehlgeschlagen:", e)
+    old = load_json("data/macro.json", {})
+    for k in ("vix", "dxy", "etf"):  # bei Ausfall alten Stand behalten
+        if not res.get(k) and old.get(k):
+            res[k] = old[k]
+    os.makedirs("data", exist_ok=True)
+    with open("data/macro.json", "w", encoding="utf-8") as f:
+        json.dump(res, f, separators=(",", ":"))
+
+
 if __name__ == "__main__":
     main()
-    try:
-        world()
-    except Exception as e:
-        print("Welt-Indizes fehlgeschlagen:", e)
+    for fn in (world, macro):
+        try:
+            fn()
+        except Exception as e:
+            print(fn.__name__, "fehlgeschlagen:", e)

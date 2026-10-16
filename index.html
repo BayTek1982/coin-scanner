@@ -86,6 +86,17 @@ textarea{width:100%;min-height:64px;font:.78rem var(--f-num);background:var(--bg
 .liq{max-height:340px;overflow-y:auto;display:grid;gap:2px;font:.8rem var(--f-num)}
 .liq div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
 .linkbox{gap:10px}.linkbox summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;list-style:none}.linkbox summary::-webkit-details-marker{display:none}.linkbox summary::before{content:"▸";color:var(--muted)}.linkbox[open] summary::before{content:"▾"}
+.fg{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:center}
+.fgcol{display:grid;gap:12px}.fgcol .lab{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.fgi{display:flex;align-items:center;gap:10px;background:none;border:0;color:var(--fg);cursor:pointer;padding:2px;font:inherit;text-align:left}
+#fgL .fgi{flex-direction:row-reverse;text-align:right}#fgL{justify-items:end}#fgL .lab{text-align:right}
+.fgi b{display:block;font-size:.88rem}.fgi small{display:block;color:var(--muted);font:.74rem var(--f-num)}
+.fgi.na{opacity:.45}.fgi:hover b{text-decoration:underline}
+.fgmid{display:grid;justify-items:center;text-align:center;gap:2px}
+.fgweek{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.fgweek span{display:grid;justify-items:center;font:.68rem var(--f-num);color:var(--muted);gap:2px}
+.fgweek i{display:block;width:26px;border-radius:4px 4px 0 0}
+@media (max-width:760px){.fg{grid-template-columns:1fr 1fr}.fgmid{grid-column:1/-1;order:-1}#fgL,#fgR{justify-items:start}#fgL .fgi{flex-direction:row;text-align:left}#fgL .lab{text-align:left}}
 .split.buy{background:var(--down)}.split.buy i{background:var(--up)}
 .split{height:10px;border-radius:5px;background:var(--up);overflow:hidden}.split i{display:block;height:100%;background:var(--down)}
 .mini{width:100%;border-collapse:collapse;font-size:.82rem;min-width:0}
@@ -245,6 +256,17 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       </div>
       <p class="hint">Faustregel bei Überweisungen: große Summen AUF eine Börse deuten eher auf Verkauf, große Summen VON einer Börse weg eher auf Kauf und Einlagern.</p>
     </details>
+
+    <section class="panel" aria-label="Krypto-Stimmungsindex">
+      <h2>Krypto-Stimmung · eigener Index aus 10 Werten</h2>
+      <div class="fg">
+        <div class="fgcol" id="fgL"><span class="lab">Futures-Markt</span></div>
+        <div class="fgmid" id="fgMid"><svg id="fgRing" width="210" height="210" viewBox="0 0 210 210" aria-hidden="true"></svg><span class="msg" id="fgSub"></span></div>
+        <div class="fgcol" id="fgR"><span class="lab">Geldflüsse &amp; Makro</span></div>
+      </div>
+      <div class="fgweek" id="fgWeek"></div>
+      <p class="hint" id="fgInfo">Tipp auf einen Ring für die Erklärung. 0 = extreme Angst, 100 = extreme Gier. Eigene Berechnung, keine Anlageberatung.</p>
+    </section>
 
     <section class="mood" aria-label="Geldflüsse auf einen Blick">
       <div class="tile"><span class="label">Stablecoins gesamt</span><span class="v" id="fStb">–</span><span class="s" id="fStbS">Geld, das bereitsteht</span></div>
@@ -930,7 +952,7 @@ function drawWhales(){const min=+$("whMin").value,coin=$("whCoin").value,mkt=$("
 }
 async function loadFlows(){
   startWhales();loadDeriv();
-  if(Date.now()-flowsLoaded<120000)return;flowsLoaded=Date.now();
+  if(Date.now()-flowsLoaded<120000){renderFG();return}flowsLoaded=Date.now();loadFG();
   const [st,ch,fee,mem]=await Promise.allSettled([getJSON("https://stablecoins.llama.fi/stablecoins?includePrices=false"),getJSON("https://api.llama.fi/v2/chains"),
     getJSON("https://mempool.space/api/v1/fees/recommended"),getJSON("https://mempool.space/api/mempool")]);
   const chg=(a,b)=>b?(a/b-1)*100:null;
@@ -953,6 +975,96 @@ async function loadFlows(){
 }
 ["whMin","whCoin","whMkt","whEx"].forEach(id=>$(id).onchange=drawWhales);
 $("whReset").onclick=()=>{wh=[];drawWhales()};
+
+// ---------- Eigener Stimmungsindex ----------
+const clamp=v=>Math.max(0,Math.min(100,v));
+const FG_C=[
+ {k:"fund",side:"L",n:"Funding",w:1,info:"Durchschnittliche Funding Rate von BTC und ETH auf Binance. Hoch = Longs zahlen viel, der Markt ist gierig gehebelt. Normal sind etwa 0,01 % je 8 Std. (= 50 Punkte).",
+  sc:v=>clamp(50+(v-0.01)/0.02*50),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:4})+" %"},
+ {k:"oi",side:"L",n:"Open-Interest-Änderung",w:1,info:"Veränderung des offenen BTC-Futures-Bestands in 24 Std. Stark steigend = viel neuer Hebel (Gier), stark fallend = Hebel wird abgebaut (Angst). ±10 % = 0 bzw. 100 Punkte.",
+  sc:v=>clamp(50+v*5),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:1})+" %"},
+ {k:"ls",side:"L",n:"Long/Short",w:1,info:"Verhältnis der Binance-Konten mit Long- zu Short-Positionen bei BTC. Viele Longs = Gier. 0,8 = 0 Punkte, 2,6 = 100 Punkte.",
+  sc:v=>clamp((v-0.8)/1.8*100),fmt:v=>v.toLocaleString("de-DE",{maximumFractionDigits:2})},
+ {k:"liq",side:"L",n:"Liquidationen",w:0.5,info:"Anteil liquidierter Shorts an allen Liquidationen seit dem Öffnen dieser Seite. Viele Short-Liquidationen = Kurs steigt (Gier). Zählt erst ab 1 Mio. $ Summe, nur für heute.",
+  sc:v=>clamp(v),fmt:(v,x)=>x},
+ {k:"rsi",side:"L",n:"RSI und Volatilität",w:1.5,info:"RSI(14) von Bitcoin im Tageschart (70 % Anteil) plus Schwankung der letzten 30 gegenüber 90 Tagen (30 %). Hoher RSI = Gier, stark steigende Schwankung = Angst.",
+  sc:v=>v,fmt:(v,x)=>x},
+ {k:"etf",side:"R",n:"ETF-Flows",w:1,info:"Summe der Zu- und Abflüsse der US-Bitcoin-ETFs der letzten 7 Tage (Farside). +1 Mrd. $ = 100 Punkte, −1 Mrd. $ = 0 Punkte.",
+  sc:v=>clamp(50+v/20),fmt:v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("de-DE",{maximumFractionDigits:0})+" Mio. $"},
+ {k:"stb",side:"R",n:"Stablecoin-Zufluss",w:1,info:"Veränderung der gesamten Stablecoin-Menge in 7 Tagen. Wachstum = frisches Geld steht bereit (Gier). ±1 % = 0 bzw. 100 Punkte.",
+  sc:v=>clamp(50+v*50),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:2})+" %"},
+ {k:"cbp",side:"R",n:"Coinbase-Premium",w:1,info:"Preisunterschied BTC Coinbase gegenüber Binance. Positiv = US-Anleger kaufen stärker (Gier). ±0,1 % = 0 bzw. 100 Punkte.",
+  sc:v=>clamp(50+v*500),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:3})+" %"},
+ {k:"vix",side:"R",n:"VIX",w:1,info:"Angstbarometer des US-Aktienmarkts. Niedrig = Ruhe (Gier), hoch = Panik (Angst). 10 = 100 Punkte, 32 = 0 Punkte.",
+  sc:v=>clamp(100-(v-10)*4.5),fmt:v=>v.toLocaleString("de-DE",{maximumFractionDigits:1})},
+ {k:"dxy",side:"R",n:"DXY-Trend",w:1,info:"Veränderung des US-Dollar-Index in 30 Tagen. Ein stärker werdender Dollar bremst Krypto meist (Angst). +5 % = 0 Punkte, −5 % = 100 Punkte.",
+  sc:v=>clamp(50-v*10),fmt:(v,x)=>x}
+];
+let FG=null,fgT=null;
+const dkey=t=>new Date(t).toISOString().slice(0,10);
+function rsi14(c){if(c.length<16)return null;let g=0,l=0;for(let i=1;i<=14;i++){const d=c[i]-c[i-1];d>0?g+=d:l-=d}g/=14;l/=14;
+  for(let i=15;i<c.length;i++){const d=c[i]-c[i-1];g=(g*13+Math.max(d,0))/14;l=(l*13+Math.max(-d,0))/14}return l===0?100:100-100/(1+g/l)}
+function sd(a){const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)}
+async function loadFG(){
+  const F="https://fapi.binance.com";
+  const q=[getJSON(F+"/fapi/v1/fundingRate?symbol=BTCUSDT&limit=40"),getJSON(F+"/fapi/v1/fundingRate?symbol=ETHUSDT&limit=40"),
+    getJSON(F+"/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=12"),getJSON(F+"/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=25"),
+    getJSON(F+"/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1d&limit=12"),getJSON(F+"/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1h&limit=1"),
+    getJSON("https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=130"),
+    getJSON("https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400"),
+    getJSON("https://stablecoins.llama.fi/stablecoincharts/all"),
+    fetch("data/macro.json?t="+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()})];
+  const r=await Promise.allSettled(q),v=i=>r[i].status==="fulfilled"&&(i===9||Array.isArray(r[i].value))?r[i].value:null;
+  FG={fb:v(0)||[],fe:v(1)||[],oiD:v(2)||[],oiH:v(3)||[],lsD:v(4)||[],lsH:v(5)||[],kl:v(6)||[],cb:v(7)||[],
+    st:(v(8)||[]).map(x=>[dkey(+x.date*1000),+(x.totalCirculatingUSD?.peggedUSD||x.totalCirculating?.peggedUSD||0)]).filter(x=>x[1]>0),mac:v(9)||{}};
+  renderFG()}
+function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)-dayMs);
+  // Funding
+  const fr=[...X.fb,...X.fe].filter(x=>dkey(x.fundingTime)===D).map(x=>+x.fundingRate*100);
+  if(fr.length)out.fund={v:fr.reduce((a,b)=>a+b,0)/fr.length};
+  // Open Interest
+  if(today&&X.oiH.length>1){const a=X.oiH;out.oi={v:(+a[a.length-1].sumOpenInterestValue/+a[0].sumOpenInterestValue-1)*100}}
+  else{const m=new Map(X.oiD.map(x=>[dkey(x.timestamp),+x.sumOpenInterestValue]));if(m.has(D)&&m.has(prev(D)))out.oi={v:(m.get(D)/m.get(prev(D))-1)*100}}
+  // Long/Short
+  const ls=today&&X.lsH.length?X.lsH[X.lsH.length-1]:X.lsD.find(x=>dkey(x.timestamp)===D);if(ls)out.ls={v:+ls.longShortRatio};
+  // Liquidationen (nur heute)
+  if(today&&liqLong+liqShort>=1e6)out.liq={v:liqShort/(liqLong+liqShort)*100,x:`${fmtB(liqLong)} / ${fmtB(liqShort)} $`};
+  // RSI und Volatilität
+  const cl=X.kl.filter(k=>dkey(k[0])<=D).map(k=>+k[4]);
+  if(cl.length>40){const rs=rsi14(cl),ret=cl.slice(1).map((c,i)=>Math.log(c/cl[i])),v30=sd(ret.slice(-30)),v90=sd(ret.slice(-90));
+    const volS=clamp(50-(v30/v90-1)*100);out.rsi={v:clamp(0.7*rs+0.3*volS),x:"RSI "+Math.round(rs)}}
+  // ETF-Flows
+  const etf=(X.mac.etf||[]).filter(e=>e[0]<=D&&e[0]>dkey(Date.parse(D)-7*dayMs));if(etf.length)out.etf={v:etf.reduce((a,e)=>a+e[1],0)};
+  // Stablecoins
+  const st=X.st.filter(x=>x[0]<=D),st7=X.st.filter(x=>x[0]<=dkey(Date.parse(D)-7*dayMs));
+  if(st.length&&st7.length)out.stb={v:(st[st.length-1][1]/st7[st7.length-1][1]-1)*100};
+  // Coinbase-Premium
+  if(today&&lastPx.Coinbase&&lastPx.Binance)out.cbp={v:(lastPx.Coinbase/lastPx.Binance-1)*100};
+  else{const c=X.cb.find(x=>dkey(x[0]*1000)===D),b=X.kl.find(k=>dkey(k[0])===D);if(c&&b)out.cbp={v:(+c[4]/+b[4]-1)*100}}
+  // VIX und DXY
+  const at=(arr,d)=>{const a=(arr||[]).filter(e=>e[0]<=d);return a.length?a[a.length-1][1]:null};
+  const vx=at(X.mac.vix,D);if(vx!=null)out.vix={v:vx};
+  const d0=at(X.mac.dxy,D),d30=at(X.mac.dxy,dkey(Date.parse(D)-30*dayMs));if(d0&&d30){const ch=(d0/d30-1)*100;out.dxy={v:ch,x:`${d0.toLocaleString("de-DE",{maximumFractionDigits:1})} · ${ch>=0?"+":""}${ch.toLocaleString("de-DE",{maximumFractionDigits:1})} %`}}
+  let ws=0,sum=0;FG_C.forEach(c=>{const o=out[c.k];if(!o)return;o.s=Math.round(c.sc(o.v));sum+=o.s*c.w;ws+=c.w});
+  return{comp:out,idx:ws?Math.round(sum/ws):null,n:Object.keys(out).length}}
+const fgCol=s=>s==null?"var(--chip)":s<25?"#d64545":s<45?"#e8853a":s<56?"#e5c547":s<75?"#9ccf5a":"#2fb36b";
+const fgLab=s=>s==null?"–":s<25?"Extreme Angst":s<45?"Angst":s<56?"Neutral":s<75?"Gier":"Extreme Gier";
+function ring(size,stroke,val){const r=(size-stroke)/2,c=2*Math.PI*r,p=val==null?0:val/100;
+  return`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--chip)" stroke-width="${stroke}"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${fgCol(val)}" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${(c*p).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>`}
+function renderFG(){if(!FG)return;clearTimeout(fgT);
+  const days=[...Array(8)].map((_,i)=>dkey(Date.now()-(7-i)*864e5));
+  const res=days.map((d,i)=>fgDay(d,i===7)),T=res[7];
+  const w7=res.slice(1).map(x=>x.idx).filter(x=>x!=null),avg=w7.length?Math.round(w7.reduce((a,b)=>a+b,0)/w7.length):null,y=res[6].idx;
+  const item=c=>{const o=T.comp[c.k];return`<button class="fgi${o?"":" na"}" data-fg="${c.k}"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">${ring(48,5,o?.s)}<text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)" font-family="var(--f-num)">${o?o.s:"–"}</text></svg><span><b>${c.n}</b><small>${o?(c.fmt(o.v,o.x)):"keine Daten"}</small></span></button>`};
+  $("fgL").innerHTML='<span class="lab">Futures-Markt</span>'+FG_C.filter(c=>c.side==="L").map(item).join("");
+  $("fgR").innerHTML='<span class="lab">Geldflüsse &amp; Makro</span>'+FG_C.filter(c=>c.side==="R").map(item).join("");
+  $("fgRing").innerHTML=ring(210,14,T.idx)+`<text x="105" y="70" text-anchor="middle" font-size="12" fill="var(--muted)" letter-spacing="2" font-family="var(--f-body)">HEUTE</text>
+    <text x="105" y="128" text-anchor="middle" font-size="62" font-weight="800" fill="${fgCol(T.idx)}" font-family="var(--f-body)">${T.idx??"–"}</text>
+    <text x="105" y="156" text-anchor="middle" font-size="16" font-weight="700" fill="${fgCol(T.idx)}" font-family="var(--f-body)">${fgLab(T.idx)}</text>`;
+  $("fgSub").textContent=`7-Tage-Mittel ${avg??"–"} · gestern ${y??"–"} · ${T.n} von 10 Werten`;
+  $("fgWeek").innerHTML=res.slice(1).map((x,i)=>`<span title="${x.n} von 10 Werten verfügbar">${x.idx??"–"}<i style="height:${Math.max(4,(x.idx||0)*0.4)}px;background:${fgCol(x.idx)}"></i>${new Date(days[i+1]).toLocaleDateString("de-DE",{weekday:"short"})}</span>`).join("");
+  fgT=setTimeout(()=>{if(S.mode==="flows")renderFG()},15000)}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-fg]");if(!b)return;const c=FG_C.find(x=>x.k===b.dataset.fg);$("fgInfo").innerHTML=`<b>${c.n}:</b> ${c.info}`});
 
 // ---------- Spot gegen Futures ----------
 let VM=null;
