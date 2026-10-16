@@ -266,38 +266,47 @@ def world():
 
 
 def etf_flows():
-    """Tägliche Summe der US-Bitcoin-ETF-Flüsse (Mio. $) von farside.co.uk."""
-    import re
-    hdr = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-           "Accept": "text/html,application/xhtml+xml", "Accept-Language": "en-GB,en;q=0.9"}
-    norm = lambda c: " ".join(re.sub(r"<[^>]+>|&nbsp;|&#160;", " ", c).split())
-    for url in ("https://farside.co.uk/btc/", "https://farside.co.uk/bitcoin-etf-flow-all-data/"):
-        r = requests.get(url, headers=hdr, timeout=40)
-        html = r.text
-        rows = re.findall(r"<tr[^>]*>(.*?)</tr>", html, re.S | re.I)
-        print("Farside", url, "Status", r.status_code, "Länge", len(html), "Zeilen", len(rows), "Anfang:", norm(html[:150]))
-        tot = None
+    """Tägliche Netto-Zuflüsse der US-Bitcoin-Spot-ETFs (Mio. $) von SoSoValue.
+    Braucht den kostenlosen API-Schlüssel als GitHub-Secret SOSO_API_KEY."""
+    key = os.environ.get("SOSO_API_KEY", "").strip()
+    if not key:
+        print("ETF: kein SOSO_API_KEY hinterlegt")
+        return []
+    hdr = {"x-soso-api-key": key, "Content-Type": "application/json", "User-Agent": "bayazit-coin-scanner"}
+    tries = [
+        ("GET", "https://openapi.sosovalue.com/openapi/v1/etfs/summary-history", {"symbol": "BTC", "country_code": "US", "limit": 60}),
+        ("POST", "https://api.sosovalue.xyz/openapi/v2/etf/historicalInflowChart", {"type": "us-btc-spot"}),
+    ]
+    for method, url, args in tries:
+        try:
+            r = requests.get(url, headers=hdr, params=args, timeout=40) if method == "GET" else \
+                requests.post(url, headers=hdr, json=args, timeout=40)
+            j = r.json()
+        except Exception as e:
+            print("ETF", url, "Fehler:", repr(e)[:150])
+            continue
+        data = j.get("data") if isinstance(j, dict) else j
+        if isinstance(data, dict):
+            data = next((v for v in data.values() if isinstance(v, list)), data.get("list"))
+        print("ETF", url, "Status", r.status_code, "Antwort:", str(j)[:300])
+        if not isinstance(data, list) or not data:
+            continue
         out = {}
-        for row in rows:
-            cells = [norm(c) for c in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S | re.I)]
-            if tot is None and "Total" in cells:
-                tot = cells.index("Total")
+        for it in data:
+            if not isinstance(it, dict):
                 continue
-            if len(cells) < 4:
+            dk = next((k for k in it if k.lower() in ("date", "data_date", "datadate", "trade_date", "tradedate")), None)
+            fk = next((k for k in it if "inflow" in k.lower() and "net" in k.lower() and "cum" not in k.lower()), None)
+            if not dk or not fk or it[fk] is None:
                 continue
+            d = str(it[dk])
+            if d.isdigit() and len(d) >= 10:  # Zeitstempel
+                d = dt.datetime.fromtimestamp(int(d[:10]), dt.timezone.utc).strftime("%Y-%m-%d")
+            d = d[:10]
             try:
-                d = dt.datetime.strptime(cells[0], "%d %b %Y").strftime("%Y-%m-%d")
-            except ValueError:
+                out[d] = round(float(it[fk]) / 1e6, 1)  # in Mio. $
+            except (TypeError, ValueError):
                 continue
-            i = tot if tot is not None and tot < len(cells) else len(cells) - 1
-            if sum(c in ("-", "") for c in cells[1:i]) >= max(1, i - 2):
-                continue  # Tag noch ohne Meldungen
-            t = cells[i].replace(",", "")
-            try:
-                v = float(t.strip("()"))
-            except ValueError:
-                continue
-            out[d] = -v if t.startswith("(") else v
         if out:
             return sorted(out.items())[-90:]
     return []
@@ -314,13 +323,21 @@ def macro():
             res[key] = [[i.strftime("%Y-%m-%d"), num(v)] for i, v in c.items()]
         except Exception as e:
             print(key, "fehlgeschlagen:", e)
-    try:
-        res["etf"] = [list(x) for x in etf_flows()]
-        print("ETF-Tage:", len(res["etf"]))
-    except Exception as e:
-        print("ETF-Flüsse fehlgeschlagen:", e)
     old = load_json("data/macro.json", {})
-    for k in ("vix", "dxy", "etf"):  # bei Ausfall alten Stand behalten
+    last = old.get("etf_at")
+    fresh = last and (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(last)).total_seconds() < 20 * 3600
+    if fresh and old.get("etf"):
+        res["etf"], res["etf_at"] = old["etf"], last
+        print("ETF: Stand von", last, "noch aktuell, kein neuer Abruf")
+    else:
+        try:
+            res["etf"] = [list(x) for x in etf_flows()]
+            print("ETF-Tage:", len(res["etf"]))
+            if res["etf"]:
+                res["etf_at"] = res["updated"]
+        except Exception as e:
+            print("ETF-Flüsse fehlgeschlagen:", e)
+    for k in ("vix", "dxy", "etf", "etf_at"):  # bei Ausfall alten Stand behalten
         if not res.get(k) and old.get(k):
             res[k] = old[k]
     os.makedirs("data", exist_ok=True)

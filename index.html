@@ -989,7 +989,7 @@ const FG_C=[
   sc:v=>clamp(v),fmt:(v,x)=>x},
  {k:"rsi",side:"L",n:"RSI und Volatilität",w:1.5,info:"RSI(14) von Bitcoin im Tageschart (70 % Anteil) plus Schwankung der letzten 30 gegenüber 90 Tagen (30 %). Hoher RSI = Gier, stark steigende Schwankung = Angst.",
   sc:v=>v,fmt:(v,x)=>x},
- {k:"etf",side:"R",n:"ETF-Flows",w:1,info:"Summe der Zu- und Abflüsse der US-Bitcoin-ETFs der letzten 7 Tage (Farside). +1 Mrd. $ = 100 Punkte, −1 Mrd. $ = 0 Punkte.",
+ {k:"etf",side:"R",n:"ETF-Flows",w:1,info:"Summe der Zu- und Abflüsse der US-Bitcoin-ETFs der letzten 7 Tage (SoSoValue). +1 Mrd. $ = 100 Punkte, −1 Mrd. $ = 0 Punkte.",
   sc:v=>clamp(50+v/20),fmt:v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("de-DE",{maximumFractionDigits:0})+" Mio. $"},
  {k:"stb",side:"R",n:"Stablecoin-Zufluss",w:1,info:"Veränderung der gesamten Stablecoin-Menge in 7 Tagen. Wachstum = frisches Geld steht bereit (Gier). ±1 % = 0 bzw. 100 Punkte.",
   sc:v=>clamp(50+v*50),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:2})+" %"},
