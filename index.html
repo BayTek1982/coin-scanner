@@ -419,7 +419,7 @@ async function loadAll(){
   S.tokenCoins=[];
   btn.disabled=false;btn.textContent="Aktualisieren";
   renderTiles();render();
-  if(S.mode==="flows")loadFlows();
+  if(S.mode==="flows"){derivLoaded=0;loadFlows()}
 }
 
 // ---------- Kopfzeile ----------
@@ -870,15 +870,15 @@ function updateWL(){
 }
 
 // ---------- Derivate ----------
-let ws=null,liq=[],liqLong=0,liqShort=0,derivLoaded=0;
+let ws=null,liq=[],liqLong=0,liqShort=0,mjLong=0,mjShort=0,derivLoaded=0;
 function startLiq(){
   if(ws&&ws.readyState<2)return;
   try{ws=new WebSocket("wss://fstream.binance.com/market/ws/!forceOrder@arr")}catch(e){$("liqState").textContent="Verbindung nicht möglich";return}
   ws.onopen=()=>{$("liqState").textContent="Live verbunden · warte auf Liquidationen";drawLiq()};
   ws.onclose=()=>{$("liqState").textContent="Getrennt · verbindet neu …";if(S.mode==="flows")setTimeout(startLiq,4000)};
   ws.onerror=()=>$("liqState").textContent="Binance Futures nicht erreichbar";
-  ws.onmessage=ev=>{try{const o=JSON.parse(ev.data).o;const qty=+o.z||+o.q,px=+o.ap||+o.p,val=qty*px;
-    const long=o.S==="SELL";if(long)liqLong+=val;else liqShort+=val;
+  ws.onmessage=ev=>{try{const o=JSON.parse(ev.data).o;$("liqState").textContent="Live · letzte Liquidation "+new Date(o.T).toLocaleTimeString("de-DE");const qty=+o.z||+o.q,px=+o.ap||+o.p,val=qty*px;
+    const long=o.S==="SELL";if(long)liqLong+=val;else liqShort+=val;if(OI_COINS.includes(o.s.replace(/USDT$/,""))){if(long)mjLong+=val;else mjShort+=val}
     liq.unshift({s:o.s.replace(/USDT$/,""),long,val,px,t:o.T});if(liq.length>300)liq.length=300;drawLiq()}catch(e){}};
 }
 function drawLiq(){const min=+$("liqMin").value;
@@ -892,7 +892,7 @@ async function loadDeriv(){
   try{const pi=await getJSON("https://fapi.binance.com/fapi/v1/premiumIndex");
     const rows=pi.filter(x=>x.symbol.endsWith("USDT")).map(x=>({s:x.symbol.slice(0,-4),f:+x.lastFundingRate*100}));
     const big=OI_COINS.map(s=>rows.find(r=>r.s===s)).filter(Boolean);
-    const known=new Set((S.base||S.coins).filter(c=>c.mc>=100e6).map(c=>c.sym));
+    const kn=(S.base||S.coins).filter(c=>c.mc>=100e6).map(c=>c.sym),known=new Set(kn.length?kn:rows.map(r=>r.s));
     const rest=rows.filter(r=>known.has(r.s)&&!OI_COINS.includes(r.s)).sort((a,b)=>b.f-a.f);
     const list=[...big,{sep:"Höchste Funding"},...rest.slice(0,5),{sep:"Niedrigste Funding"},...rest.slice(-5).reverse()];
     $("fundBody").innerHTML=list.map(r=>r.sep?`<tr><td colspan="3" class="l label" style="padding-top:10px">${r.sep}</td></tr>`:`<tr><td class="l">${esc(r.s)}</td><td>${pct(r.f,false,4)}</td><td>${pct(r.f*3*365,false,1)}</td></tr>`).join("");
@@ -985,7 +985,7 @@ const FG_C=[
   sc:v=>clamp(50+v*5),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:1})+" %"},
  {k:"ls",side:"L",n:"Long/Short",w:1,info:"Verhältnis der Binance-Konten mit Long- zu Short-Positionen bei BTC. Viele Longs = Gier. 0,8 = 0 Punkte, 2,6 = 100 Punkte.",
   sc:v=>clamp((v-0.8)/1.8*100),fmt:v=>v.toLocaleString("de-DE",{maximumFractionDigits:2})},
- {k:"liq",side:"L",n:"Liquidationen",w:0.5,info:"Anteil liquidierter Shorts an allen Liquidationen seit dem Öffnen dieser Seite. Viele Short-Liquidationen = Kurs steigt (Gier). Zählt erst ab 1 Mio. $ Summe, nur für heute.",
+ {k:"liq",side:"L",n:"Liquidationen",w:0.5,info:"Anteil liquidierter Shorts an allen Liquidationen der großen Coins (BTC, ETH, SOL, XRP, BNB, DOGE) seit dem Öffnen dieser Seite. Viele Short-Liquidationen = Kurs steigt (Gier), viele Long-Liquidationen = Kurs fällt (Angst). Zählt ab 250 Tsd. $ Summe, nur für heute.",
   sc:v=>clamp(v),fmt:(v,x)=>x},
  {k:"rsi",side:"L",n:"RSI und Volatilität",w:1.5,info:"RSI(14) von Bitcoin im Tageschart (70 % Anteil) plus Schwankung der letzten 30 gegenüber 90 Tagen (30 %). Hoher RSI = Gier, stark steigende Schwankung = Angst.",
   sc:v=>v,fmt:(v,x)=>x},
@@ -1028,7 +1028,8 @@ function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)
   // Long/Short
   const ls=today&&X.lsH.length?X.lsH[X.lsH.length-1]:X.lsD.find(x=>dkey(x.timestamp)===D);if(ls)out.ls={v:+ls.longShortRatio};
   // Liquidationen (nur heute)
-  if(today&&liqLong+liqShort>=1e6)out.liq={v:liqShort/(liqLong+liqShort)*100,x:`${fmtB(liqLong)} / ${fmtB(liqShort)} $`};
+  if(today&&mjLong+mjShort>=25e4)out.liq={v:mjShort/(mjLong+mjShort)*100,x:`L ${fmtB(mjLong)} / S ${fmtB(mjShort)} $`};
+  else if(today&&mjLong+mjShort>0)out._liqWait=fmtB(mjLong+mjShort);
   // RSI und Volatilität
   const cl=X.kl.filter(k=>dkey(k[0])<=D).map(k=>+k[4]);
   if(cl.length>40){const rs=rsi14(cl),ret=cl.slice(1).map((c,i)=>Math.log(c/cl[i])),v30=sd(ret.slice(-30)),v90=sd(ret.slice(-90));
@@ -1046,7 +1047,7 @@ function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)
   const vx=at(X.mac.vix,D);if(vx!=null)out.vix={v:vx};
   const d0=at(X.mac.dxy,D),d30=at(X.mac.dxy,dkey(Date.parse(D)-30*dayMs));if(d0&&d30){const ch=(d0/d30-1)*100;out.dxy={v:ch,x:`${d0.toLocaleString("de-DE",{maximumFractionDigits:1})} · ${ch>=0?"+":""}${ch.toLocaleString("de-DE",{maximumFractionDigits:1})} %`}}
   let ws=0,sum=0;FG_C.forEach(c=>{const o=out[c.k];if(!o)return;o.s=Math.round(c.sc(o.v));sum+=o.s*c.w;ws+=c.w});
-  return{comp:out,idx:ws?Math.round(sum/ws):null,n:Object.keys(out).length}}
+  return{comp:out,idx:ws?Math.round(sum/ws):null,n:Object.keys(out).filter(k=>k[0]!=="_").length}}
 const fgCol=s=>s==null?"var(--chip)":s<25?"#d64545":s<45?"#e8853a":s<56?"#e5c547":s<75?"#9ccf5a":"#2fb36b";
 const fgLab=s=>s==null?"–":s<25?"Extreme Angst":s<45?"Angst":s<56?"Neutral":s<75?"Gier":"Extreme Gier";
 function ring(size,stroke,val){const r=(size-stroke)/2,c=2*Math.PI*r,p=val==null?0:val/100;
@@ -1055,7 +1056,7 @@ function renderFG(){if(!FG)return;clearTimeout(fgT);
   const days=[...Array(8)].map((_,i)=>dkey(Date.now()-(7-i)*864e5));
   const res=days.map((d,i)=>fgDay(d,i===7)),T=res[7];
   const w7=res.slice(1).map(x=>x.idx).filter(x=>x!=null),avg=w7.length?Math.round(w7.reduce((a,b)=>a+b,0)/w7.length):null,y=res[6].idx;
-  const item=c=>{const o=T.comp[c.k];return`<button class="fgi${o?"":" na"}" data-fg="${c.k}"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">${ring(48,5,o?.s)}<text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)" font-family="var(--f-num)">${o?o.s:"–"}</text></svg><span><b>${c.n}</b><small>${o?(c.fmt(o.v,o.x)):"keine Daten"}</small></span></button>`};
+  const item=c=>{const o=T.comp[c.k];return`<button class="fgi${o?"":" na"}" data-fg="${c.k}"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">${ring(48,5,o?.s)}<text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)" font-family="var(--f-num)">${o?o.s:"–"}</text></svg><span><b>${c.n}</b><small>${o?(c.fmt(o.v,o.x)):c.k==="liq"&&T.comp._liqWait?`sammelt: ${T.comp._liqWait} von 250 Tsd. $`:c.k==="liq"?"wartet auf Daten":"keine Daten"}</small></span></button>`};
   $("fgL").innerHTML='<span class="lab">Futures-Markt</span>'+FG_C.filter(c=>c.side==="L").map(item).join("");
   $("fgR").innerHTML='<span class="lab">Geldflüsse &amp; Makro</span>'+FG_C.filter(c=>c.side==="R").map(item).join("");
   $("fgRing").innerHTML=ring(210,14,T.idx)+`<text x="105" y="70" text-anchor="middle" font-size="12" fill="var(--muted)" letter-spacing="2" font-family="var(--f-body)">HEUTE</text>
