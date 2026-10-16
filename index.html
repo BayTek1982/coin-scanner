@@ -270,6 +270,15 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       <p class="hint">Grün = jemand kauft aggressiv zum Marktpreis (Kaufdruck), Rot = jemand verkauft aggressiv (Verkaufsdruck). Gezählt wird ab dem Öffnen dieser Ansicht. Spot = echte Coins, Futures = Hebel-Kontrakte (Coinbase und OKX hier nur Spot). Coinbase handelt kein BNB. Große Wale teilen ihre Orders oft auf, die siehst du hier nicht als einen großen Trade.</p>
     </section>
 
+    <section class="panel">
+      <h2>Spot gegen Futures · Volumen &amp; Open Interest</h2>
+      <div class="bar"><span class="label">Börsen</span><select id="vmEx" aria-label="Börsen"><option value="all">Binance + OKX + Bybit</option><option value="bn">nur Binance</option></select><span class="msg" id="vmState"></span></div>
+      <div class="tablebox" style="border:0"><table class="mini" style="min-width:820px"><thead><tr>
+        <th class="l" data-dsort="0">Coin</th><th data-dsort="1">Kurs 24h</th><th data-dsort="2">Spot-Volumen</th><th data-dsort="3">Futures-Volumen</th><th data-dsort="4">Futures / Spot</th><th data-dsort="5">Open Interest</th><th data-dsort="6">OI 24h</th><th class="l" data-dsort="7">Wer treibt?</th><th class="l" data-dsort="8">Signal</th>
+      </tr></thead><tbody id="vmBody"><tr><td colspan="9" class="empty">Lädt …</td></tr></tbody></table></div>
+      <p class="hint"><b>Futures / Spot:</b> wie viel mehr mit Hebel gehandelt wird als mit echten Coins. Unter 3× = Spot-getrieben (gesünder), 3–8× = normal, über 8× = stark von Hebel getrieben (kippt schneller). <b>Signal</b> aus Kurs und Open Interest der letzten 24 Std.: Kurs ↑ + OI ↑ = neue Longs · Kurs ↑ + OI ↓ = Shorts werden eingedeckt · Kurs ↓ + OI ↑ = neue Shorts · Kurs ↓ + OI ↓ = Longs steigen aus. Volumen = letzte 24 Std.; „OI 24h“ = Veränderung auf Binance.</p>
+    </section>
+
     <section id="derivBox">
     <div class="dgrid">
       <div class="panel">
@@ -279,11 +288,6 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
         <div class="bar"><span class="msg">Mindestgröße</span><select id="liqMin"><option value="0">alle</option><option value="10000" selected>ab 10 Tsd. $</option><option value="100000">ab 100 Tsd. $</option><option value="1000000">ab 1 Mio. $</option></select></div>
         <div class="liq" id="liqList"></div>
         <p class="hint">Rot = Long-Position zwangsgeschlossen (Kurs fiel), Grün = Short liquidiert (Kurs stieg). Binance meldet je Coin höchstens eine Liquidation pro Sekunde, die Summen sind daher eine Untergrenze. Gezählt wird ab dem Öffnen dieser Ansicht.</p>
-      </div>
-      <div class="panel">
-        <h2>Open Interest · 24 Std.</h2>
-        <table class="mini"><thead><tr><th class="l" data-dsort="0">Coin</th><th data-dsort="1">Open Interest</th><th data-dsort="2">24 Std.</th></tr></thead><tbody id="oiBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
-        <p class="hint">Steigt Open Interest stark, sammelt sich Hebel im Markt. Bei fallendem Kurs drohen dann Long-Liquidationen.</p>
         <p class="hint">Liquidations-Heatmap: <a class="ext" href="https://coinank.com/liqHeatMapChart" target="_blank" rel="noopener">CoinAnk öffnen</a></p>
       </div>
       <div class="panel">
@@ -328,6 +332,7 @@ const TV_EX={O:"OKX",B:"BINANCE"};
 const SKIP=new Set("USDT USDC DAI FDUSD TUSD USDE USDS PYUSD USD1 RLUSD USDD BUSD USDP GUSD FRAX LUSD EURC EURT XAUT PAXG KAU USDG USDF USD0 USDTB BFUSD GHO USYC USDY OUSG USTB BUIDL USDX USDB SUSDE SUSDS SDAI WBTC WETH STETH WSTETH WEETH EETH CBBTC CBETH RETH BETH LBTC SOLVBTC JITOSOL MSOL BNSOL JUPSOL EZETH RSETH METH OSETH SFRXETH TBTC BTCB CLBTC WBETH BSC-USD WBNB WSOL WTRX WHYPE JLP".split(" "));
 const CATS=[["KI","^artificial intelligence"],["Meme","^meme"],["DeFi","^decentralized finance"],["Layer 1","^layer 1"],["Layer 2","^layer 2"],["Gaming","^gaming"],["Reale Vermögenswerte (RWA)","^real world assets"],["Solana-Ökosystem","^solana ecosystem"]];
 const OI_COINS=["BTC","ETH","SOL","XRP","DOGE","BNB"];
+const VM_COINS=["BTC","ETH","SOL","XRP","BNB","DOGE","ADA","SUI","LINK","AVAX","LTC","TRX"];
 
 const S={coins:[],btc:null,ex:{},exOk:{},cats:{},tokenCat:null,trending:[],tokenCoins:[],
   tab:"kern",tf:"score",dir:-1,rank:250,cat:"",sel:new Set(),stars:new Set(),filt:{}};
@@ -861,10 +866,7 @@ function drawLiq(){const min=+$("liqMin").value;
 }
 async function loadDeriv(){
   startLiq();if(Date.now()-derivLoaded<60000)return;derivLoaded=Date.now();
-  const oi=await Promise.allSettled(OI_COINS.map(s=>getJSON(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${s}USDT&period=1h&limit=25`)));
-  $("oiBody").innerHTML=OI_COINS.map((s,i)=>{const r=oi[i];if(r.status!=="fulfilled"||!r.value.length)return`<tr><td class="l">${s}</td><td colspan="2" class="flat">nicht erreichbar</td></tr>`;
-    const a=r.value,now=+a[a.length-1].sumOpenInterestValue,old=+a[0].sumOpenInterestValue;
-    return`<tr><td class="l">${s}</td><td>${fmtB(now)} $</td><td>${pct((now/old-1)*100)}</td></tr>`}).join("");
+  loadVolOI();
   try{const pi=await getJSON("https://fapi.binance.com/fapi/v1/premiumIndex");
     const rows=pi.filter(x=>x.symbol.endsWith("USDT")).map(x=>({s:x.symbol.slice(0,-4),f:+x.lastFundingRate*100}));
     const big=OI_COINS.map(s=>rows.find(r=>r.s===s)).filter(Boolean);
@@ -951,6 +953,44 @@ async function loadFlows(){
 }
 ["whMin","whCoin","whMkt","whEx"].forEach(id=>$(id).onchange=drawWhales);
 $("whReset").onclick=()=>{wh=[];drawWhales()};
+
+// ---------- Spot gegen Futures ----------
+let VM=null;
+async function loadVolOI(){
+  const syms=VM_COINS.map(c=>c+"USDT");
+  const req=[
+    getJSON("https://data-api.binance.vision/api/v3/ticker/24hr?symbols="+encodeURIComponent(JSON.stringify(syms))),
+    getJSON("https://fapi.binance.com/fapi/v1/ticker/24hr"),
+    getJSON("https://www.okx.com/api/v5/market/tickers?instType=SPOT"),
+    getJSON("https://www.okx.com/api/v5/market/tickers?instType=SWAP"),
+    getJSON("https://www.okx.com/api/v5/public/open-interest?instType=SWAP"),
+    getJSON("https://api.bybit.com/v5/market/tickers?category=spot"),
+    getJSON("https://api.bybit.com/v5/market/tickers?category=linear"),
+    ...VM_COINS.map(c=>getJSON(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${c}USDT&period=1h&limit=25`))];
+  const r=await Promise.allSettled(req),ok=i=>r[i].status==="fulfilled"?r[i].value:null;
+  const bnS=ok(0),bnF=ok(1),okS=ok(2)?.data,okF=ok(3)?.data,okOI=ok(4)?.data,byS=ok(5)?.result?.list,byF=ok(6)?.result?.list;
+  VM={coins:VM_COINS.map((c,i)=>{const h=ok(7+i);const fT=bnF?.find(x=>x.symbol===c+"USDT"),sT=bnS?.find(x=>x.symbol===c+"USDT");
+    const px=+(fT?.lastPrice||sT?.lastPrice||0);
+    const oS=okS?.find(x=>x.instId===c+"-USDT"),oF=okF?.find(x=>x.instId===c+"-USDT-SWAP"),oO=okOI?.find(x=>x.instId===c+"-USDT-SWAP");
+    const yS=byS?.find(x=>x.symbol===c+"USDT"),yF=byF?.find(x=>x.symbol===c+"USDT");
+    const oiNow=h&&h.length?+h[h.length-1].sumOpenInterestValue:null,oiOld=h&&h.length?+h[0].sumOpenInterestValue:null;
+    return{c,chg:fT?+fT.priceChangePercent:sT?+sT.priceChangePercent:null,
+      bn:{s:sT?+sT.quoteVolume:null,f:fT?+fT.quoteVolume:null,oi:oiNow},
+      ok:{s:oS?+oS.volCcy24h:null,f:oF?+oF.volCcy24h*(+oF.last||px):null,oi:oO?(+oO.oiUsd||+oO.oiCcy*px||null):null},
+      by:{s:yS?+yS.turnover24h:null,f:yF?+yF.turnover24h:null,oi:yF?+yF.openInterestValue:null},
+      oiChg:oiNow&&oiOld?(oiNow/oiOld-1)*100:null}}),
+    st:{Binance:!!(bnS&&bnF),OKX:!!(okS&&okF),Bybit:!!(byS&&byF)}};
+  drawVolOI()}
+function drawVolOI(){if(!VM)return;const all=$("vmEx").value==="all",keys=all?["bn","ok","by"]:["bn"];
+  const sum=(x,f)=>{let t=0,n=0;keys.forEach(k=>{const v=x[k][f];if(v!=null&&!isNaN(v)){t+=v;n++}});return n?t:null};
+  $("vmState").innerHTML=Object.entries(VM.st).filter(([k])=>all||k==="Binance").map(([k,v])=>`<span class="${v?"up":"down"}">${k} ${v?"✓":"✗"}</span>`).join(" · ");
+  $("vmBody").innerHTML=VM.coins.map(x=>{const s=sum(x,"s"),f=sum(x,"f"),oi=sum(x,"oi"),ratio=s&&f?f/s:null;
+    const who=ratio==null?"–":ratio<3?'<span class="up">Spot-getrieben</span>':ratio>8?'<span class="down">Hebel-getrieben</span>':'<span class="flat">ausgewogen</span>';
+    let sig="–";const p=x.chg,o=x.oiChg;if(p!=null&&o!=null){if(Math.abs(o)<1)sig='<span class="flat">OI kaum verändert</span>';
+      else if(p>=0&&o>0)sig='<span class="up">neue Longs</span>';else if(p>=0&&o<0)sig='<span class="flat">Shorts eingedeckt</span>';
+      else if(p<0&&o>0)sig='<span class="down">neue Shorts</span>';else sig='<span class="flat">Longs steigen aus</span>'}
+    return`<tr><td class="l"><a class="ext" href="https://www.coinglass.com/currencies/${x.c}" target="_blank" rel="noopener">${x.c}</a></td><td>${pct(p)}</td><td>${s?fmtB(s)+" $":"–"}</td><td>${f?fmtB(f)+" $":"–"}</td><td>${ratio?ratio.toLocaleString("de-DE",{maximumFractionDigits:1})+"×":"–"}</td><td>${oi?fmtB(oi)+" $":"–"}</td><td>${pct(o)}</td><td class="l" style="font-family:var(--f-body)">${who}</td><td class="l" style="font-family:var(--f-body)">${sig}</td></tr>`}).join("")}
+$("vmEx").onchange=drawVolOI;
 
 // ---------- Eigener Filter ----------
 const FF={fMcMin:"mcMin",fMcMax:"mcMax",fVol:"vol",fTf:"tf",fPMin:"pMin",fPMax:"pMax"},FC={fExO:"exO",fExB:"exB",fRs:"rs"};
