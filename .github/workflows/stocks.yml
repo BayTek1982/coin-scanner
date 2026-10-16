@@ -15,6 +15,8 @@ jobs:
           python-version: "3.12"
       - run: pip install yfinance pandas lxml requests
       - run: python stocks.py
+        env:
+         SOSO_API_KEY: ${{ secrets.SOSO_API_KEY }}
       - run: |
           git config user.name "kurs-bot"
           git config user.email "kurs-bot@users.noreply.github.com"
