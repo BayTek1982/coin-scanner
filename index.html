@@ -85,6 +85,8 @@ textarea{width:100%;min-height:64px;font:.78rem var(--f-num);background:var(--bg
 .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
 .liq{max-height:340px;overflow-y:auto;display:grid;gap:2px;font:.8rem var(--f-num)}
 .liq div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid var(--line)}
+.linkbox{gap:10px}.linkbox summary{cursor:pointer;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;list-style:none}.linkbox summary::-webkit-details-marker{display:none}.linkbox summary::before{content:"▸";color:var(--muted)}.linkbox[open] summary::before{content:"▾"}
+.split.buy{background:var(--down)}.split.buy i{background:var(--up)}
 .split{height:10px;border-radius:5px;background:var(--up);overflow:hidden}.split i{display:block;height:100%;background:var(--down)}
 .mini{width:100%;border-collapse:collapse;font-size:.82rem;min-width:0}
 .mini td,.mini th{padding:5px 4px}
@@ -102,7 +104,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
 <div class="wrap">
   <header>
     <div>
-      <div class="label">Krypto &amp; Aktien · Live · OKX, Binance, Bitunix, TradingView</div>
+      <div class="label">Krypto, Aktien &amp; Geldflüsse · Live · OKX, Binance, Bitunix, TradingView, DefiLlama</div>
       <h1>Bayazit Coin-Scanner</h1>
     </div>
     <div class="status">
@@ -112,7 +114,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   </header>
   <div class="src" id="src"></div>
   <p class="notice" id="notice" hidden></p>
-  <div class="seg" role="group" aria-label="Bereich"><button data-mode="krypto">Krypto</button><button data-mode="aktien">Aktien &amp; Indizes</button></div>
+  <div class="seg" role="group" aria-label="Bereich"><button data-mode="krypto">Krypto</button><button data-mode="aktien">Aktien &amp; Indizes</button><button data-mode="flows">🐋 Geldflüsse</button></div>
   <div id="cryptoView" class="view">
 
   <section class="mood" aria-label="Marktlage">
@@ -123,20 +125,15 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <div class="tile"><span class="label">Angst &amp; Gier</span><div class="gauge"><svg id="fngSvg" width="92" height="54" viewBox="0 0 92 54" aria-hidden="true"></svg><span class="v" id="tFng">–</span></div><span class="s" id="tFngS"></span></div>
   </section>
 
-  <section class="panel" aria-label="Links für die Morgenanalyse" style="gap:8px">
-    <span class="label">Morgenanalyse · Links (öffnen in neuem Tab)</span>
+  <details class="panel linkbox">
+    <summary><span class="label">🔗 Links für die Morgenanalyse</span><span class="msg">Crypto Bubbles, CoinMarketCap, CoinGecko</span></summary>
     <div class="links">
       <a class="lk" href="https://cryptobubbles.net/" target="_blank" rel="noopener">🫧 Crypto Bubbles <small>Markt auf einen Blick</small></a>
-      <a class="lk" href="https://coinank.com/liqHeatMapChart" target="_blank" rel="noopener">📊 CoinAnk <small>Liquidations-Heatmap</small></a>
       <a class="lk" href="https://coinmarketcap.com/" target="_blank" rel="noopener">🪙 CoinMarketCap</a>
       <a class="lk" href="https://www.coingecko.com/de" target="_blank" rel="noopener">🦎 CoinGecko</a>
-      <a class="lk" href="https://www.coinglass.com/" target="_blank" rel="noopener">🔍 CoinGlass <small>Funding, Open Interest, Long/Short</small></a>
-      <a class="lk" href="https://farside.co.uk/btc/" target="_blank" rel="noopener">🏦 Farside BTC <small>ETF-Flows</small></a>
-      <a class="lk" href="https://farside.co.uk/eth/" target="_blank" rel="noopener">🏦 Farside ETH <small>ETF-Flows</small></a>
-      <a class="lk" href="https://tokenomist.ai/" target="_blank" rel="noopener">🔓 Tokenomist <small>Token-Unlocks</small></a>
-      <a class="lk" href="https://defillama.com/" target="_blank" rel="noopener">🦙 DefiLlama <small>DeFi &amp; Chains</small></a>
     </div>
-  </section>
+    <p class="hint">Liquidationen, Wale, ETF-Flows, Funding und Unlocks findest du jetzt im Bereich 🐋 Geldflüsse.</p>
+  </details>
 
   <div class="tabs" role="group" aria-label="Ansicht">
     <button class="tab" data-tab="kern">Large Caps</button>
@@ -146,7 +143,6 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <button class="tab" data-tab="watch">★ Watchlist</button>
     <button class="tab" data-tab="token">Tokenisierte Aktien</button>
     <button class="tab" data-tab="alle">Alle</button>
-    <button class="tab" data-tab="deriv">Derivate</button>
   </div>
 
   <div class="bar" id="filterBar">
@@ -184,29 +180,6 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     </table>
   </div>
 
-  <section id="derivBox" hidden>
-    <div class="dgrid">
-      <div class="panel">
-        <h2>Liquidationen live · Binance Futures</h2>
-        <div class="bar" style="justify-content:space-between"><span class="msg" id="liqState">Verbinde …</span><span class="msg" id="liqSum"></span></div>
-        <div class="split" title="Rot = Longs liquidiert, Grün = Shorts liquidiert"><i id="liqSplit" style="width:50%"></i></div>
-        <div class="bar"><span class="msg">Mindestgröße</span><select id="liqMin"><option value="0">alle</option><option value="10000" selected>ab 10 Tsd. $</option><option value="100000">ab 100 Tsd. $</option><option value="1000000">ab 1 Mio. $</option></select></div>
-        <div class="liq" id="liqList"></div>
-        <p class="hint">Rot = Long-Position zwangsgeschlossen (Kurs fiel), Grün = Short liquidiert (Kurs stieg). Binance meldet je Coin höchstens eine Liquidation pro Sekunde, die Summen sind daher eine Untergrenze. Gezählt wird ab dem Öffnen dieser Ansicht.</p>
-      </div>
-      <div class="panel">
-        <h2>Open Interest · 24 Std.</h2>
-        <table class="mini"><thead><tr><th class="l" data-dsort="0">Coin</th><th data-dsort="1">Open Interest</th><th data-dsort="2">24 Std.</th></tr></thead><tbody id="oiBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
-        <p class="hint">Steigt Open Interest stark, sammelt sich Hebel im Markt. Bei fallendem Kurs drohen dann Long-Liquidationen.</p>
-        <p class="hint">Liquidations-Heatmap: <a class="ext" href="https://coinank.com/" target="_blank" rel="noopener">CoinAnk öffnen</a></p>
-      </div>
-      <div class="panel">
-        <h2>Funding Rate · Binance Perpetuals</h2>
-        <table class="mini"><thead><tr><th class="l">Coin</th><th>Funding</th><th>Pro Jahr</th></tr></thead><tbody id="fundBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
-        <p class="hint">Positiv = Longs zahlen an Shorts, der Markt ist eher gehebelt long. Stark positiv kann ein Warnsignal sein. Gezeigt: große Coins plus die Extreme nach oben und unten.</p>
-      </div>
-    </div>
-  </section>
 
   <section class="panel" id="exportBox">
     <h2>TradingView-Watchlist</h2>
@@ -222,15 +195,15 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       <a class="tile linkcard" href="https://www.tradingview.com/symbols/XETR-V1X/" target="_blank" rel="noopener"><span class="label">VDAX-NEW</span><span class="v">Angstbarometer DAX</span><span class="s">Hoch = Angst, niedrig = Ruhe. Antippen öffnet TradingView.</span></a>
       <a class="tile linkcard" href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener"><span class="label">CNN Fear &amp; Greed</span><span class="v">US-Aktien</span><span class="s">Stimmungsindex 0–100. Antippen öffnet CNN.</span></a>
     </section>
-    <section class="panel" aria-label="Links für die Morgenanalyse Aktien" style="gap:8px">
-      <span class="label">Morgenanalyse · Links (öffnen in neuem Tab)</span>
+    <details class="panel linkbox">
+      <summary><span class="label">🔗 Links für die Morgenanalyse</span><span class="msg">Wirtschaftskalender, FedWatch, Quartalszahlen, Heatmap</span></summary>
       <div class="links">
         <a class="lk" href="https://de.investing.com/economic-calendar/" target="_blank" rel="noopener">📅 Wirtschaftskalender <small>Investing.com</small></a>
         <a class="lk" href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" rel="noopener">🏛️ CME FedWatch <small>Zins-Erwartung</small></a>
         <a class="lk" href="https://www.earningswhispers.com/calendar" target="_blank" rel="noopener">📈 Earnings Whispers <small>Quartalszahlen</small></a>
         <a class="lk" href="https://finviz.com/map.ashx" target="_blank" rel="noopener">🟩 Finviz <small>Heatmap USA</small></a>
       </div>
-    </section>
+    </details>
     <section class="panel">
       <h2>Welt-Überblick</h2>
       <p class="hint">Die wichtigsten Indizes je Region. Antippen öffnet TradingView. Bei einigen Börsen zeigt TradingView in eingebetteten Ansichten verzögerte oder gar keine Kurse, das liegt an deren Lizenzen.</p>
@@ -251,6 +224,86 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       <textarea id="swl" readonly aria-label="Aktien-Watchlist"></textarea>
       <div class="bar"><button class="btn" id="sCopy">Kopieren</button><button class="btn ghost" id="sSave">Als .txt speichern</button><button class="btn ghost" id="sClear">Auswahl leeren</button><span class="msg" id="sMsg"></span></div>
     </section>
+  </div>
+
+  <div id="flowView" class="view" hidden>
+    <details class="panel linkbox">
+      <summary><span class="label">🔗 Links für die Morgenanalyse</span><span class="msg">Whale Alert, Arkham, CryptoQuant, CoinGlass, ETF-Flows …</span></summary>
+      <div class="links">
+        <a class="lk" href="https://whale-alert.io/" target="_blank" rel="noopener">🐳 Whale Alert <small>große Überweisungen</small></a>
+        <a class="lk" href="https://arkm.com/" target="_blank" rel="noopener">🕵️ Arkham <small>wem gehört die Wallet?</small></a>
+        <a class="lk" href="https://cryptoquant.com/" target="_blank" rel="noopener">📉 CryptoQuant <small>Börsen-Zu- und Abflüsse</small></a>
+        <a class="lk" href="https://www.coinglass.com/" target="_blank" rel="noopener">🔍 CoinGlass <small>Funding, Open Interest, Long/Short</small></a>
+        <a class="lk" href="https://coinank.com/liqHeatMapChart" target="_blank" rel="noopener">📊 CoinAnk <small>Liquidations-Heatmap</small></a>
+        <a class="lk" href="https://farside.co.uk/btc/" target="_blank" rel="noopener">🏦 Farside BTC <small>ETF-Flows</small></a>
+        <a class="lk" href="https://farside.co.uk/eth/" target="_blank" rel="noopener">🏦 Farside ETH <small>ETF-Flows</small></a>
+        <a class="lk" href="https://tokenomist.ai/" target="_blank" rel="noopener">🔓 Tokenomist <small>Token-Unlocks</small></a>
+        <a class="lk" href="https://defillama.com/" target="_blank" rel="noopener">🦙 DefiLlama <small>DeFi &amp; Chains</small></a>
+      </div>
+      <p class="hint">Faustregel bei Überweisungen: große Summen AUF eine Börse deuten eher auf Verkauf, große Summen VON einer Börse weg eher auf Kauf und Einlagern.</p>
+    </details>
+
+    <section class="mood" aria-label="Geldflüsse auf einen Blick">
+      <div class="tile"><span class="label">Stablecoins gesamt</span><span class="v" id="fStb">–</span><span class="s" id="fStbS">Geld, das bereitsteht</span></div>
+      <div class="tile"><span class="label">Stablecoins · 7 Tage</span><span class="v" id="fStb7">–</span><span class="s" id="fStb7S"></span></div>
+      <div class="tile"><span class="label">Stablecoins · 30 Tage</span><span class="v" id="fStb30">–</span><span class="s">Wachstum = frisches Geld für den Markt</span></div>
+      <div class="tile"><span class="label">Coinbase-Premium · BTC</span><span class="v" id="fPrem">–</span><span class="s" id="fPremS">Preis Coinbase gegenüber Binance, live</span></div>
+      <div class="tile"><span class="label">Bitcoin-Gebühren</span><span class="v" id="fFee">–</span><span class="s" id="fFeeS">sat/vB, schnell</span></div>
+      <div class="tile"><span class="label">Wartende BTC-Transaktionen</span><span class="v" id="fMem">–</span><span class="s" id="fMemS">Mempool</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>🐋 Wale live · große Trades auf Binance, Coinbase, OKX, Bybit</h2>
+      <div class="bar">
+        <span class="label">Coin</span><select id="whCoin" aria-label="Coin"><option value="all">BTC, ETH, SOL, XRP, BNB, DOGE</option><option value="btc">nur BTC</option><option value="eth">nur ETH</option><option value="sol">nur SOL</option><option value="xrp">nur XRP</option><option value="bnb">nur BNB</option><option value="doge">nur DOGE</option></select>
+        <span class="label">Börse</span><select id="whEx" aria-label="Börse"><option value="all">alle</option><option>Binance</option><option>Coinbase</option><option>OKX</option><option>Bybit</option></select>
+        <span class="label">Markt</span><select id="whMkt" aria-label="Markt"><option value="both">Spot + Futures</option><option value="spot">nur Spot</option><option value="fut">nur Futures</option></select>
+        <span class="label">Ab</span><select id="whMin" aria-label="Mindestgröße"><option value="100000">100 Tsd. $</option><option value="250000" selected>250 Tsd. $</option><option value="500000">500 Tsd. $</option><option value="1000000">1 Mio. $</option></select>
+        <button class="btn ghost" id="whReset">Summen zurücksetzen</button>
+      </div>
+      <div class="bar" style="justify-content:space-between"><span class="msg" id="whState">Verbinde …</span><span class="msg" id="whSum"></span></div>
+      <div class="split buy" title="Grün = große Käufe, Rot = große Verkäufe"><i id="whSplit" style="width:50%"></i></div>
+      <div class="liq" id="whList"></div>
+      <p class="hint">Grün = jemand kauft aggressiv zum Marktpreis (Kaufdruck), Rot = jemand verkauft aggressiv (Verkaufsdruck). Gezählt wird ab dem Öffnen dieser Ansicht. Spot = echte Coins, Futures = Hebel-Kontrakte (Coinbase und OKX hier nur Spot). Coinbase handelt kein BNB. Große Wale teilen ihre Orders oft auf, die siehst du hier nicht als einen großen Trade.</p>
+    </section>
+
+    <section id="derivBox">
+    <div class="dgrid">
+      <div class="panel">
+        <h2>Liquidationen live · Binance Futures</h2>
+        <div class="bar" style="justify-content:space-between"><span class="msg" id="liqState">Verbinde …</span><span class="msg" id="liqSum"></span></div>
+        <div class="split" title="Rot = Longs liquidiert, Grün = Shorts liquidiert"><i id="liqSplit" style="width:50%"></i></div>
+        <div class="bar"><span class="msg">Mindestgröße</span><select id="liqMin"><option value="0">alle</option><option value="10000" selected>ab 10 Tsd. $</option><option value="100000">ab 100 Tsd. $</option><option value="1000000">ab 1 Mio. $</option></select></div>
+        <div class="liq" id="liqList"></div>
+        <p class="hint">Rot = Long-Position zwangsgeschlossen (Kurs fiel), Grün = Short liquidiert (Kurs stieg). Binance meldet je Coin höchstens eine Liquidation pro Sekunde, die Summen sind daher eine Untergrenze. Gezählt wird ab dem Öffnen dieser Ansicht.</p>
+      </div>
+      <div class="panel">
+        <h2>Open Interest · 24 Std.</h2>
+        <table class="mini"><thead><tr><th class="l" data-dsort="0">Coin</th><th data-dsort="1">Open Interest</th><th data-dsort="2">24 Std.</th></tr></thead><tbody id="oiBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
+        <p class="hint">Steigt Open Interest stark, sammelt sich Hebel im Markt. Bei fallendem Kurs drohen dann Long-Liquidationen.</p>
+        <p class="hint">Liquidations-Heatmap: <a class="ext" href="https://coinank.com/liqHeatMapChart" target="_blank" rel="noopener">CoinAnk öffnen</a></p>
+      </div>
+      <div class="panel">
+        <h2>Funding Rate · Binance Perpetuals</h2>
+        <table class="mini"><thead><tr><th class="l">Coin</th><th>Funding</th><th>Pro Jahr</th></tr></thead><tbody id="fundBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
+        <p class="hint">Positiv = Longs zahlen an Shorts, der Markt ist eher gehebelt long. Stark positiv kann ein Warnsignal sein. Gezeigt: große Coins plus die Extreme nach oben und unten.</p>
+      </div>
+    </div>
+  </section>
+
+    <div class="dgrid">
+      <section class="panel">
+        <h2>Stablecoins · die größten</h2>
+        <table class="mini"><thead><tr><th class="l" data-dsort="0">Name</th><th data-dsort="1">Menge</th><th data-dsort="2">7 Tage</th><th data-dsort="3">30 Tage</th></tr></thead><tbody id="stbBody"><tr><td colspan="4" class="empty">Lädt …</td></tr></tbody></table>
+        <p class="hint">Steigt die Menge, kommt neues Geld in den Kryptomarkt, das noch nicht investiert ist. Sinkt sie, fließt Geld ab.</p>
+      </section>
+      <section class="panel">
+        <h2>Blockchains · wo liegt das Geld?</h2>
+        <table class="mini"><thead><tr><th class="l" data-dsort="0">Chain</th><th data-dsort="1">Gebunden (TVL)</th><th data-dsort="2">Anteil</th><th data-dsort="3">7 Tage</th></tr></thead><tbody id="chainBody"><tr><td colspan="4" class="empty">Lädt …</td></tr></tbody></table>
+        <p class="hint">TVL = Geld, das in Anwendungen auf dieser Blockchain steckt. Wächst eine Chain stark, wandert Kapital dorthin, oft profitieren dann auch ihre Coins.</p>
+      </section>
+    </div>
+    <p class="hint">Quellen: Binance, Coinbase, OKX, Bybit (Trades), Binance (Liquidationen, Open Interest, Funding), DefiLlama (Stablecoins, Blockchains), mempool.space (Bitcoin-Netzwerk).</p>
   </div>
 
   <footer>
@@ -337,7 +390,7 @@ async function loadAll(){
   S.tokenCoins=[];
   btn.disabled=false;btn.textContent="Aktualisieren";
   renderTiles();render();
-  if(S.tab==="deriv")loadDeriv();
+  if(S.mode==="flows")loadFlows();
 }
 
 // ---------- Kopfzeile ----------
@@ -420,13 +473,12 @@ function spark(arr,up){if(!arr||arr.length<2)return"";const step=Math.max(1,Math
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===S.tab));
   document.querySelectorAll("[data-tf]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tf===S.tf));
-  const deriv=S.tab==="deriv";
-  $("derivBox").hidden=!deriv;$("tableBox").hidden=deriv;$("filterBar").hidden=deriv||S.tab==="trend"||S.tab==="token"||S.tab==="watch";
-  $("eigenPanel").hidden=S.tab!=="eigen";$("exportBox").hidden=deriv;
-  $("listHint").textContent=deriv?"Futures-Daten: Wo stecken Hebel und Druck im Markt?":LISTS[S.tab].hint;
+  if(!LISTS[S.tab])S.tab="kern";
+  $("filterBar").hidden=S.tab==="trend"||S.tab==="token"||S.tab==="watch";
+  $("eigenPanel").hidden=S.tab!=="eigen";
+  $("listHint").textContent=LISTS[S.tab].hint;
   $("rank").value=S.rank;
   arrows("th[data-sort]","data-sort",S.tf,S.dir);
-  if(deriv)return;
   if(S.tab==="token"&&!S.tokenCoins.length){loadToken();return}
   if(!S.coins.length)return;
   const R=rows(),k=S.tf;
@@ -776,8 +828,8 @@ function updateSWL(){if(!STK||!S.ssel)return;const all=new Map();Object.values(S
   const list=[...S.ssel].filter(y=>all.has(y)).map(ySym);$("swl").value=list.join(",");$("sMsg").textContent=list.length?list.length+" Aktien ausgewählt":"Noch nichts ausgewählt"}
 function setMode(m){S.mode=m;save();
   document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
-  $("cryptoView").hidden=m!=="krypto";$("aktienView").hidden=m!=="aktien";
-  if(m==="aktien")initAktien()}
+  $("cryptoView").hidden=m!=="krypto";$("aktienView").hidden=m!=="aktien";$("flowView").hidden=m!=="flows";
+  if(m==="aktien")initAktien();if(m==="flows")loadFlows();else stopFlows()}
 function updateWL(){
   const pool=new Map();[...(S.base||[]),...S.coins,...S.tokenCoins].forEach(c=>pool.set(c.sym,c));
   const list=[...S.sel].map(s=>pool.get(s)).filter(Boolean).map(tvSym);
@@ -791,7 +843,7 @@ function startLiq(){
   if(ws&&ws.readyState<2)return;
   try{ws=new WebSocket("wss://fstream.binance.com/ws/!forceOrder@arr")}catch(e){$("liqState").textContent="Verbindung nicht möglich";return}
   ws.onopen=()=>{$("liqState").textContent="Live verbunden · warte auf Liquidationen";drawLiq()};
-  ws.onclose=()=>{$("liqState").textContent="Getrennt · verbindet neu …";if(S.tab==="deriv")setTimeout(startLiq,4000)};
+  ws.onclose=()=>{$("liqState").textContent="Getrennt · verbindet neu …";if(S.mode==="flows")setTimeout(startLiq,4000)};
   ws.onerror=()=>$("liqState").textContent="Binance Futures nicht erreichbar";
   ws.onmessage=ev=>{try{const o=JSON.parse(ev.data).o;const qty=+o.z||+o.q,px=+o.ap||+o.p,val=qty*px;
     const long=o.S==="SELL";if(long)liqLong+=val;else liqShort+=val;
@@ -818,6 +870,83 @@ async function loadDeriv(){
   }catch(e){$("fundBody").innerHTML='<tr><td colspan="3" class="empty">Binance Futures gerade nicht erreichbar.</td></tr>'}
 }
 
+// ---------- Geldflüsse ----------
+const WH_COINS=["btc","eth","sol","xrp","bnb","doge"];
+let whWs=[],wh=[],whDraw=false,flowsLoaded=0,whSt={},lastPx={};
+// Jede Börse: Adresse, Anmeldung, Herzschlag und Übersetzung der Nachrichten in {s,buy,p,q,T}
+const UP=WH_COINS.map(c=>c.toUpperCase());
+const WH_EX=[
+ {ex:"Binance",mkt:"Spot",url:"wss://stream.binance.com:9443/stream?streams="+WH_COINS.map(c=>c+"usdt@aggTrade").join("/"),
+  parse:j=>{const d=j.data;return d?[{s:d.s.replace(/USDT$/,""),buy:!d.m,p:+d.p,q:+d.q,T:d.T}]:[]}},
+ {ex:"Binance",mkt:"Futures",url:"wss://fstream.binance.com/stream?streams="+WH_COINS.map(c=>c+"usdt@aggTrade").join("/"),
+  parse:j=>{const d=j.data;return d?[{s:d.s.replace(/USDT$/,""),buy:!d.m,p:+d.p,q:+d.q,T:d.T}]:[]}},
+ {ex:"Coinbase",mkt:"Spot",url:"wss://ws-feed.exchange.coinbase.com",
+  sub:{type:"subscribe",product_ids:UP.filter(c=>c!=="BNB").map(c=>c+"-USD"),channels:["matches"]},
+  parse:j=>j.type==="match"?[{s:j.product_id.split("-")[0],buy:j.side==="sell",p:+j.price,q:+j.size,T:Date.parse(j.time)}]:[]},
+ {ex:"OKX",mkt:"Spot",url:"wss://ws.okx.com:8443/ws/v5/public",
+  sub:{op:"subscribe",args:UP.map(c=>({channel:"trades",instId:c+"-USDT"}))},ping:"ping",
+  parse:j=>(j.data||[]).map(d=>({s:d.instId.split("-")[0],buy:d.side==="buy",p:+d.px,q:+d.sz,T:+d.ts}))},
+ {ex:"Bybit",mkt:"Spot",url:"wss://stream.bybit.com/v5/public/spot",
+  sub:{op:"subscribe",args:UP.map(c=>"publicTrade."+c+"USDT")},ping:'{"op":"ping"}',
+  parse:j=>(j.topic&&j.data||[]).map(d=>({s:d.s.replace(/USDT$/,""),buy:d.S==="Buy",p:+d.p,q:+d.v,T:d.T}))},
+ {ex:"Bybit",mkt:"Futures",url:"wss://stream.bybit.com/v5/public/linear",
+  sub:{op:"subscribe",args:UP.map(c=>"publicTrade."+c+"USDT")},ping:'{"op":"ping"}',
+  parse:j=>(j.topic&&j.data||[]).map(d=>({s:d.s.replace(/USDT$/,""),buy:d.S==="Buy",p:+d.p,q:+d.v,T:d.T}))}
+];
+function whState(){const by={};WH_EX.forEach(e=>{const k=e.ex;by[k]=by[k]||whSt[e.ex+e.mkt]});
+  $("whState").innerHTML=Object.entries(by).map(([k,v])=>`<span class="${v==="ok"?"up":v==="err"?"down":"flat"}">${k} ${v==="ok"?"✓":v==="err"?"✗":"…"}</span>`).join(" · ")}
+function premium(){const c=lastPx.Coinbase,b=lastPx.Binance;if(!c||!b)return;const d=c-b,pc=d/b*100;
+  $("fPrem").innerHTML=pct(pc,false,3);$("fPremS").textContent=`${d>=0?"+":"−"}${Math.abs(d).toLocaleString("de-DE",{maximumFractionDigits:0})} $ · ${pc>0.02?"US-Käufer stärker":pc<-0.02?"US-Seite verkauft eher":"ausgeglichen"}`}
+function startWhales(){
+  if(whWs.length&&whWs.every(w=>w.readyState<2))return;stopWhales();
+  const open=cfg=>{let w;const key=cfg.ex+cfg.mkt;try{w=new WebSocket(cfg.url)}catch(e){whSt[key]="err";return null}whSt[key]="…";
+    w.onopen=()=>{whSt[key]="ok";whState();if(cfg.sub)w.send(JSON.stringify(cfg.sub));if(cfg.ping)w._p=setInterval(()=>{try{w.send(cfg.ping)}catch(e){}},20000)};
+    w.onclose=()=>{clearInterval(w._p);if(S.mode==="flows"&&whWs.includes(w)){whSt[key]="…";whState();setTimeout(()=>{if(S.mode==="flows"&&whWs.includes(w)){const n=open(cfg);whWs=whWs.map(x=>x===w?n:x).filter(Boolean)}},5000)}};
+    w.onerror=()=>{whSt[key]="err";whState()};
+    w.onmessage=ev=>{if(typeof ev.data!=="string"||ev.data[0]!=="{")return;let j;try{j=JSON.parse(ev.data)}catch(e){return}
+      for(const t of cfg.parse(j)){if(!t.p)continue;
+        if(t.s==="BTC"&&cfg.mkt==="Spot"&&(cfg.ex==="Coinbase"||cfg.ex==="Binance")){lastPx[cfg.ex]=t.p;premium()}
+        const val=t.p*t.q;if(val<100000)continue;
+        wh.unshift({s:t.s,buy:t.buy,val,px:t.p,t:t.T||Date.now(),mkt:cfg.mkt,ex:cfg.ex});if(wh.length>600)wh.length=600;
+        if(!whDraw){whDraw=true;setTimeout(()=>{whDraw=false;drawWhales()},300)}}};
+    return w};
+  whWs=WH_EX.map(open).filter(Boolean);whState();
+}
+function stopWhales(){const old=whWs;whWs=[];old.forEach(w=>{try{w.close()}catch(e){}})}
+function stopFlows(){stopWhales();if(ws){const w=ws;ws=null;try{w.close()}catch(e){}}}
+function drawWhales(){const min=+$("whMin").value,coin=$("whCoin").value,mkt=$("whMkt").value,exf=$("whEx").value;
+  const ok=x=>x.val>=min&&(coin==="all"||x.s===coin.toUpperCase())&&(mkt==="both"||(mkt==="spot")===(x.mkt==="Spot"))&&(exf==="all"||x.ex===exf);
+  const L=wh.filter(ok);let b=0,s2=0;L.forEach(x=>x.buy?b+=x.val:s2+=x.val);
+  $("whList").innerHTML=L.slice(0,80).map(x=>`<div><span class="${x.buy?"up":"down"}">${x.buy?"Kauf    ":"Verkauf "} ${esc(x.s)}</span><span>${fmtB(x.val)} $</span><span class="flat">${fmtP(x.px)}</span><span class="flat">${x.ex} ${x.mkt}</span><span class="flat">${new Date(x.t).toLocaleTimeString("de-DE")}</span></div>`).join("")||'<div class="flat">Noch keine Trades über dieser Größe seit dem Öffnen.</div>';
+  const tot=b+s2;$("whSplit").style.width=(tot?b/tot*100:50)+"%";
+  $("whSum").innerHTML=`<span class="up">Käufe ${fmtB(b)} $</span> · <span class="down">Verkäufe ${fmtB(s2)} $</span>`;
+}
+async function loadFlows(){
+  startWhales();loadDeriv();
+  if(Date.now()-flowsLoaded<120000)return;flowsLoaded=Date.now();
+  const [st,ch,fee,mem]=await Promise.allSettled([getJSON("https://stablecoins.llama.fi/stablecoins?includePrices=false"),getJSON("https://api.llama.fi/v2/chains"),
+    getJSON("https://mempool.space/api/v1/fees/recommended"),getJSON("https://mempool.space/api/mempool")]);
+  const chg=(a,b)=>b?(a/b-1)*100:null;
+  if(st.status==="fulfilled"){const A=(st.value.peggedAssets||[]).filter(x=>x.pegType==="peggedUSD"&&x.circulating?.peggedUSD>0);
+    const sum=k=>A.reduce((t,x)=>t+(x[k]?.peggedUSD||0),0),now=sum("circulating"),d1=sum("circulatingPrevDay"),w=sum("circulatingPrevWeek"),m=sum("circulatingPrevMonth");
+    $("fStb").textContent=fmtUSD(now);$("fStbS").innerHTML=pct(chg(now,d1),false,2)+" seit gestern";
+    $("fStb7").innerHTML=pct(chg(now,w),false,2);$("fStb7S").textContent=(now-w>=0?"+":"−")+fmtB(Math.abs(now-w))+" $";
+    $("fStb30").innerHTML=pct(chg(now,m),false,2);
+    $("stbBody").innerHTML=A.sort((a,b)=>b.circulating.peggedUSD-a.circulating.peggedUSD).slice(0,8).map(x=>{const c=x.circulating.peggedUSD;
+      return`<tr><td class="l">${esc(x.symbol)}</td><td>${fmtB(c)} $</td><td>${pct(chg(c,x.circulatingPrevWeek?.peggedUSD))}</td><td>${pct(chg(c,x.circulatingPrevMonth?.peggedUSD))}</td></tr>`}).join("")}
+  else $("stbBody").innerHTML='<tr><td colspan="4" class="empty">DefiLlama gerade nicht erreichbar.</td></tr>';
+  if(fee.status==="fulfilled"){const f=fee.value;$("fFee").textContent=f.fastestFee+" sat/vB";$("fFeeS").textContent=`in 1 Std. ${f.hourFee} · günstig ${f.economyFee}. ${f.fastestFee>=30?"Viel los im Netzwerk":f.fastestFee>=8?"Normale Aktivität":"Ruhig im Netzwerk"}`}
+  if(mem.status==="fulfilled"){$("fMem").textContent=(mem.value.count||0).toLocaleString("de-DE");$("fMemS").textContent="Transaktionen warten auf einen Block"}
+  if(ch.status==="fulfilled"){const all=ch.value.filter(c=>c.tvl>0).sort((a,b)=>b.tvl-a.tvl),tot=all.reduce((t,c)=>t+c.tvl,0),top=all.slice(0,10);
+    const draw=hist=>$("chainBody").innerHTML=top.map((c,i)=>`<tr><td class="l">${esc(c.name)}</td><td>${fmtB(c.tvl)} $</td><td>${(c.tvl/tot*100).toLocaleString("de-DE",{maximumFractionDigits:1})} %</td><td>${hist&&hist[i]!=null?pct(hist[i]):'<span class="flat">…</span>'}</td></tr>`).join("");
+    draw(null);
+    const H=await Promise.allSettled(top.map(c=>getJSON("https://api.llama.fi/v2/historicalChainTvl/"+encodeURIComponent(c.name))));
+    draw(H.map(h=>{if(h.status!=="fulfilled"||h.value.length<8)return null;const a=h.value,n=a[a.length-1].tvl,o=a[a.length-8].tvl;return chg(n,o)}))}
+  else $("chainBody").innerHTML='<tr><td colspan="4" class="empty">DefiLlama gerade nicht erreichbar.</td></tr>';
+}
+["whMin","whCoin","whMkt","whEx"].forEach(id=>$(id).onchange=drawWhales);
+$("whReset").onclick=()=>{wh=[];drawWhales()};
+
 // ---------- Eigener Filter ----------
 const FF={fMcMin:"mcMin",fMcMax:"mcMax",fVol:"vol",fTf:"tf",fPMin:"pMin",fPMax:"pMax"},FC={fExO:"exO",fExB:"exB",fExU:"exU",fRs:"rs"};
 function fillFilter(){for(const[id,k]of Object.entries(FF))$(id).value=S.filt[k]??(k==="tf"?"d":"");for(const[id,k]of Object.entries(FC))$(id).checked=!!S.filt[k]}
@@ -827,7 +956,7 @@ $("fReset").onclick=()=>{S.filt={mcMin:"100",vol:"5"};fillFilter();save();render
 if(!Object.keys(S.filt).length)S.filt={mcMin:"100",vol:"5"};
 
 // ---------- Bedienung ----------
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;S.tf=LISTS[S.tab]?.tf||"d";S.dir=-1;S.sorted=false;save();render();if(S.tab==="deriv")loadDeriv()});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;S.tf=LISTS[S.tab]?.tf||"d";S.dir=-1;S.sorted=false;save();render()});
 document.querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>{S.tf=b.dataset.tf;S.dir=-1;S.sorted=true;save();render()});
 document.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const s=th.dataset.sort;if(S.tf===s)S.dir*=-1;else{S.tf=s;S.dir=-1}S.sorted=true;save();render()});
 $("rank").onchange=e=>{S.rank=+e.target.value;save();render()};
@@ -840,7 +969,7 @@ $("copyBtn").onclick=async()=>{const ta=$("wl");try{await navigator.clipboard.wr
 $("saveBtn").onclick=()=>{const v=$("wl").value;if(!v){$("wlMsg").textContent="Erst Coins auswählen";return}
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"text/plain"}));a.download="bayazit-watchlist-"+new Date().toISOString().slice(0,10)+".txt";document.body.appendChild(a);a.click();a.remove();$("wlMsg").textContent="Datei gespeichert"};
 $("liqMin").onchange=drawLiq;
-$("refresh").onclick=()=>{derivLoaded=0;loadAll()};
+$("refresh").onclick=()=>{derivLoaded=0;flowsLoaded=0;loadAll()};
 document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 document.querySelectorAll("[data-stf]").forEach(b=>b.onclick=()=>{S.stf=b.dataset.stf;S.sdir=-1;showIndex()});
 $("idxHead").addEventListener("click",e=>{const th=e.target.closest("th");if(!th)return;
