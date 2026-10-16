@@ -101,6 +101,7 @@ textarea{width:100%;min-height:64px;font:.78rem var(--f-num);background:var(--bg
 .fgweek span{display:grid;justify-items:center;font:.68rem var(--f-num);color:var(--muted);gap:2px}
 .fgweek i{display:block;width:26px;border-radius:4px 4px 0 0}
 @media (max-width:760px){.fg{grid-template-columns:1fr 1fr}.fgmid{grid-column:1/-1;order:-1}#fgL,#fgR{justify-items:start}#fgL .fgi{flex-direction:row;text-align:left}#fgL .lab{text-align:left}}
+.lmlegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.74rem;color:var(--muted)}.lmlegend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .split.buy{background:var(--down)}.split.buy i{background:var(--up)}
 .split{height:10px;border-radius:5px;background:var(--up);overflow:hidden}.split i{display:block;height:100%;background:var(--down)}
 .mini{width:100%;border-collapse:collapse;font-size:.82rem;min-width:0}
@@ -323,6 +324,20 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       </div>
     </div>
   </section>
+
+    <section class="panel">
+      <h2>Liquidationskarte · eigene Schätzung</h2>
+      <div class="bar">
+        <span class="label">Coin</span><select id="lmCoin" aria-label="Coin"><option>BTC</option><option>ETH</option><option>SOL</option><option>XRP</option><option>DOGE</option><option>BNB</option></select>
+        <span class="label">Bereich</span><select id="lmRange" aria-label="Bereich"><option value="4">± 4 %</option><option value="8" selected>± 8 %</option><option value="15">± 15 %</option></select>
+        <span class="msg" id="lmState">Lädt …</span>
+      </div>
+      <div class="lmlegend"><span><i style="background:#3b82f6"></i>niedriger Hebel (10×)</span><span><i style="background:#a78bfa"></i>mittlerer Hebel (25×)</span><span><i style="background:#fb923c"></i>hoher Hebel (50–100×)</span><span><i style="background:var(--down)"></i>Summe Longs</span><span><i style="background:var(--up)"></i>Summe Shorts</span></div>
+      <div style="position:relative"><svg id="lmSvg" viewBox="0 0 1000 340" style="width:100%;height:340px;display:block;touch-action:pan-y" aria-label="Liquidationskarte"></svg></div>
+      <p class="msg" id="lmTip">Tipp oder Maus auf einen Balken zeigt Preis und Menge.</p>
+      <p class="msg" id="lmSum"></p>
+      <p class="hint">So entsteht die Karte: Für jede Stunde der letzten ca. 20 Tage schaue ich, wie viel Open Interest neu dazukam und zu welchem Kurs. Daraus schätze ich Long- und Short-Positionen mit 10-, 25-, 50- und 100-fachem Hebel und berechne, wo sie liquidiert würden. Positionen, deren Liquidationspreis schon erreicht wurde, fallen heraus. Links (rot) liegen Long-Liquidationen, rechts (grün) Short-Liquidationen. Hohe Balken wirken oft wie Magneten für den Kurs. Es ist eine Schätzung, Zahlen weichen von CoinAnk oder CoinGlass ab, die Lage der großen Cluster ist aber meist ähnlich. <a class="ext" href="https://coinank.com/liqMapChart" target="_blank" rel="noopener">Zum Vergleich: CoinAnk</a></p>
+    </section>
 
     <div class="dgrid">
       <section class="panel">
@@ -892,7 +907,7 @@ function drawLiq(){const min=+$("liqMin").value;
 }
 async function loadDeriv(){
   startLiq();if(Date.now()-derivLoaded<60000)return;derivLoaded=Date.now();
-  loadVolOI();
+  loadVolOI();loadLiqMap(true);
   try{const pi=await getJSON("https://fapi.binance.com/fapi/v1/premiumIndex");
     const rows=pi.filter(x=>x.symbol.endsWith("USDT")).map(x=>({s:x.symbol.slice(0,-4),f:+x.lastFundingRate*100}));
     const big=OI_COINS.map(s=>rows.find(r=>r.s===s)).filter(Boolean);
@@ -1070,6 +1085,60 @@ function renderFG(){if(!FG)return;clearTimeout(fgT);
   $("fgWeek").innerHTML=res.slice(1).map((x,i)=>`<span title="${x.n} von 10 Werten verfügbar">${x.idx??"–"}<i style="height:${Math.max(4,(x.idx||0)*0.4)}px;background:${fgCol(x.idx)}"></i>${new Date(days[i+1]).toLocaleDateString("de-DE",{weekday:"short"})}</span>`).join("");
   fgT=setTimeout(()=>{if(S.mode==="flows")renderFG()},15000)}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-fg]");if(!b)return;const c=FG_C.find(x=>x.k===b.dataset.fg);$("fgInfo").innerHTML=`<b>${c.n}:</b> ${c.info}`});
+
+// ---------- Liquidationskarte (eigene Schätzung) ----------
+const LM_TIERS=[{l:10,w:.35,c:"#3b82f6"},{l:25,w:.30,c:"#a78bfa"},{l:50,w:.20,c:"#fb923c"},{l:100,w:.15,c:"#fb923c"}];
+const LM={cache:{},bins:null};
+async function loadLiqMap(force){const c=$("lmCoin").value,sym=c+"USDT",F="https://fapi.binance.com";
+  const old=LM.cache[c];if(old&&!force&&Date.now()-old.t<300000){drawLiqMap();return}
+  $("lmState").textContent="Lädt …";
+  try{const [kl,oi,tk]=await Promise.all([getJSON(`${F}/fapi/v1/klines?symbol=${sym}&interval=1h&limit=500`),
+      getJSON(`${F}/futures/data/openInterestHist?symbol=${sym}&period=1h&limit=500`),
+      getJSON(`${F}/futures/data/takerlongshortRatio?symbol=${sym}&period=1h&limit=500`).catch(()=>[])]);
+    LM.cache[c]={t:Date.now(),kl,oi,tk};drawLiqMap()}
+  catch(e){$("lmState").textContent="Binance gerade nicht erreichbar";$("lmSvg").innerHTML=""}}
+function liqModel(d){const H=3600000,K=new Map(d.kl.map(k=>[k[0],{h:+k[2],l:+k[3],c:+k[4],p:(+k[2]+ +k[3]+ +k[4])/3}])),
+  T=new Map(d.tk.map(x=>[Math.floor(x.timestamp/H)*H,+x.buySellRatio])),times=d.kl.map(k=>k[0]);
+  const oiAt=new Map(d.oi.map(x=>[Math.floor(x.timestamp/H)*H,+x.sumOpenInterestValue]));
+  let pos=[],prevOI=null;
+  for(const t of times){const k=K.get(t),o=oiAt.get(t)??oiAt.get(t+H);
+    // erst prüfen, welche bestehenden Positionen in dieser Stunde liquidiert wurden
+    if(pos.length)pos=pos.filter(q=>q.side>0?k.l>q.liq:k.h<q.liq);
+    if(o!=null&&prevOI!=null){const d0=o-prevOI;
+      if(d0<0&&prevOI>0){const r=o/prevOI;pos.forEach(q=>q.n*=r)}
+      else if(d0>0){const br=T.get(t),ls=br?br/(1+br):.5;
+        LM_TIERS.forEach((tr,i)=>{const mm=.005;
+          pos.push({side:1,n:d0*ls*tr.w,liq:k.p*(1-1/tr.l+mm),ti:i});
+          pos.push({side:-1,n:d0*(1-ls)*tr.w,liq:k.p*(1+1/tr.l-mm),ti:i})})}}
+    if(o!=null)prevOI=o}
+  return{pos,price:d.kl.length?+d.kl[d.kl.length-1][4]:null}}
+function drawLiqMap(){const c=$("lmCoin").value,d=LM.cache[c];if(!d)return;
+  const {pos,price}=liqModel(d);if(!price){$("lmState").textContent="keine Daten";return}
+  const W=Math.max(300,Math.round($("lmSvg").clientWidth||1000));$("lmSvg").setAttribute("viewBox",`0 0 ${W} 340`);
+  const rg=+$("lmRange").value/100,lo=price*(1-rg),hi=price*(1+rg),N=Math.min(120,Math.floor(W/6)),bw=(hi-lo)/N;
+  const bins=[...Array(N)].map((_,i)=>({a:lo+i*bw,t:[0,0,0],side:0}));
+  pos.forEach(q=>{if(q.liq<lo||q.liq>=hi||q.n<=0)return;const b=bins[Math.floor((q.liq-lo)/bw)];b.t[Math.min(q.ti,2)]+=q.n;b.side=q.side});
+  bins.forEach(b=>b.v=b.t[0]+b.t[1]+b.t[2]);
+  const mx=Math.max(...bins.map(b=>b.v),1),Hh=300,top=12,x=v=>(v-lo)/(hi-lo)*W,y=v=>top+Hh-v/mx*Hh;
+  // Summenlinien
+  const pi=Math.floor((price-lo)/bw);let cl=[],cs=[],acc=0;for(let i=pi;i>=0;i--){acc+=bins[i].side>0?bins[i].v:0;cl.push([i,acc])}const totL=acc;acc=0;
+  for(let i=pi;i<N;i++){acc+=bins[i].side<0?bins[i].v:0;cs.push([i,acc])}const totS=acc,cm=Math.max(totL,totS,1),yc=v=>top+Hh-v/cm*Hh;
+  let svg="";for(let g=1;g<=4;g++)svg+=`<line x1="0" x2="${W}" y1="${top+Hh*g/4}" y2="${top+Hh*g/4}" stroke="var(--line)" stroke-width="1"/>`;
+  bins.forEach((b,i)=>{let yy=top+Hh;[0,1,2].forEach(t=>{if(!b.t[t])return;const h=b.t[t]/mx*Hh;yy-=h;svg+=`<rect x="${(i*W/N+.6).toFixed(1)}" y="${yy.toFixed(1)}" width="${(W/N-1.2).toFixed(1)}" height="${h.toFixed(1)}" fill="${LM_TIERS[t].c}" opacity="${b.side>0?.85:.95}"/>`})});
+  const path=(arr)=>arr.map(([i,v],j)=>`${j?"L":"M"}${((i+.5)*W/N).toFixed(1)} ${yc(v).toFixed(1)}`).join(" ");
+  svg+=`<path d="${path(cl)}" fill="none" stroke="var(--down)" stroke-width="2"/><path d="${path(cs)}" fill="none" stroke="var(--up)" stroke-width="2"/>`;
+  svg+=`<line x1="${x(price)}" x2="${x(price)}" y1="${top}" y2="${top+Hh}" stroke="var(--fg)" stroke-dasharray="5 4" stroke-width="1.5"/>`;
+  const G=W<600?2:4;for(let g=0;g<=G;g++){const v=lo+(hi-lo)*g/G;svg+=`<text x="${Math.min(W-4,Math.max(4,x(v)))}" y="${top+Hh+20}" font-size="13" fill="var(--muted)" text-anchor="${g===0?"start":g===G?"end":"middle"}" font-family="var(--f-num)">${fmtP(v)}</text>`}
+  svg+=`<text x="4" y="${top+12}" font-size="12" fill="var(--muted)" font-family="var(--f-num)">höchster Balken ≈ ${fmtB(mx)} $</text>`;
+  $("lmSvg").innerHTML=svg;LM.bins=bins;LM.lo=lo;LM.bw=bw;LM.N=N;
+  const big=s=>{const b=bins.filter(b=>b.side===s&&b.v>0).sort((a,b)=>b.v-a.v)[0];return b?`${fmtP(b.a+bw/2)} (≈ ${fmtB(b.v)} $)`:"–"};
+  $("lmSum").innerHTML=`Kurs <b>${fmtP(price)}</b> · größter <span class="down">Long-Cluster</span> bei ${big(1)} · größter <span class="up">Short-Cluster</span> bei ${big(-1)} · im Bereich: Longs ≈ ${fmtB(totL)} $, Shorts ≈ ${fmtB(totS)} $`;
+  $("lmState").textContent=`Stand ${new Date(d.t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} · ${d.kl.length} Stunden ausgewertet`}
+function lmPoint(e){if(!LM.bins)return;const r=$("lmSvg").getBoundingClientRect(),cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  const i=Math.max(0,Math.min(LM.N-1,Math.floor(cx/r.width*LM.N))),b=LM.bins[i];
+  $("lmTip").innerHTML=b.v?`<b>${fmtP(b.a)} – ${fmtP(b.a+LM.bw)}</b> · <span class="${b.side>0?"down":"up"}">${b.side>0?"Long":"Short"}-Liquidationen ≈ ${fmtB(b.v)} $</span> (10×: ${fmtB(b.t[0])} · 25×: ${fmtB(b.t[1])} · 50–100×: ${fmtB(b.t[2])})`:`${fmtP(b.a)} – ${fmtP(b.a+LM.bw)}: kaum Liquidationen geschätzt`}
+["mousemove","touchstart","touchmove"].forEach(ev=>$("lmSvg").addEventListener(ev,lmPoint,{passive:true}));
+$("lmCoin").onchange=()=>loadLiqMap();let lmRs;addEventListener("resize",()=>{clearTimeout(lmRs);lmRs=setTimeout(()=>{if(S.mode==="flows")drawLiqMap()},250)});$("lmRange").onchange=drawLiqMap;
 
 // ---------- Spot gegen Futures ----------
 let VM=null;
