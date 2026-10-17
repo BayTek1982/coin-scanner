@@ -82,6 +82,7 @@ tr.grp td{background:var(--chip);font-family:var(--f-body);font-weight:600;text-
 .view{display:grid;gap:16px}
 .tvbox{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
 td.chain{font-family:var(--f-body);font-size:.8rem}td.chain small{color:var(--muted);font-size:.7rem}
+.newtag{background:var(--accent);color:var(--accent-ink);font-weight:700}
 .coinpill{display:inline-block;font:600 .7rem var(--f-body);padding:2px 7px;border-radius:5px;background:var(--chip);color:var(--fg);margin:1px 4px 1px 0;white-space:nowrap}
 .linkcard{display:grid;gap:4px;text-decoration:none;color:var(--fg)}
 .empty{padding:26px;text-align:center;color:var(--muted);font-family:var(--f-body);white-space:normal}
@@ -160,6 +161,8 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <button class="tab" data-tab="watch">★ Watchlist</button>
     <button class="tab" data-tab="token">Tokenisierte Aktien</button>
     <button class="tab" data-tab="alle">Alle</button>
+    <button class="tab" data-tab="chains">⛓ Chains</button>
+    <button class="tab" data-tab="neu">🆕 Neu gelistet</button>
   </div>
 
   <div class="bar" id="filterBar">
@@ -187,6 +190,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
 
   <p class="hint" id="listHint"></p>
 
+  <div class="tablebox" id="specBox" hidden></div>
   <div class="tablebox" id="tableBox">
     <table>
       <thead><tr>
@@ -211,7 +215,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   <div id="aktienView" class="view" hidden>
     <section class="mood" aria-label="Stimmung Aktien">
       <div class="tvbox" id="tvVix" style="min-height:120px"></div>
-      <a class="tile linkcard" href="https://www.tradingview.com/symbols/XETR-V1X/" target="_blank" rel="noopener"><span class="label">VDAX-NEW</span><span class="v">Angstbarometer DAX</span><span class="s">Hoch = Angst, niedrig = Ruhe. Antippen öffnet TradingView.</span></a>
+      <a class="tile linkcard" href="https://www.finanzen.net/index/vdax_new" target="_blank" rel="noopener"><span class="label">VDAX-NEW</span><span class="v">Angstbarometer DAX</span><span class="s">Hoch = Angst, niedrig = Ruhe. Unter 20 eher ruhig, über 30 Nervosität. Antippen öffnet finanzen.net.</span></a>
       <a class="tile linkcard" href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener"><span class="label">CNN Fear &amp; Greed</span><span class="v">US-Aktien</span><span class="s">Stimmungsindex 0–100. Antippen öffnet CNN.</span></a>
     </section>
     <details class="panel linkbox">
@@ -302,11 +306,17 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
 
     <section class="panel">
       <h2>Spot gegen Futures · Volumen &amp; Open Interest</h2>
-      <div class="bar"><span class="label">Börsen</span><select id="vmEx" aria-label="Börsen"><option value="all">Binance + OKX + Bybit</option><option value="bn">nur Binance</option></select><span class="msg" id="vmState"></span></div>
+      <div class="bar"><span class="label">Börsen</span><select id="vmEx" aria-label="Börsen"><option value="all">Binance + OKX + Bybit + Hyperliquid</option><option value="bn">nur Binance</option></select><span class="msg" id="vmState"></span></div>
       <div class="tablebox" style="border:0"><table class="mini" style="min-width:820px"><thead><tr>
         <th class="l" data-dsort="0">Coin</th><th data-dsort="1">Kurs 24h</th><th data-dsort="2">Spot-Volumen</th><th data-dsort="3">Futures-Volumen</th><th data-dsort="4">Futures / Spot</th><th data-dsort="5">Open Interest</th><th data-dsort="6">OI 24h</th><th class="l" data-dsort="7">Wer treibt?</th><th class="l" data-dsort="8">Signal</th>
       </tr></thead><tbody id="vmBody"><tr><td colspan="9" class="empty">Lädt …</td></tr></tbody></table></div>
       <p class="hint"><b>Futures / Spot:</b> wie viel mehr mit Hebel gehandelt wird als mit echten Coins. Unter 3× = Spot-getrieben (gesünder), 3–8× = normal, über 8× = stark von Hebel getrieben (kippt schneller). <b>Signal</b> aus Kurs und Open Interest der letzten 24 Std.: Kurs ↑ + OI ↑ = neue Longs · Kurs ↑ + OI ↓ = Shorts werden eingedeckt · Kurs ↓ + OI ↑ = neue Shorts · Kurs ↓ + OI ↓ = Longs steigen aus. Volumen = letzte 24 Std.; „OI 24h“ = Veränderung auf Binance.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Hyperliquid · die größten Märkte</h2>
+      <div class="tablebox" style="border:0"><table class="mini" style="min-width:640px"><thead><tr><th class="l" data-dsort="0">Coin</th><th data-dsort="1">Kurs 24h</th><th data-dsort="2">Open Interest</th><th data-dsort="3">Volumen 24h</th><th data-dsort="4">Funding (8 Std.)</th><th data-dsort="5">Pro Jahr</th><th data-dsort="6">max. Hebel</th></tr></thead><tbody id="hlBody"><tr><td colspan="7" class="empty">Lädt …</td></tr></tbody></table></div>
+      <p class="hint">Hyperliquid ist eine dezentrale Börse, auf der viele große Trader offen sichtbar handeln. Funding wird dort stündlich gezahlt, hier zum Vergleich mit Binance auf 8 Stunden umgerechnet. Ein Tipp auf den Coin öffnet ihn bei Hyperliquid.</p>
     </section>
 
     <section id="derivBox">
@@ -420,6 +430,37 @@ async function loadChains(){
     S.chains=m;try{sessionStorage.setItem("cgchains",JSON.stringify(m))}catch(e){}}catch(e){S.chains=null}}
 const NATIVE=new Set("bitcoin ethereum solana ripple binancecoin cardano dogecoin tron avalanche-2 the-open-network sui aptos hyperliquid polkadot litecoin bitcoin-cash stellar near internet-computer cosmos algorand hedera-hashgraph monero ethereum-classic kaspa sei-network injective-protocol celestia mantle berachain-bera sonic-3 bittensor filecoin vechain tezos elrond-erd-2 flow kava zcash dash iota neo eos stacks fantom crypto-com-chain okb kucoin-shares leo-token xdce-crypto-token".split(" "));
 function chainOf(c){if(!S.chains)return null;const p=NATIVE.has(c.id)?null:S.chains[c.id];if(!p)return{n:"eigene Chain",own:1};return{n:chainName(p[0]),k:p[0],a:p[1],more:p[2]-1}}
+// ---------- Neu gelistet (Binance Futures, OKX Spot und Perpetuals) ----------
+async function loadListings(){const since=Date.now()-30*864e5,out=[];
+  const r=await Promise.allSettled([getJSON("https://fapi.binance.com/fapi/v1/exchangeInfo",30000),
+    getJSON("https://www.okx.com/api/v5/public/instruments?instType=SPOT"),getJSON("https://www.okx.com/api/v5/public/instruments?instType=SWAP")]);
+  const v=i=>r[i].status==="fulfilled"?r[i].value:null;
+  (v(0)?.symbols||[]).forEach(x=>{if(x.quoteAsset==="USDT"&&x.contractType==="PERPETUAL"&&x.status==="TRADING"&&+x.onboardDate>=since)out.push({sym:x.baseAsset.replace(/^1000+/,""),raw:x.baseAsset,ex:"Binance",m:"Futures",t:+x.onboardDate,tv:`BINANCE:${x.symbol}.P`})});
+  (v(1)?.data||[]).forEach(x=>{if(x.quoteCcy==="USDT"&&x.state==="live"&&+x.listTime>=since)out.push({sym:x.baseCcy,raw:x.baseCcy,ex:"OKX",m:"Spot",t:+x.listTime,tv:`OKX:${x.baseCcy}USDT`})});
+  (v(2)?.data||[]).forEach(x=>{if(x.settleCcy==="USDT"&&x.state==="live"&&+x.listTime>=since){const b=x.instId.split("-")[0];out.push({sym:b,raw:b,ex:"OKX",m:"Futures",t:+x.listTime,tv:`OKX:${b}USDT.P`})}});
+  S.listings=out.sort((a,b)=>b.t-a.t);S.listOk={Binance:!!v(0),OKX:!!(v(1)||v(2))};S.newMap={};
+  out.forEach(x=>{if(Date.now()-x.t<14*864e5&&!S.newMap[x.sym])S.newMap[x.sym]={t:x.t,txt:`${x.ex} ${x.m} am ${new Date(x.t).toLocaleDateString("de-DE")}`}});
+  render()}
+function drawNeu(){const box=$("specBox");if(!S.listings){box.innerHTML='<div class="empty">Lade neue Listings …</div>';return}
+  const pool=new Map((S.base||S.coins).map(c=>[c.sym,c]));
+  const st=Object.entries(S.listOk).map(([k,v])=>`<span class="${v?"up":"down"}">${k} ${v?"✓":"✗"}</span>`).join(" · ");
+  box.innerHTML=`<table class="mini" style="min-width:720px"><thead><tr><th class="l" data-dsort="0">Coin</th><th class="l" data-dsort="1">Börse</th><th class="l" data-dsort="2">Markt</th><th data-dsort="3">gelistet am</th><th data-dsort="4">vor Tagen</th><th class="l" data-dsort="5">Hyperliquid</th><th data-dsort="6">24H</th><th data-dsort="7">MarketCap</th></tr></thead><tbody>${
+    S.listings.length?S.listings.map(x=>{const c=pool.get(x.sym),d=Math.floor((Date.now()-x.t)/864e5);
+      return`<tr><td class="l coin"><a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(x.tv)}" target="_blank" rel="noopener">${esc(x.raw)}</a>${c?`<span>${esc(c.name)}</span>`:""}</td><td class="l">${x.ex}</td><td class="l">${x.m}</td><td>${new Date(x.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</td><td>${d}</td><td class="l">${S.ex.H?.has(x.sym)?'<span class="up">ja</span>':'<span class="flat">nein</span>'}</td><td>${c?pct(c.d):'<span class="flat">–</span>'}</td><td>${c?.mc?fmtB(c.mc):'<span class="flat">–</span>'}</td></tr>`}).join("")
+    :'<tr><td colspan="8" class="empty">Keine neuen Listings in den letzten 30 Tagen gefunden.</td></tr>'}</tbody></table><p class="msg" style="padding:8px 10px;margin:0">${st} · Ein Tipp auf den Coin öffnet den Chart bei TradingView. Coins, die in den letzten 14 Tagen neu dazukamen, tragen in allen Listen ein <span class="tag newtag">NEU</span>.</p>`;
+  bindDsort(box)}
+// ---------- Chains im Vergleich ----------
+function drawChains(){const box=$("specBox");if(!S.chains){box.innerHTML='<div class="empty">Die Chain-Liste von CoinGecko ist gerade nicht verfügbar. Bitte später auf „Aktualisieren“ tippen.</div>';return}
+  const g={};(S.base||S.coins).forEach(c=>{const n=chainOf(c)?.n;if(!n)return;(g[n]=g[n]||[]).push(c)});
+  const w=(L,k)=>{const a=L.filter(c=>c[k]!=null&&c.mc);const t=a.reduce((x,c)=>x+c.mc,0);return t?a.reduce((x,c)=>x+c[k]*c.mc,0)/t:null};
+  const rows=Object.entries(g).map(([n,L])=>{const best=L.filter(c=>c.w!=null).sort((a,b)=>b.w-a.w)[0];
+    return{n,cnt:L.length,mc:L.reduce((x,c)=>x+c.mc,0),d:w(L,"d"),w:w(L,"w"),m:w(L,"m"),best}}).sort((a,b)=>b.mc-a.mc);
+  box.innerHTML=`<table class="mini" style="min-width:720px"><thead><tr><th class="l" data-dsort="0">Chain</th><th data-dsort="1">Coins</th><th data-dsort="2">MarketCap</th><th data-dsort="3">24H</th><th data-dsort="4">7T</th><th data-dsort="5">30T</th><th class="l" data-dsort="6">Bester Coin 7T</th></tr></thead><tbody>${rows.map(r=>`<tr data-chain="${esc(r.n)}" style="cursor:pointer"><td class="l"><b>${esc(r.n)}</b></td><td>${r.cnt}</td><td>${fmtB(r.mc)}</td><td>${pct(r.d)}</td><td>${pct(r.w)}</td><td>${pct(r.m)}</td><td class="l">${r.best?`${esc(r.best.sym)} ${pct(r.best.w)}`:"–"}</td></tr>`).join("")}</tbody></table><p class="msg" style="padding:8px 10px;margin:0">Werte nach MarketCap gewichtet, aus den Top 250 (ohne Stablecoins). „eigene Chain“ = Coins mit eigener Blockchain. Ein Tipp auf eine Zeile zeigt alle Coins dieser Chain.</p>`;
+  bindDsort(box)}
+const SPEC={
+  chains:{hint:"Wohin fließt das Geld? Die Coins jeder Blockchain im Durchschnitt, gewichtet nach Größe.",draw:drawChains},
+  neu:{hint:"Neu gelistete Coins der letzten 30 Tage auf Binance Futures und OKX. Neue Listings bringen oft starke Bewegung, in beide Richtungen.",draw:drawNeu}};
+document.addEventListener("click",e=>{const tr=e.target.closest("#specBox tr[data-chain]");if(!tr)return;S.chain=tr.dataset.chain;S.tab="alle";S.tf="d";S.dir=-1;save();render();$("chainSel").value=S.chain});
 async function loadCategories(){
   let list=null;try{list=JSON.parse(sessionStorage.getItem("cgcats")||"null")}catch(e){}
   if(!list){try{list=await getJSON(CG+"/coins/categories/list");sessionStorage.setItem("cgcats",JSON.stringify(list))}catch(e){return}}
@@ -432,7 +473,7 @@ async function loadAll(){
   const btn=$("refresh");btn.disabled=true;btn.textContent="Lädt …";
   $("src").innerHTML="<span>Daten werden geladen …</span>";
   const first=!Object.keys(S.exOk).length;
-  if(first)await Promise.all([loadExchanges(),loadCategories(),loadChains()]);
+  if(first){await Promise.all([loadExchanges(),loadCategories(),loadChains()]);loadListings()}
   const [mk,gl,tr,fg,base]=await Promise.allSettled([getJSON(MK(S.cat)),getJSON(CG+"/global"),getJSON(CG+"/search/trending"),
     getJSON("https://api.alternative.me/fng/?limit=8"),S.cat?getJSON(MK("")):Promise.resolve(null)]);
   const cgOk=mk.status==="fulfilled"&&Array.isArray(mk.value);
@@ -540,10 +581,12 @@ function spark(arr,up){if(!arr||arr.length<2)return"";const step=Math.max(1,Math
 function render(){
   document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tab===S.tab));
   document.querySelectorAll("[data-tf]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tf===S.tf));
-  if(!LISTS[S.tab])S.tab="kern";
-  $("filterBar").hidden=S.tab==="trend"||S.tab==="token"||S.tab==="watch";
+  if(!LISTS[S.tab]&&!SPEC[S.tab])S.tab="kern";
+  const sp=SPEC[S.tab];$("specBox").hidden=!sp;$("tableBox").hidden=!!sp;$("exportBox").hidden=!!sp;
+  $("filterBar").hidden=!!sp||S.tab==="trend"||S.tab==="token"||S.tab==="watch";
   $("eigenPanel").hidden=S.tab!=="eigen";
-  $("listHint").textContent=LISTS[S.tab].hint;
+  $("listHint").textContent=sp?sp.hint:LISTS[S.tab].hint;
+  if(sp){sp.draw();return}
   $("rank").value=S.rank;
   arrows("th[data-sort]","data-sort",S.tf,S.dir);
   if(S.tab==="token"&&!S.tokenCoins.length){loadToken();return}
@@ -553,7 +596,7 @@ function render(){
     <td class="l"><button class="star${S.stars.has(c.id)?" on":""}" data-star="${esc(c.id)}" aria-label="${esc(c.sym)} zur Watchlist">${S.stars.has(c.id)?"★":"☆"}</button></td>
     <td class="l"><input type="checkbox" data-sym="${esc(c.sym)}" ${S.sel.has(c.sym)?"checked":""} aria-label="${esc(c.sym)} exportieren"></td>
     <td class="l">${c.r??"–"}</td>
-    <td class="l coin"><a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(c))}" target="_blank" rel="noopener">${esc(c.sym)}</a>${tok?`<span class="tag">${esc(c.issuer)}</span>`:`<span>${esc(c.name)}</span>`}</td>
+    <td class="l coin"><a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(c))}" target="_blank" rel="noopener">${esc(c.sym)}</a>${S.newMap?.[c.sym]?`<span class="tag newtag" title="neu gelistet: ${esc(S.newMap[c.sym].txt)}">NEU</span>`:""}${tok?`<span class="tag">${esc(c.issuer)}</span>`:`<span>${esc(c.name)}</span>`}</td>
     <td>${fmtP(c.p)}</td>
     ${["h","d","w","m"].map(t=>`<td class="${t===k?"sel":""}">${pct(c[t])}</td>`).join("")}
     <td class="${k==="score"?"sel":""}">${pct(c.score,true)}</td>
@@ -1163,6 +1206,12 @@ function lmPoint(e){if(!LM.bins)return;const r=$("lmSvg").getBoundingClientRect(
 ["mousemove","touchstart","touchmove"].forEach(ev=>$("lmSvg").addEventListener(ev,lmPoint,{passive:true}));
 $("lmCoin").onchange=()=>loadLiqMap();let lmRs;addEventListener("resize",()=>{clearTimeout(lmRs);lmRs=setTimeout(()=>{if(S.mode==="flows")drawLiqMap()},250)});$("lmRange").onchange=drawLiqMap;
 
+// ---------- Hyperliquid ----------
+let HL=null;
+function drawHL(){const b=$("hlBody");if(!b)return;if(!HL){b.innerHTML='<tr><td colspan="7" class="empty">Hyperliquid gerade nicht erreichbar.</td></tr>';return}
+  const L=HL.map(x=>({...x,oiu:+x.openInterest*+x.markPx,chg:+x.prevDayPx?(+x.markPx/+x.prevDayPx-1)*100:null,f8:+x.funding*800})).sort((a,b)=>b.oiu-a.oiu).slice(0,15);
+  b.innerHTML=L.map(x=>`<tr><td class="l"><a class="ext" href="https://app.hyperliquid.xyz/trade/${encodeURIComponent(x.n)}" target="_blank" rel="noopener">${esc(x.n)}</a></td><td>${pct(x.chg)}</td><td>${fmtB(x.oiu)} $</td><td>${fmtB(+x.dayNtlVlm)} $</td><td>${pct(x.f8,false,4)}</td><td>${pct(+x.funding*100*24*365,false,1)}</td><td>${x.lev}×</td></tr>`).join("")}
+
 // ---------- Spot gegen Futures ----------
 let VM=null;
 async function loadVolOI(){
@@ -1175,10 +1224,12 @@ async function loadVolOI(){
     getJSON("https://www.okx.com/api/v5/public/open-interest?instType=SWAP"),
     getJSON("https://api.bybit.com/v5/market/tickers?category=spot"),
     getJSON("https://api.bybit.com/v5/market/tickers?category=linear"),
+    fetch("https://api.hyperliquid.xyz/info",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"type":"metaAndAssetCtxs"}'}).then(r=>{if(!r.ok)throw 0;return r.json()}),
     ...VM_COINS.map(c=>getJSON(`https://fapi.binance.com/futures/data/openInterestHist?symbol=${c}USDT&period=1h&limit=25`))];
   const r=await Promise.allSettled(req),ok=i=>r[i].status==="fulfilled"?r[i].value:null;
-  const bnS=ok(0),bnF=ok(1),okS=ok(2)?.data,okF=ok(3)?.data,okOI=ok(4)?.data,byS=ok(5)?.result?.list,byF=ok(6)?.result?.list;
-  VM={coins:VM_COINS.map((c,i)=>{const h=ok(7+i);const fT=bnF?.find(x=>x.symbol===c+"USDT"),sT=bnS?.find(x=>x.symbol===c+"USDT");
+  const bnS=ok(0),bnF=ok(1),okS=ok(2)?.data,okF=ok(3)?.data,okOI=ok(4)?.data,byS=ok(5)?.result?.list,byF=ok(6)?.result?.list,hl=ok(7);
+  HL=Array.isArray(hl)&&hl[0]?.universe?hl[0].universe.map((u,i)=>({n:u.name,lev:u.maxLeverage,del:u.isDelisted,...(hl[1][i]||{})})).filter(x=>!x.del):null;drawHL();
+  VM={coins:VM_COINS.map((c,i)=>{const h=ok(8+i);const hX=HL?.find(x=>x.n===c);const fT=bnF?.find(x=>x.symbol===c+"USDT"),sT=bnS?.find(x=>x.symbol===c+"USDT");
     const px=+(fT?.lastPrice||sT?.lastPrice||0);
     const oS=okS?.find(x=>x.instId===c+"-USDT"),oF=okF?.find(x=>x.instId===c+"-USDT-SWAP"),oO=okOI?.find(x=>x.instId===c+"-USDT-SWAP");
     const yS=byS?.find(x=>x.symbol===c+"USDT"),yF=byF?.find(x=>x.symbol===c+"USDT");
@@ -1187,10 +1238,11 @@ async function loadVolOI(){
       bn:{s:sT?+sT.quoteVolume:null,f:fT?+fT.quoteVolume:null,oi:oiNow},
       ok:{s:oS?+oS.volCcy24h:null,f:oF?+oF.volCcy24h*(+oF.last||px):null,oi:oO?(+oO.oiUsd||+oO.oiCcy*px||null):null},
       by:{s:yS?+yS.turnover24h:null,f:yF?+yF.turnover24h:null,oi:yF?+yF.openInterestValue:null},
+      hl:{s:null,f:hX?+hX.dayNtlVlm:null,oi:hX?+hX.openInterest*+hX.markPx:null},
       oiChg:oiNow&&oiOld?(oiNow/oiOld-1)*100:null}}),
-    st:{Binance:!!(bnS&&bnF),OKX:!!(okS&&okF),Bybit:!!(byS&&byF)}};
+    st:{Binance:!!(bnS&&bnF),OKX:!!(okS&&okF),Bybit:!!(byS&&byF),Hyperliquid:!!HL}};
   drawVolOI()}
-function drawVolOI(){if(!VM)return;const all=$("vmEx").value==="all",keys=all?["bn","ok","by"]:["bn"];
+function drawVolOI(){if(!VM)return;const all=$("vmEx").value==="all",keys=all?["bn","ok","by","hl"]:["bn"];
   const sum=(x,f)=>{let t=0,n=0;keys.forEach(k=>{const v=x[k][f];if(v!=null&&!isNaN(v)){t+=v;n++}});return n?t:null};
   $("vmState").innerHTML=Object.entries(VM.st).filter(([k])=>all||k==="Binance").map(([k,v])=>`<span class="${v?"up":"down"}">${k} ${v?"✓":"✗"}</span>`).join(" · ");
   $("vmBody").innerHTML=VM.coins.map(x=>{const s=sum(x,"s"),f=sum(x,"f"),oi=sum(x,"oi"),ratio=s&&f?f/s:null;
@@ -1231,12 +1283,13 @@ $("idxHead").addEventListener("click",e=>{const th=e.target.closest("th");if(!th
   if(th.dataset.ssort){const s=th.dataset.ssort;if((S.stf||"score")===s)S.sdir=-(S.sdir||-1);else{S.stf=s;S.sdir=-1}showIndex()}
   else if(th.dataset.lsort){const s=th.dataset.lsort;if(S.lsort===s)S.ldir=-(S.ldir||-1);else{S.lsort=s;S.ldir=-1}showIndex()}});
 // einfache Sortierung für kleine Tabellen (Open Interest)
-document.querySelectorAll("th[data-dsort]").forEach(th=>th.onclick=()=>{const tb=th.closest("table").tBodies[0],i=+th.dataset.dsort;
+function bindDsort(root){root.querySelectorAll("th[data-dsort]").forEach(th=>th.onclick=()=>{const tb=th.closest("table").tBodies[0],i=+th.dataset.dsort;
   const dir=th.dataset.dir==="-1"?1:-1;th.closest("tr").querySelectorAll("th").forEach(x=>{delete x.dataset.dir;x.querySelector(".arr")?.remove();x.classList.remove("sel")});
-  th.dataset.dir=dir;th.classList.add("sel");const txt=i===0;th.insertAdjacentHTML("beforeend",`<span class="arr">${(txt?dir===-1:dir===1)?"▲":"▼"}</span>`);
+  th.dataset.dir=dir;th.classList.add("sel");const txt=i===0||th.classList.contains("l");th.insertAdjacentHTML("beforeend",`<span class="arr">${(txt?dir===-1:dir===1)?"▲":"▼"}</span>`);
   const num=t=>{const m=t.replace(/\./g,"").replace(",",".").match(/[-−+]?\d+(\.\d+)?/);if(!m)return null;let v=parseFloat(m[0].replace("−","-"));if(/Bio/.test(t))v*=1e12;else if(/Mrd/.test(t))v*=1e9;else if(/Mio/.test(t))v*=1e6;return v};
   const rows=[...tb.rows].filter(r=>r.cells.length>i);rows.sort((a,b)=>{const x=a.cells[i].textContent,y=b.cells[i].textContent;
-    if(txt){const r=x.localeCompare(y,"de");return dir===-1?r:-r}const p=num(x)??-1e18,q=num(y)??-1e18;return dir===-1?q-p:p-q});rows.forEach(r=>tb.appendChild(r))});
+    if(txt){const r=x.localeCompare(y,"de");return dir===-1?r:-r}const p=num(x)??-1e18,q=num(y)??-1e18;return dir===-1?q-p:p-q});rows.forEach(r=>tb.appendChild(r))})}
+bindDsort(document);
 $("idxBody").addEventListener("change",e=>{const y=e.target.dataset.ssel;if(!y)return;e.target.checked?S.ssel.add(y):S.ssel.delete(y);LS("bcsStk",{sel:[...S.ssel],stars:[...S.sstars]});updateSWL()});
 $("idxBody").addEventListener("click",e=>{const b=e.target.closest("[data-sstar]");if(!b)return;const y=b.dataset.sstar;S.sstars.has(y)?S.sstars.delete(y):S.sstars.add(y);LS("bcsStk",{sel:[...S.ssel],stars:[...S.sstars]});showIndex()});
 $("sClear").onclick=()=>{S.ssel=new Set();LS("bcsStk",{sel:[],stars:[...(S.sstars||[])]});showIndex()};
