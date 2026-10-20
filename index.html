@@ -189,6 +189,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   </section>
 
   <p class="hint" id="listHint"></p>
+  <p class="msg" id="stCrypto"></p>
 
   <div class="tablebox" id="specBox" hidden></div>
   <div class="tablebox" id="tableBox">
@@ -229,10 +230,12 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     </details>
     <section class="panel">
       <h2>Welt-Überblick</h2>
+      <p class="msg">Live von TradingView, verzögert je nach Börse</p>
       <p class="hint">Die wichtigsten Indizes je Region. Antippen öffnet TradingView. Bei einigen Börsen zeigt TradingView in eingebetteten Ansichten verzögerte oder gar keine Kurse, das liegt an deren Lizenzen.</p>
       <div class="tvbox" id="tvWorld" style="min-height:420px;border:0"></div>
       <h2 style="margin-top:6px">Weitere Märkte · Schlusskurse</h2>
       <table class="mini"><thead><tr><th class="l" data-dsort="0">Index</th><th class="l" data-dsort="1">Land</th><th data-dsort="2">Stand</th><th data-dsort="3">1T</th><th data-dsort="4">7T</th><th data-dsort="5">30T</th><th data-dsort="6">Datum</th></tr></thead><tbody id="worldBody"><tr><td colspan="7" class="empty">Lädt …</td></tr></tbody></table>
+      <p class="msg" id="stWorld"></p>
       <p class="hint">Diese Börsen erlauben TradingView keine Anzeige auf fremden Seiten. Darum kommen die Kurse hier von Yahoo Finance (letzter Schlusskurs, alle 30 Minuten geprüft). Ein Tipp auf den Namen öffnet den Chart bei TradingView.</p>
     </section>
     <section class="panel">
@@ -277,9 +280,11 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
         <div class="fgcol" id="fgR"><span class="lab">Geldflüsse &amp; Makro</span></div>
       </div>
       <div class="fgweek" id="fgWeek"></div>
+      <p class="msg" id="stFG" style="text-align:center"></p>
       <p class="hint" id="fgInfo">Tipp auf einen Ring für die Erklärung. 0 = extreme Angst, 100 = extreme Gier. Eigene Berechnung, keine Anlageberatung.</p>
     </section>
 
+    <p class="msg" id="stTiles" style="margin:0 0 -8px"></p>
     <section class="mood" aria-label="Geldflüsse auf einen Blick">
       <div class="tile"><span class="label">Stablecoins gesamt</span><span class="v" id="fStb">–</span><span class="s" id="fStbS">Geld, das bereitsteht</span></div>
       <div class="tile"><span class="label">Stablecoins · 7 Tage</span><span class="v" id="fStb7">–</span><span class="s" id="fStb7S"></span></div>
@@ -295,7 +300,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
         <span class="label">Coin</span><select id="whCoin" aria-label="Coin"><option value="all">BTC, ETH, SOL, XRP, BNB, DOGE</option><option value="btc">nur BTC</option><option value="eth">nur ETH</option><option value="sol">nur SOL</option><option value="xrp">nur XRP</option><option value="bnb">nur BNB</option><option value="doge">nur DOGE</option></select>
         <span class="label">Börse</span><select id="whEx" aria-label="Börse"><option value="all">alle</option><option>Binance</option><option>Coinbase</option><option>OKX</option><option>Bybit</option></select>
         <span class="label">Markt</span><select id="whMkt" aria-label="Markt"><option value="both">Spot + Futures</option><option value="spot">nur Spot</option><option value="fut">nur Futures</option></select>
-        <span class="label">Ab</span><select id="whMin" aria-label="Mindestgröße"><option value="100000">100 Tsd. $</option><option value="250000" selected>250 Tsd. $</option><option value="500000">500 Tsd. $</option><option value="1000000">1 Mio. $</option></select>
+        <span class="label">Ab</span><select id="whMin" aria-label="Mindestgröße"><option value="100000" selected>100 Tsd. $</option><option value="250000">250 Tsd. $</option><option value="500000">500 Tsd. $</option><option value="1000000">1 Mio. $</option></select>
         <button class="btn ghost" id="whReset">Summen zurücksetzen</button>
       </div>
       <div class="bar" style="justify-content:space-between"><span class="msg" id="whState">Verbinde …</span><span class="msg" id="whSum"></span></div>
@@ -315,6 +320,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
 
     <section class="panel">
       <h2>Hyperliquid · die größten Märkte</h2>
+      <p class="msg" id="stHL"></p>
       <div class="tablebox" style="border:0"><table class="mini" style="min-width:640px"><thead><tr><th class="l" data-dsort="0">Coin</th><th data-dsort="1">Kurs 24h</th><th data-dsort="2">Open Interest</th><th data-dsort="3">Volumen 24h</th><th data-dsort="4">Funding (8 Std.)</th><th data-dsort="5">Pro Jahr</th><th data-dsort="6">max. Hebel</th></tr></thead><tbody id="hlBody"><tr><td colspan="7" class="empty">Lädt …</td></tr></tbody></table></div>
       <p class="hint">Hyperliquid ist eine dezentrale Börse, auf der viele große Trader offen sichtbar handeln. Funding wird dort stündlich gezahlt, hier zum Vergleich mit Binance auf 8 Stunden umgerechnet. Ein Tipp auf den Coin öffnet ihn bei Hyperliquid.</p>
     </section>
@@ -325,13 +331,14 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
         <h2>Liquidationen live · Binance Futures</h2>
         <div class="bar" style="justify-content:space-between"><span class="msg" id="liqState">Verbinde …</span><span class="msg" id="liqSum"></span></div>
         <div class="split" title="Rot = Longs liquidiert, Grün = Shorts liquidiert"><i id="liqSplit" style="width:50%"></i></div>
-        <div class="bar"><span class="msg">Mindestgröße</span><select id="liqMin"><option value="0">alle</option><option value="10000" selected>ab 10 Tsd. $</option><option value="100000">ab 100 Tsd. $</option><option value="1000000">ab 1 Mio. $</option></select></div>
+        <div class="bar"><span class="msg">Mindestgröße</span><select id="liqMin"><option value="0" selected>alle</option><option value="10000">ab 10 Tsd. $</option><option value="100000">ab 100 Tsd. $</option><option value="1000000">ab 1 Mio. $</option></select></div>
         <div class="liq" id="liqList"></div>
         <p class="hint">Rot = Long-Position zwangsgeschlossen (Kurs fiel), Grün = Short liquidiert (Kurs stieg). Binance meldet je Coin höchstens eine Liquidation pro Sekunde, die Summen sind daher eine Untergrenze. Gezählt wird ab dem Öffnen dieser Ansicht.</p>
         <p class="hint">Liquidations-Heatmap: <a class="ext" href="https://coinank.com/liqHeatMapChart" target="_blank" rel="noopener">CoinAnk öffnen</a></p>
       </div>
       <div class="panel">
         <h2>Funding Rate · Binance Perpetuals</h2>
+        <p class="msg" id="stFund"></p>
         <table class="mini"><thead><tr><th class="l">Coin</th><th>Funding</th><th>Pro Jahr</th></tr></thead><tbody id="fundBody"><tr><td colspan="3" class="empty">Lädt …</td></tr></tbody></table>
         <p class="hint">Positiv = Longs zahlen an Shorts, der Markt ist eher gehebelt long. Stark positiv kann ein Warnsignal sein. Gezeigt: große Coins plus die Extreme nach oben und unten.</p>
       </div>
@@ -355,11 +362,13 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <div class="dgrid">
       <section class="panel">
         <h2>Stablecoins · die größten</h2>
+        <p class="msg" id="stStb"></p>
         <table class="mini"><thead><tr><th class="l" data-dsort="0">Name</th><th data-dsort="1">Menge</th><th data-dsort="2">7 Tage</th><th data-dsort="3">30 Tage</th></tr></thead><tbody id="stbBody"><tr><td colspan="4" class="empty">Lädt …</td></tr></tbody></table>
         <p class="hint">Steigt die Menge, kommt neues Geld in den Kryptomarkt, das noch nicht investiert ist. Sinkt sie, fließt Geld ab.</p>
       </section>
       <section class="panel">
         <h2>Blockchains · wo liegt das Geld?</h2>
+        <p class="msg" id="stChain"></p>
         <table class="mini"><thead><tr><th class="l" data-dsort="0">Chain</th><th data-dsort="1">Gebunden (TVL)</th><th data-dsort="2">Anteil</th><th data-dsort="3">7 Tage</th></tr></thead><tbody id="chainBody"><tr><td colspan="4" class="empty">Lädt …</td></tr></tbody></table>
         <p class="hint">TVL = Geld, das in Anwendungen auf dieser Blockchain steckt. Wächst eine Chain stark, wandert Kapital dorthin, oft profitieren dann auch ihre Coins.</p>
       </section>
@@ -403,6 +412,8 @@ function baseSymbols(j){const out=new Set();const walk=v=>{if(!v)return;if(Array
   if(typeof v==="object"){for(const [k,x] of Object.entries(v)){if(typeof x==="string"&&/^(symbol|instId|s)$/i.test(k)){const m=x.toUpperCase().match(/^([A-Z0-9]+)[-_/]?USDT$/);if(m)out.add(m[1])}else if(typeof x==="object")walk(x)}}};walk(j);return out}
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $=id=>document.getElementById(id);
+const fmtT=t=>{if(!t)return"–";const d=new Date(t),today=d.toDateString()===new Date().toDateString();return(today?"":d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+", ")+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr"};
+const stamp=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt};
 
 function mapCoin(c){const sym=String(c.symbol||"").toUpperCase();
   const fl=EXCH.filter(e=>S.exOk[e.k]&&S.ex[e.k].has(sym)).map(e=>e.k).join("");
@@ -438,7 +449,7 @@ async function loadListings(){const since=Date.now()-30*864e5,out=[];
   (v(0)?.symbols||[]).forEach(x=>{if(x.quoteAsset==="USDT"&&x.contractType==="PERPETUAL"&&x.status==="TRADING"&&+x.onboardDate>=since)out.push({sym:x.baseAsset.replace(/^1000+/,""),raw:x.baseAsset,ex:"Binance",m:"Futures",t:+x.onboardDate,tv:`BINANCE:${x.symbol}.P`})});
   (v(1)?.data||[]).forEach(x=>{if(x.quoteCcy==="USDT"&&x.state==="live"&&+x.listTime>=since)out.push({sym:x.baseCcy,raw:x.baseCcy,ex:"OKX",m:"Spot",t:+x.listTime,tv:`OKX:${x.baseCcy}USDT`})});
   (v(2)?.data||[]).forEach(x=>{if(x.settleCcy==="USDT"&&x.state==="live"&&+x.listTime>=since){const b=x.instId.split("-")[0];out.push({sym:b,raw:b,ex:"OKX",m:"Futures",t:+x.listTime,tv:`OKX:${b}USDT.P`})}});
-  S.listings=out.sort((a,b)=>b.t-a.t);S.listOk={Binance:!!v(0),OKX:!!(v(1)||v(2))};S.newMap={};
+  S.listings=out.sort((a,b)=>b.t-a.t);S.listAt=Date.now();S.listOk={Binance:!!v(0),OKX:!!(v(1)||v(2))};S.newMap={};
   out.forEach(x=>{if(Date.now()-x.t<14*864e5&&!S.newMap[x.sym])S.newMap[x.sym]={t:x.t,txt:`${x.ex} ${x.m} am ${new Date(x.t).toLocaleDateString("de-DE")}`}});
   render()}
 function drawNeu(){const box=$("specBox");if(!S.listings){box.innerHTML='<div class="empty">Lade neue Listings …</div>';return}
@@ -489,6 +500,7 @@ async function loadAll(){
     const baseList=base.status==="fulfilled"&&base.value?base.value.map(mapCoin).filter(c=>!isSkip(c)):(S.cat?null:all);
     S.btc=(baseList||all).find(c=>c.sym==="BTC")||all.find(c=>c.sym==="BTC")||S.btc;
     S.coins=enrich(all);if(baseList)S.base=enrich(baseList);
+    S.loadedAt=Date.now();
     $("stand").textContent=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+" Uhr";
   }
   if(gl.status==="fulfilled")renderGlobal(gl.value.data);
@@ -586,6 +598,7 @@ function render(){
   $("filterBar").hidden=!!sp||S.tab==="trend"||S.tab==="token"||S.tab==="watch";
   $("eigenPanel").hidden=S.tab!=="eigen";
   $("listHint").textContent=sp?sp.hint:LISTS[S.tab].hint;
+  stamp("stCrypto",sp?(S.tab==="neu"?`Stand ${fmtT(S.listAt)} · Quellen: Binance Futures, OKX`:`Stand ${fmtT(S.loadedAt)} · Quelle: CoinGecko`):`Stand ${fmtT(S.loadedAt)} · Kurse: CoinGecko · Börsen: OKX, Binance, Hyperliquid${S.tab==="trend"?" · Trend: CoinGecko":""}`);
   if(sp){sp.draw();return}
   $("rank").value=S.rank;
   arrows("th[data-sort]","data-sort",S.tf,S.dir);
@@ -908,12 +921,12 @@ function showIndex(){
     return`<tr><td class="l coin" style="font-family:var(--f-body)">${esc(name)}</td><td class="l"><a class="ext" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">${esc(sym.split(":").pop())}</a></td><td class="l">${toks.length?toks.map(t=>`<span class="coinpill">🪙 ${esc(t.sym)} · ${esc(t.issuer)}</span>`).join(""):'<span class="flat">–</span>'}</td></tr>`}).join("");
 }
 async function loadWorld(){try{const r=await fetch("data/world.json?t="+Date.now());if(!r.ok)throw 0;const j=await r.json();
-  $("worldBody").innerHTML=j.items.map(w=>`<tr><td class="l"><a class="ext" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(w.tv)}" target="_blank" rel="noopener">${esc(w.n)}</a></td><td class="l" style="font-family:var(--f-body);color:var(--muted)">${esc(w.r)}</td><td>${w.p!=null?w.p.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}):"–"}</td><td>${pct(w.d)}</td><td>${pct(w.w)}</td><td>${pct(w.m)}</td><td class="flat">${new Date(w.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</td></tr>`).join("")}
+  stamp("stWorld",`Stand ${fmtT(j.updated)} · Quelle: Yahoo Finance`);$("worldBody").innerHTML=j.items.map(w=>`<tr><td class="l"><a class="ext" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(w.tv)}" target="_blank" rel="noopener">${esc(w.n)}</a></td><td class="l" style="font-family:var(--f-body);color:var(--muted)">${esc(w.r)}</td><td>${w.p!=null?w.p.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}):"–"}</td><td>${pct(w.d)}</td><td>${pct(w.w)}</td><td>${pct(w.m)}</td><td class="flat">${new Date(w.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</td></tr>`).join("")}
   catch(e){$("worldBody").innerHTML='<tr><td colspan="7" class="empty">Noch keine Daten. Sie kommen mit dem nächsten automatischen Kurs-Lauf.</td></tr>'}}
 let STK=null,stkLoading=false;
 async function loadStocks(){if(stkLoading)return;stkLoading=true;
   try{const r=await fetch("data/stocks.json?t="+Date.now());if(r.ok)STK=await r.json()}catch(e){}
-  try{const r=await fetch("data/russell.json?t="+Date.now());if(r.ok){const j=await r.json();if(STK)Object.assign(STK.indices,j.indices);else STK=j}}catch(e){}
+  try{const r=await fetch("data/russell.json?t="+Date.now());if(r.ok){const j=await r.json();Object.values(j.indices).forEach(ix=>ix.updated=j.updated);if(STK)Object.assign(STK.indices,j.indices);else STK=j}}catch(e){}
   stkLoading=false;showIndex()}
 const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
 function ySym(y){const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+(m[2]==="HK"?m[1].replace(/^0+/,""):m[1].replace(/-/g,"_"));return y.replace(/-/g,".")}
@@ -927,7 +940,7 @@ function showStocks(k){const ix=STK.indices[k],R=stockRows(k),cur=ix.cur,f=S.stf
   if(!S.ssel)S.ssel=new Set();if(!S.sstars)S.sstars=new Set();
   document.querySelectorAll("[data-stf]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.stf===f));
   $("stkBar").hidden=false;$("idxTable").style.minWidth="900px";
-  $("stkStand").textContent=`Stand ${new Date(STK.updated).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr · Index: 1T ${b.d!=null?b.d.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %, 30T ${b.m!=null?b.m.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %`;
+  $("stkStand").textContent=`Stand ${new Date(ix.updated||STK.updated).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr · Index: 1T ${b.d!=null?b.d.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %, 30T ${b.m!=null?b.m.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %`;
   $("idxHead").innerHTML=`<tr><th class="l"></th><th class="l"></th><th class="l" data-ssort="n">Unternehmen</th><th data-ssort="p">Kurs ${cur}</th><th data-ssort="d">1T</th><th data-ssort="w">7T</th><th data-ssort="m">30T</th><th data-ssort="score">Score</th><th data-ssort="mc">Börsenwert</th><th data-ssort="v">Umsatz</th><th data-ssort="m">30 Tage</th><th class="l" data-ssort="tk">🪙 Token</th><th class="l" data-ssort="sec">Sektor</th></tr>`;
   arrows("#idxHead th[data-ssort]","data-ssort",f,S.sdir||-1);
   const LIM=300,more=R.length>LIM&&!S.showAll;const RR=more?R.slice(0,LIM):R;
@@ -974,7 +987,7 @@ function drawLiq(){const min=+$("liqMin").value;
 async function loadDeriv(){
   startLiq();if(Date.now()-derivLoaded<60000)return;derivLoaded=Date.now();
   loadVolOI();loadLiqMap(true);
-  try{const pi=await getJSON("https://fapi.binance.com/fapi/v1/premiumIndex");
+  try{const pi=await getJSON("https://fapi.binance.com/fapi/v1/premiumIndex");stamp("stFund",`Stand ${fmtT(Date.now())} · nächste Zahlung alle 8 Std.`);
     const rows=pi.filter(x=>x.symbol.endsWith("USDT")).map(x=>({s:x.symbol.slice(0,-4),f:+x.lastFundingRate*100}));
     const big=OI_COINS.map(s=>rows.find(r=>r.s===s)).filter(Boolean);
     const kn=(S.base||S.coins).filter(c=>c.mc>=100e6).map(c=>c.sym),known=new Set(kn.length?kn:rows.map(r=>r.s));
@@ -1033,11 +1046,12 @@ function drawWhales(){const min=+$("whMin").value,coin=$("whCoin").value,mkt=$("
   const L=wh.filter(ok);let b=0,s2=0;L.forEach(x=>x.buy?b+=x.val:s2+=x.val);
   $("whList").innerHTML=L.slice(0,80).map(x=>`<div><span class="${x.buy?"up":"down"}">${x.buy?"Kauf    ":"Verkauf "} ${esc(x.s)}</span><span>${fmtB(x.val)} $</span><span class="flat">${fmtP(x.px)}</span><span class="flat">${x.ex} ${x.mkt}</span><span class="flat">${new Date(x.t).toLocaleTimeString("de-DE")}</span></div>`).join("")||'<div class="flat">Noch keine Trades über dieser Größe seit dem Öffnen.</div>';
   const tot=b+s2;$("whSplit").style.width=(tot?b/tot*100:50)+"%";
-  $("whSum").innerHTML=`<span class="up">Käufe ${fmtB(b)} $</span> · <span class="down">Verkäufe ${fmtB(s2)} $</span>`;
+  $("whSum").innerHTML=(L.length?`letzter großer Trade ${new Date(L[0].t).toLocaleTimeString("de-DE")} · `:"")+`<span class="up">Käufe ${fmtB(b)} $</span> · <span class="down">Verkäufe ${fmtB(s2)} $</span>`;
 }
 async function loadFlows(){
   startWhales();loadDeriv();
   if(Date.now()-flowsLoaded<120000){renderFG();return}flowsLoaded=Date.now();loadFG();
+  stamp("stTiles",`Kacheln, Stablecoins, Blockchains: Stand ${fmtT(flowsLoaded)} · Coinbase-Premium live`);stamp("stStb",`Stand ${fmtT(flowsLoaded)} · Quelle: DefiLlama`);stamp("stChain",`Stand ${fmtT(flowsLoaded)} · Quelle: DefiLlama`);
   const [st,ch,fee,mem]=await Promise.allSettled([getJSON("https://stablecoins.llama.fi/stablecoins?includePrices=false"),getJSON("https://api.llama.fi/v2/chains"),
     getJSON("https://mempool.space/api/v1/fees/recommended"),getJSON("https://mempool.space/api/mempool")]);
   const chg=(a,b)=>b?(a/b-1)*100:null;
@@ -1058,7 +1072,8 @@ async function loadFlows(){
     draw(H.map(h=>{if(h.status!=="fulfilled"||h.value.length<8)return null;const a=h.value,n=a[a.length-1].tvl,o=a[a.length-8].tvl;return chg(n,o)}))}
   else $("chainBody").innerHTML='<tr><td colspan="4" class="empty">DefiLlama gerade nicht erreichbar.</td></tr>';
 }
-["whMin","whCoin","whMkt","whEx"].forEach(id=>$(id).onchange=drawWhales);
+["whCoin","whMkt","whEx"].forEach(id=>$(id).onchange=drawWhales);
+$("whMin").onchange=()=>{savePref("whMin",$("whMin").value);drawWhales()};
 $("whReset").onclick=()=>{wh=[];drawWhales()};
 
 // ---------- Eigener Stimmungsindex ----------
@@ -1070,7 +1085,7 @@ const FG_C=[
   sc:v=>clamp(50+v*5),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:1})+" %"},
  {k:"ls",side:"L",n:"Long/Short",w:1,info:"Verhältnis der Binance-Konten mit Long- zu Short-Positionen bei BTC. Viele Longs = Gier. 0,8 = 0 Punkte, 2,6 = 100 Punkte.",
   sc:v=>clamp((v-0.8)/1.8*100),fmt:v=>v.toLocaleString("de-DE",{maximumFractionDigits:2})},
- {k:"liq",side:"L",n:"Liquidationen",w:0.5,info:"Anteil liquidierter Shorts an allen Liquidationen der großen Coins (BTC, ETH, SOL, XRP, BNB, DOGE) seit dem Öffnen dieser Seite. Viele Short-Liquidationen = Kurs steigt (Gier), viele Long-Liquidationen = Kurs fällt (Angst). Zählt ab 250 Tsd. $ Summe, nur für heute.",
+ {k:"liq",side:"L",n:"Liquidationen",w:0.5,info:"Anteil liquidierter Shorts an allen Liquidationen auf Binance Futures seit dem Öffnen dieser Seite. Viele Short-Liquidationen = Kurs steigt (Gier), viele Long-Liquidationen = Kurs fällt (Angst). Zählt ab 50 Tsd. $ Summe, nur für heute.",
   sc:v=>clamp(v),fmt:(v,x)=>x},
  {k:"rsi",side:"L",n:"RSI und Volatilität",w:1.5,info:"RSI(14) von Bitcoin im Tageschart (70 % Anteil) plus Schwankung der letzten 30 gegenüber 90 Tagen (30 %). Hoher RSI = Gier, stark steigende Schwankung = Angst.",
   sc:v=>v,fmt:(v,x)=>x},
@@ -1101,7 +1116,7 @@ async function loadFG(){
     fetch("data/macro.json?t="+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()})];
   const r=await Promise.allSettled(q),v=i=>r[i].status==="fulfilled"&&(i===9||Array.isArray(r[i].value))?r[i].value:null;
   FG={fb:v(0)||[],fe:v(1)||[],oiD:v(2)||[],oiH:v(3)||[],lsD:v(4)||[],lsH:v(5)||[],kl:v(6)||[],cb:v(7)||[],
-    st:(v(8)||[]).map(x=>[dkey(+x.date*1000),+(x.totalCirculatingUSD?.peggedUSD||x.totalCirculating?.peggedUSD||0)]).filter(x=>x[1]>0),mac:v(9)||{}};
+    at:Date.now(),st:(v(8)||[]).map(x=>[dkey(+x.date*1000),+(x.totalCirculatingUSD?.peggedUSD||x.totalCirculating?.peggedUSD||0)]).filter(x=>x[1]>0),mac:v(9)||{}};
   renderFG()}
 function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)-dayMs);
   // Funding
@@ -1113,8 +1128,8 @@ function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)
   // Long/Short
   const ls=today&&X.lsH.length?X.lsH[X.lsH.length-1]:X.lsD.find(x=>dkey(x.timestamp)===D);if(ls)out.ls={v:+ls.longShortRatio};
   // Liquidationen (nur heute)
-  if(today&&mjLong+mjShort>=25e4)out.liq={v:mjShort/(mjLong+mjShort)*100,x:`L ${fmtB(mjLong)} / S ${fmtB(mjShort)} $`};
-  else if(today&&mjLong+mjShort>0)out._liqWait=fmtB(mjLong+mjShort);
+  if(today&&liqLong+liqShort>=5e4)out.liq={v:liqShort/(liqLong+liqShort)*100,x:`L ${fmtB(liqLong)} / S ${fmtB(liqShort)} $`};
+  else if(today&&liqLong+liqShort>0)out._liqWait=fmtB(liqLong+liqShort);
   // RSI und Volatilität
   const cl=X.kl.filter(k=>dkey(k[0])<=D).map(k=>+k[4]);
   if(cl.length>40){const rs=rsi14(cl),ret=cl.slice(1).map((c,i)=>Math.log(c/cl[i])),v30=sd(ret.slice(-30)),v90=sd(ret.slice(-90));
@@ -1141,13 +1156,14 @@ function renderFG(){if(!FG)return;clearTimeout(fgT);
   const days=[...Array(8)].map((_,i)=>dkey(Date.now()-(7-i)*864e5));
   const res=days.map((d,i)=>fgDay(d,i===7)),T=res[7];
   const w7=res.slice(1).map(x=>x.idx).filter(x=>x!=null),avg=w7.length?Math.round(w7.reduce((a,b)=>a+b,0)/w7.length):null,y=res[6].idx;
-  const item=c=>{const o=T.comp[c.k];return`<button class="fgi${o?"":" na"}" data-fg="${c.k}"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">${ring(48,5,o?.s)}<text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)" font-family="var(--f-num)">${o?o.s:"–"}</text></svg><span><b>${c.n}</b><small>${o?(c.fmt(o.v,o.x)):c.k==="liq"&&T.comp._liqWait?`sammelt: ${T.comp._liqWait} von 250 Tsd. $`:c.k==="liq"?"wartet auf Daten":"keine Daten"}</small></span></button>`};
+  const item=c=>{const o=T.comp[c.k];return`<button class="fgi${o?"":" na"}" data-fg="${c.k}"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">${ring(48,5,o?.s)}<text x="24" y="29" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fg)" font-family="var(--f-num)">${o?o.s:"–"}</text></svg><span><b>${c.n}</b><small>${o?(c.fmt(o.v,o.x)):c.k==="liq"&&T.comp._liqWait?`sammelt: ${T.comp._liqWait} von 50 Tsd. $`:c.k==="liq"?"wartet auf Daten":"keine Daten"}</small></span></button>`};
   $("fgL").innerHTML='<span class="lab">Futures-Markt</span>'+FG_C.filter(c=>c.side==="L").map(item).join("");
   $("fgR").innerHTML='<span class="lab">Geldflüsse &amp; Makro</span>'+FG_C.filter(c=>c.side==="R").map(item).join("");
   $("fgRing").innerHTML=ring(210,14,T.idx)+`<text x="105" y="70" text-anchor="middle" font-size="12" fill="var(--muted)" letter-spacing="2" font-family="var(--f-body)">HEUTE</text>
     <text x="105" y="128" text-anchor="middle" font-size="62" font-weight="800" fill="${fgCol(T.idx)}" font-family="var(--f-body)">${T.idx??"–"}</text>
     <text x="105" y="156" text-anchor="middle" font-size="16" font-weight="700" fill="${fgCol(T.idx)}" font-family="var(--f-body)">${fgLab(T.idx)}</text>`;
-  $("fgSub").textContent=`7-Tage-Mittel ${avg??"–"} · gestern ${y??"–"} · ${T.n} von 10 Werten`;
+  $("fgSub").textContent=`7-Tage-Mittel ${avg??"–"} · gestern ${y??"–"} · ${T.n} von 10 Werten · Stand ${fmtT(Date.now())}`;
+  stamp("stFG",`Marktdaten: ${fmtT(FG.at)} · VIX, Dollar, ETF-Flows: ${fmtT(FG.mac.updated)}${(FG.mac.etf||[]).length?" (ETF bis "+new Date(FG.mac.etf[FG.mac.etf.length-1][0]).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+")":""}`);
   $("fgWeek").innerHTML=res.slice(1).map((x,i)=>`<span title="${x.n} von 10 Werten verfügbar">${x.idx??"–"}<i style="height:${Math.max(4,(x.idx||0)*0.4)}px;background:${fgCol(x.idx)}"></i>${new Date(days[i+1]).toLocaleDateString("de-DE",{weekday:"short"})}</span>`).join("");
   fgT=setTimeout(()=>{if(S.mode==="flows")renderFG()},15000)}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-fg]");if(!b)return;const c=FG_C.find(x=>x.k===b.dataset.fg);$("fgInfo").innerHTML=`<b>${c.n}:</b> ${c.info}`});
@@ -1196,19 +1212,26 @@ function drawLiqMap(){const c=$("lmCoin").value,d=LM.cache[c];if(!d)return;
   svg+=`<line x1="${x(price)}" x2="${x(price)}" y1="${top}" y2="${top+Hh}" stroke="var(--fg)" stroke-dasharray="5 4" stroke-width="1.5"/>`;
   const G=W<600?2:4;for(let g=0;g<=G;g++){const v=lo+(hi-lo)*g/G;svg+=`<text x="${Math.min(W-4,Math.max(4,x(v)))}" y="${top+Hh+20}" font-size="13" fill="var(--muted)" text-anchor="${g===0?"start":g===G?"end":"middle"}" font-family="var(--f-num)">${fmtP(v)}</text>`}
   svg+=`<text x="4" y="${top+12}" font-size="12" fill="var(--muted)" font-family="var(--f-num)">höchster Balken ≈ ${fmtB(mx)} $</text>`;
-  $("lmSvg").innerHTML=svg;LM.bins=bins;LM.lo=lo;LM.bw=bw;LM.N=N;
+  $("lmSvg").innerHTML=svg+'<g id="lmCross"></g>';LM.bins=bins;LM.lo=lo;LM.bw=bw;LM.N=N;LM.W=W;LM.top=top;LM.Hh=Hh;LM.mx=mx;if(LM.sel!=null&&LM.sel<N)lmCross(LM.sel);
   const big=s=>{const b=bins.filter(b=>b.side===s&&b.v>0).sort((a,b)=>b.v-a.v)[0];return b?`${fmtP(b.a+bw/2)} (≈ ${fmtB(b.v)} $)`:"–"};
   $("lmSum").innerHTML=`Kurs <b>${fmtP(price)}</b> · größter <span class="down">Long-Cluster</span> bei ${big(1)} · größter <span class="up">Short-Cluster</span> bei ${big(-1)} · im Bereich: Longs ≈ ${fmtB(totL)} $, Shorts ≈ ${fmtB(totS)} $`;
   $("lmState").textContent=`Stand ${new Date(d.t).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} · ${d.kl.length} Stunden ausgewertet`}
+function lmCross(i){const g=$("lmCross");if(!g||!LM.bins)return;const b=LM.bins[i],W=LM.W,N=LM.N,bx=i*W/N,cx=bx+W/N/2,top=LM.top,Hh=LM.Hh;
+  const lab=`${fmtP(b.a+LM.bw/2)}${b.v?" · "+fmtB(b.v)+" $":""}`,tw=lab.length*7.4+14,tx=Math.min(W-tw-2,Math.max(2,cx-tw/2));
+  g.innerHTML=`<rect x="${bx.toFixed(1)}" y="${top}" width="${(W/N).toFixed(1)}" height="${Hh}" fill="var(--fg)" opacity=".08"/>
+    <line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${top}" y2="${top+Hh}" stroke="var(--accent)" stroke-width="2"/>
+    <rect x="${tx.toFixed(1)}" y="${top+18}" width="${tw.toFixed(1)}" height="22" rx="5" fill="var(--accent)"/>
+    <text x="${(tx+tw/2).toFixed(1)}" y="${top+33}" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--accent-ink)" font-family="var(--f-num)">${lab}</text>`}
 function lmPoint(e){if(!LM.bins)return;const r=$("lmSvg").getBoundingClientRect(),cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
-  const i=Math.max(0,Math.min(LM.N-1,Math.floor(cx/r.width*LM.N))),b=LM.bins[i];
+  const i=Math.max(0,Math.min(LM.N-1,Math.floor(cx/r.width*LM.N))),b=LM.bins[i];LM.sel=i;lmCross(i);
   $("lmTip").innerHTML=b.v?`<b>${fmtP(b.a)} – ${fmtP(b.a+LM.bw)}</b> · <span class="${b.side>0?"down":"up"}">${b.side>0?"Long":"Short"}-Liquidationen ≈ ${fmtB(b.v)} $</span> (10×: ${fmtB(b.t[0])} · 25×: ${fmtB(b.t[1])} · 50–100×: ${fmtB(b.t[2])})`:`${fmtP(b.a)} – ${fmtP(b.a+LM.bw)}: kaum Liquidationen geschätzt`}
 ["mousemove","touchstart","touchmove"].forEach(ev=>$("lmSvg").addEventListener(ev,lmPoint,{passive:true}));
+$("lmSvg").addEventListener("mouseleave",()=>{LM.sel=null;const g=$("lmCross");if(g)g.innerHTML=""});
 $("lmCoin").onchange=()=>loadLiqMap();let lmRs;addEventListener("resize",()=>{clearTimeout(lmRs);lmRs=setTimeout(()=>{if(S.mode==="flows")drawLiqMap()},250)});$("lmRange").onchange=drawLiqMap;
 
 // ---------- Hyperliquid ----------
 let HL=null;
-function drawHL(){const b=$("hlBody");if(!b)return;if(!HL){b.innerHTML='<tr><td colspan="7" class="empty">Hyperliquid gerade nicht erreichbar.</td></tr>';return}
+function drawHL(){const b=$("hlBody");if(!b)return;stamp("stHL",HL?`Stand ${fmtT(Date.now())} · Quelle: Hyperliquid`:"");if(!HL){b.innerHTML='<tr><td colspan="7" class="empty">Hyperliquid gerade nicht erreichbar.</td></tr>';return}
   const L=HL.map(x=>({...x,oiu:+x.openInterest*+x.markPx,chg:+x.prevDayPx?(+x.markPx/+x.prevDayPx-1)*100:null,f8:+x.funding*800})).sort((a,b)=>b.oiu-a.oiu).slice(0,15);
   b.innerHTML=L.map(x=>`<tr><td class="l"><a class="ext" href="https://app.hyperliquid.xyz/trade/${encodeURIComponent(x.n)}" target="_blank" rel="noopener">${esc(x.n)}</a></td><td>${pct(x.chg)}</td><td>${fmtB(x.oiu)} $</td><td>${fmtB(+x.dayNtlVlm)} $</td><td>${pct(x.f8,false,4)}</td><td>${pct(+x.funding*100*24*365,false,1)}</td><td>${x.lev}×</td></tr>`).join("")}
 
@@ -1240,11 +1263,11 @@ async function loadVolOI(){
       by:{s:yS?+yS.turnover24h:null,f:yF?+yF.turnover24h:null,oi:yF?+yF.openInterestValue:null},
       hl:{s:null,f:hX?+hX.dayNtlVlm:null,oi:hX?+hX.openInterest*+hX.markPx:null},
       oiChg:oiNow&&oiOld?(oiNow/oiOld-1)*100:null}}),
-    st:{Binance:!!(bnS&&bnF),OKX:!!(okS&&okF),Bybit:!!(byS&&byF),Hyperliquid:!!HL}};
+    st:{Binance:!!(bnS&&bnF),OKX:!!(okS&&okF),Bybit:!!(byS&&byF),Hyperliquid:!!HL},at:Date.now()};
   drawVolOI()}
 function drawVolOI(){if(!VM)return;const all=$("vmEx").value==="all",keys=all?["bn","ok","by","hl"]:["bn"];
   const sum=(x,f)=>{let t=0,n=0;keys.forEach(k=>{const v=x[k][f];if(v!=null&&!isNaN(v)){t+=v;n++}});return n?t:null};
-  $("vmState").innerHTML=Object.entries(VM.st).filter(([k])=>all||k==="Binance").map(([k,v])=>`<span class="${v?"up":"down"}">${k} ${v?"✓":"✗"}</span>`).join(" · ");
+  $("vmState").innerHTML=`Stand ${fmtT(VM.at)} · `+Object.entries(VM.st).filter(([k])=>all||k==="Binance").map(([k,v])=>`<span class="${v?"up":"down"}">${k} ${v?"✓":"✗"}</span>`).join(" · ");
   $("vmBody").innerHTML=VM.coins.map(x=>{const s=sum(x,"s"),f=sum(x,"f"),oi=sum(x,"oi"),ratio=s&&f?f/s:null;
     const who=ratio==null?"–":ratio<3?'<span class="up">Spot-getrieben</span>':ratio>8?'<span class="down">Hebel-getrieben</span>':'<span class="flat">ausgewogen</span>';
     let sig="–";const p=x.chg,o=x.oiChg;if(p!=null&&o!=null){if(Math.abs(o)<1)sig='<span class="flat">OI kaum verändert</span>';
@@ -1275,7 +1298,9 @@ $("clearBtn").onclick=()=>{S.sel.clear();save();render()};
 $("copyBtn").onclick=async()=>{const ta=$("wl");try{await navigator.clipboard.writeText(ta.value);$("wlMsg").textContent="Kopiert"}catch(e){ta.focus();ta.select();$("wlMsg").textContent="Text markiert, jetzt kopieren"}};
 $("saveBtn").onclick=()=>{const v=$("wl").value;if(!v){$("wlMsg").textContent="Erst Coins auswählen";return}
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"text/plain"}));a.download="bayazit-watchlist-"+new Date().toISOString().slice(0,10)+".txt";document.body.appendChild(a);a.click();a.remove();$("wlMsg").textContent="Datei gespeichert"};
-$("liqMin").onchange=drawLiq;
+(()=>{const p=LS("bcsPrefs")||{};if(p.liqMin!=null)$("liqMin").value=p.liqMin;if(p.whMin!=null)$("whMin").value=p.whMin})();
+const savePref=(k,v)=>{const p=LS("bcsPrefs")||{};p[k]=v;LS("bcsPrefs",p)};
+$("liqMin").onchange=()=>{savePref("liqMin",$("liqMin").value);drawLiq()};
 $("refresh").onclick=()=>{derivLoaded=0;flowsLoaded=0;loadAll()};
 document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 document.querySelectorAll("[data-stf]").forEach(b=>b.onclick=()=>{S.stf=b.dataset.stf;S.sdir=-1;showIndex()});
