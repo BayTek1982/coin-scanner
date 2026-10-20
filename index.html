@@ -245,7 +245,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       <div class="tvbox" id="tvHeat" style="height:460px"></div>
       <div class="bar" id="stkBar"><span class="label">Sortieren</span><button class="chip" data-stf="d">1T</button><button class="chip" data-stf="w">7T</button><button class="chip" data-stf="m">30T</button><button class="chip" data-stf="score">Score</button><button class="chip" data-stf="mc">Börsenwert</button><span class="msg" id="stkStand"></span></div>
       <div class="tablebox"><table id="idxTable" style="min-width:520px"><thead id="idxHead"></thead><tbody id="idxBody"></tbody></table></div>
-      <p class="hint">🪙 zeigt, ob es die Aktie zusätzlich als Token auf Krypto-Börsen gibt (xStock, Ondo, Robinhood, bStocks). Score = Vorsprung (+) oder Rückstand (−) gegenüber dem eigenen Index über 7 und 30 Tage. Kurse werden automatisch etwa alle 30 Minuten aktualisiert (Quelle: Yahoo Finance, verzögert). Ein Tipp auf den Namen öffnet den Chart in TradingView. Ein Tipp auf eine Spaltenüberschrift sortiert, nochmal tippen dreht die Reihenfolge um.</p>
+      <p class="hint">🪙 zeigt, ob es die Aktie zusätzlich als echten Token auf Krypto-Börsen gibt (xStock, Ondo, Robinhood, bStocks). ⚡ OKX-Perp = auf OKX als Aktien-Perpetual handelbar: ein Hebel-Kontrakt rund um die Uhr, kein Token, mit Funding und Liquidationsrisiko. Ein Tipp darauf öffnet ihn bei OKX. Score = Vorsprung (+) oder Rückstand (−) gegenüber dem eigenen Index über 7 und 30 Tage. Kurse werden automatisch etwa alle 30 Minuten aktualisiert (Quelle: Yahoo Finance, verzögert). Ein Tipp auf den Namen öffnet den Chart in TradingView. Ein Tipp auf eine Spaltenüberschrift sortiert, nochmal tippen dreht die Reihenfolge um.</p>
     </section>
     <section class="panel">
       <h2>TradingView-Watchlist Aktien</h2>
@@ -878,7 +878,13 @@ const WORLD=[
 ];
 
 let tokMap=null;
+// Aktien-Perpetuals auf OKX (instCategory 3 = Aktien)
+async function loadOkxStocks(){if(S.okxStk)return;try{const j=await getJSON("https://www.okx.com/api/v5/public/instruments?instType=SWAP");
+  const m=new Map();(j.data||[]).forEach(x=>{if(String(x.instCategory)==="3"&&x.state==="live"){const b=x.instId.split("-")[0].toUpperCase();m.set(b,{id:x.instId,lev:x.lever})}});S.okxStk=m}catch(e){S.okxStk=new Map()}}
+function okxPerp(c,cur){const m=S.okxStk;if(!m||!m.size)return null;const y=c.y.toUpperCase(),base=y.split(".")[0].replace(/-/g,""),first=String(c.n).split(/[\s.,&]+/)[0].toUpperCase();
+  return(cur==="$"&&(m.get(y.replace(/-/g,""))||m.get(y.replace(/-/g,"."))))||m.get(base)||(first.length>=4?m.get(first):null)||null}
 async function ensureTokens(){
+  await loadOkxStocks();
   if(!S.tokenCoins.length){try{const res=await Promise.allSettled(["tokenized-stock","xstocks-ecosystem"].map(c=>getJSON(MK(c))));
     const seen=new Set(),out=[];res.forEach(r=>{if(r.status==="fulfilled"&&Array.isArray(r.value))r.value.forEach(c=>{if(!seen.has(c.id)&&(c.market_cap||c.total_volume)>0){seen.add(c.id);out.push(c)}})});
     S.tokenCoins=enrich(out.map(mapCoin))}catch(e){}}
@@ -933,7 +939,7 @@ function ySym(y){const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return 
 function stockRows(k){const ix=STK?.indices?.[k];if(!ix)return null;const b=ix.bench||{};
   const list=ix.items.map(c=>Object.assign({},c,{score:c.w!=null&&c.m!=null&&b.w!=null?0.5*(c.w-b.w)+0.5*(c.m-b.m):null}));
   const f=S.stf||"score",dir=S.sdir||-1;
-  if(f==="tk")list.forEach(c=>{c.tk=tokensFor(c.n,ix.cur==="$"?c.y.replace(/-/g,"."):ySym(c.y)).length});
+  if(f==="tk")list.forEach(c=>{c.tk=tokensFor(c.n,ix.cur==="$"?c.y.replace(/-/g,"."):ySym(c.y)).length+(okxPerp(c,ix.cur)?1:0)});
   if(f==="n"||f==="sec")return list.sort((a,c)=>{const r=String(a[f]||"").localeCompare(String(c[f]||""),"de");return dir===-1?r:-r});
   return list.sort((a,c)=>{const x=a[f]??-1e12,y=c[f]??-1e12;return dir===-1?y-x:x-y})}
 function showStocks(k){const ix=STK.indices[k],R=stockRows(k),cur=ix.cur,f=S.stf||"score",b=ix.bench||{};
@@ -941,7 +947,7 @@ function showStocks(k){const ix=STK.indices[k],R=stockRows(k),cur=ix.cur,f=S.stf
   document.querySelectorAll("[data-stf]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.stf===f));
   $("stkBar").hidden=false;$("idxTable").style.minWidth="900px";
   $("stkStand").textContent=`Stand ${new Date(ix.updated||STK.updated).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr · Index: 1T ${b.d!=null?b.d.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %, 30T ${b.m!=null?b.m.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %`;
-  $("idxHead").innerHTML=`<tr><th class="l"></th><th class="l"></th><th class="l" data-ssort="n">Unternehmen</th><th data-ssort="p">Kurs ${cur}</th><th data-ssort="d">1T</th><th data-ssort="w">7T</th><th data-ssort="m">30T</th><th data-ssort="score">Score</th><th data-ssort="mc">Börsenwert</th><th data-ssort="v">Umsatz</th><th data-ssort="m">30 Tage</th><th class="l" data-ssort="tk">🪙 Token</th><th class="l" data-ssort="sec">Sektor</th></tr>`;
+  $("idxHead").innerHTML=`<tr><th class="l"></th><th class="l"></th><th class="l" data-ssort="n">Unternehmen</th><th data-ssort="p">Kurs ${cur}</th><th data-ssort="d">1T</th><th data-ssort="w">7T</th><th data-ssort="m">30T</th><th data-ssort="score">Score</th><th data-ssort="mc">Börsenwert</th><th data-ssort="v">Umsatz</th><th data-ssort="m">30 Tage</th><th class="l" data-ssort="tk">🪙 Token / ⚡ Perp</th><th class="l" data-ssort="sec">Sektor</th></tr>`;
   arrows("#idxHead th[data-ssort]","data-ssort",f,S.sdir||-1);
   const LIM=300,more=R.length>LIM&&!S.showAll;const RR=more?R.slice(0,LIM):R;
   $("idxBody").innerHTML=RR.map(c=>{const tv=ySym(c.y),toks=tokensFor(c.n,cur==="$"?c.y.replace(/-/g,"."):tv);const id=k+":"+c.y;
@@ -950,7 +956,7 @@ function showStocks(k){const ix=STK.indices[k],R=stockRows(k),cur=ix.cur,f=S.stf
     <td class="l coin"><a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tv)}" target="_blank" rel="noopener">${esc(c.n)}</a><span>${esc(tv.split(":").pop())}</span></td>
     <td>${fmtP(c.p)}</td><td class="${f==="d"?"sel":""}">${pct(c.d)}</td><td class="${f==="w"?"sel":""}">${pct(c.w)}</td><td class="${f==="m"?"sel":""}">${pct(c.m)}</td>
     <td class="${f==="score"?"sel":""}">${pct(c.score,true)}</td><td>${c.mc?fmtB(c.mc):"–"}</td><td>${c.v?fmtB(c.v):"–"}</td><td>${spark(c.spark,(c.m??0)>=0)}</td>
-    <td class="l">${toks.length?toks.map(t=>`<span class="coinpill">🪙 ${esc(t.sym)} · ${esc(t.issuer)}</span>`).join(""):'<span class="flat">–</span>'}</td>
+    <td class="l">${(()=>{const op=okxPerp(c,cur),h=toks.map(t=>`<span class="coinpill">🪙 ${esc(t.sym)} · ${esc(t.issuer)}</span>`).join("")+(op?`<a class="coinpill" style="text-decoration:none" href="https://www.okx.com/trade-swap/${esc(op.id.toLowerCase())}" target="_blank" rel="noopener" title="Aktien-Perpetual auf OKX: Hebel-Kontrakt, kein Token${op.lev?" · bis "+esc(op.lev)+"×":""}">⚡ OKX-Perp</a>`:"");return h||'<span class="flat">–</span>'})()}</td>
     <td class="l" style="font-family:var(--f-body);color:var(--muted)">${esc(c.sec||"")}</td></tr>`}).join("")+(more?`<tr><td colspan="13" class="empty">Gezeigt werden die ersten ${LIM} von ${R.length} nach deiner Sortierung. <button class="btn ghost" id="showAll">Alle ${R.length} anzeigen</button></td></tr>`:"")||'<tr><td colspan="13" class="empty">Für diesen Index liegen noch keine Kurse vor.</td></tr>';
   const sa=document.getElementById("showAll");if(sa)sa.onclick=()=>{S.showAll=true;showIndex()};
   updateSWL()}
