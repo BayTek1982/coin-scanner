@@ -350,6 +350,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
       <div class="bar">
         <span class="label">Coin</span><select id="lmCoin" aria-label="Coin"><option>BTC</option><option>ETH</option><option>SOL</option><option>XRP</option><option>DOGE</option><option>BNB</option></select>
         <span class="label">Bereich</span><select id="lmRange" aria-label="Bereich"><option value="4">± 4 %</option><option value="8" selected>± 8 %</option><option value="15">± 15 %</option></select>
+        <button class="btn ghost" id="lmRefresh" style="padding:6px 12px">Aktualisieren</button>
         <span class="msg" id="lmState">Lädt …</span>
       </div>
       <div class="lmlegend"><span><i style="background:#3b82f6"></i>niedriger Hebel (10×)</span><span><i style="background:#a78bfa"></i>mittlerer Hebel (25×)</span><span><i style="background:#fb923c"></i>hoher Hebel (50–100×)</span><span><i style="background:var(--down)"></i>Summe Longs</span><span><i style="background:var(--up)"></i>Summe Shorts</span></div>
@@ -1233,7 +1234,8 @@ function lmPoint(e){if(!LM.bins)return;const r=$("lmSvg").getBoundingClientRect(
   $("lmTip").innerHTML=b.v?`<b>${fmtP(b.a)} – ${fmtP(b.a+LM.bw)}</b> · <span class="${b.side>0?"down":"up"}">${b.side>0?"Long":"Short"}-Liquidationen ≈ ${fmtB(b.v)} $</span> (10×: ${fmtB(b.t[0])} · 25×: ${fmtB(b.t[1])} · 50–100×: ${fmtB(b.t[2])})`:`${fmtP(b.a)} – ${fmtP(b.a+LM.bw)}: kaum Liquidationen geschätzt`}
 ["mousemove","touchstart","touchmove"].forEach(ev=>$("lmSvg").addEventListener(ev,lmPoint,{passive:true}));
 $("lmSvg").addEventListener("mouseleave",()=>{LM.sel=null;const g=$("lmCross");if(g)g.innerHTML=""});
-$("lmCoin").onchange=()=>loadLiqMap();let lmRs;addEventListener("resize",()=>{clearTimeout(lmRs);lmRs=setTimeout(()=>{if(S.mode==="flows")drawLiqMap()},250)});$("lmRange").onchange=drawLiqMap;
+$("lmCoin").onchange=()=>loadLiqMap();
+$("lmRefresh").onclick=async()=>{const b=$("lmRefresh");b.disabled=true;b.textContent="Lädt …";await loadLiqMap(true);b.disabled=false;b.textContent="Aktualisieren"};let lmRs;addEventListener("resize",()=>{clearTimeout(lmRs);lmRs=setTimeout(()=>{if(S.mode==="flows")drawLiqMap()},250)});$("lmRange").onchange=drawLiqMap;
 
 // ---------- Hyperliquid ----------
 let HL=null;
