@@ -399,10 +399,10 @@ def perps():
             sym = str(x.get("symbol", ""))
             raw = sym.split("-")[0].upper()
             b = norm(raw)
-            if raw != b and b:  # nur Aktien-Kennung NCSK…2USD
+            if raw.startswith("NCSK") and b:  # nur Aktien-Kennung NCSK…2USD
                 res["bingx"][b] = sym
             if b in stockset or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
-                odd.append(sym + ("" if raw != b else " (Krypto)"))
+                odd.append(sym + ("" if raw.startswith("NCSK") else " (Krypto)"))
         print("BingX Kontrakte:", len(data), "als Aktie erkannt:", len(res["bingx"]), "Treffer:", odd[:40])
     except Exception as e:
         print("BingX fehlgeschlagen:", repr(e)[:200])
@@ -414,7 +414,7 @@ def perps():
             sym = str(x.get("symbol", ""))
             raw = str(x.get("base") or re.sub(r"USDT$", "", sym)).upper()
             b = norm(raw)
-            if b in res["okx"] or b in res["bingx"]:
+            if b in res["okx"] or (b in res["bingx"] and b not in crypto):
                 res["bitunix"][b] = sym
             if b in stockset or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
                 odd.append(sym + ("" if b in res["bitunix"] else " (Krypto)"))
