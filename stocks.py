@@ -375,9 +375,21 @@ def perps():
         b = re.sub(r"\d*USDT?$", "", b) if len(b) > 5 else b
         return b
 
+    # Nur Kürzel zulassen, die zu einer Aktie aus den Index-Listen gehören (oder OKX als Aktie führt)
+    stockset = set(res["okx"])
+    st = load_json(OUT, {})
+    for ix in (st.get("indices") or {}).values():
+        for it in ix.get("items", []):
+            y = str(it.get("y", "")).upper()
+            if "." not in y:
+                stockset.add(y.replace("-", ""))
+            first = re.split(r"[\s.,&]+", str(it.get("n", "")))[0].upper()
+            if len(first) >= 4:
+                stockset.add(first)
+
     def keep(b, raw):
         stocky = raw != b or bool(re.search(r"(STOCK|XSTOCK)$", raw))
-        return b and (stocky or b not in crypto)
+        return b in stockset and (stocky or b not in crypto)
 
     try:
         j = requests.get("https://open-api.bingx.com/openApi/swap/v2/quote/contracts", headers=ua, timeout=30).json()
@@ -389,9 +401,9 @@ def perps():
             b = norm(raw)
             if keep(b, raw):
                 res["bingx"][b] = sym
-            if raw != b or len(raw) > 6 or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
-                odd.append(sym)
-        print("BingX Kontrakte:", len(data), "nach Filter:", len(res["bingx"]), "auffällige:", odd[:25])
+            if b in stockset or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
+                odd.append(sym + ("" if keep(b, raw) else " (Krypto?)"))
+        print("BingX Kontrakte:", len(data), "als Aktie erkannt:", len(res["bingx"]), "Treffer:", odd[:40])
     except Exception as e:
         print("BingX fehlgeschlagen:", repr(e)[:200])
     try:
@@ -404,13 +416,13 @@ def perps():
             b = norm(raw)
             if keep(b, raw):
                 res["bitunix"][b] = sym
-            if raw != b or len(raw) > 6 or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
-                odd.append(sym)
-        print("Bitunix Kontrakte:", len(data), "nach Filter:", len(res["bitunix"]), "auffällige:", odd[:25])
+            if b in stockset or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
+                odd.append(sym + ("" if keep(b, raw) else " (Krypto?)"))
+        print("Bitunix Kontrakte:", len(data), "als Aktie erkannt:", len(res["bitunix"]), "Treffer:", odd[:40])
     except Exception as e:
         print("Bitunix fehlgeschlagen:", repr(e)[:200])
     old = load_json("data/perps.json", {})
-    for k in ("okx", "bingx", "bitunix"):
+    for k in ("okx",):
         if not res[k] and old.get(k):
             res[k] = old[k]
     os.makedirs("data", exist_ok=True)
