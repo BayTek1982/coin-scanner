@@ -378,11 +378,14 @@ def perps():
     # Nur Kürzel zulassen, die zu einer Aktie aus den Index-Listen gehören (oder OKX als Aktie führt)
     stockset = set(res["okx"])
     st = load_json(OUT, {})
+    uspx = {}  # US-Aktienkurse für den Preisvergleich
     for ix in (st.get("indices") or {}).values():
         for it in ix.get("items", []):
             y = str(it.get("y", "")).upper()
             if "." not in y:
                 stockset.add(y.replace("-", ""))
+                if it.get("p"):
+                    uspx[y.replace("-", "")] = float(it["p"])
             first = re.split(r"[\s.,&]+", str(it.get("n", "")))[0].upper()
             if len(first) >= 4:
                 stockset.add(first)
@@ -408,6 +411,21 @@ def perps():
         print("BingX Kontrakte:", len(data), "als Aktie erkannt:", len(res["bingx"]), "Treffer:", odd[:40])
     except Exception as e:
         print("BingX fehlgeschlagen:", repr(e)[:200])
+    bxpx = {}
+    try:
+        t = requests.get("https://fapi.bitunix.com/api/v1/futures/market/tickers", headers=ua, timeout=30).json()
+        for x in (t.get("data") or []) if isinstance(t, dict) else []:
+            try:
+                bxpx[str(x.get("symbol", "")).upper()] = float(x.get("lastPrice") or x.get("last") or x.get("markPrice") or 0)
+            except (TypeError, ValueError):
+                pass
+    except Exception as e:
+        print("Bitunix-Preise fehlgeschlagen:", repr(e)[:150])
+
+    def same_price(sym, b):
+        a, ref = bxpx.get(sym.upper()), uspx.get(b)
+        return bool(a and ref and 0.8 < a / ref < 1.25)
+
     try:
         j = requests.get("https://fapi.bitunix.com/api/v1/futures/market/trading_pairs", headers=ua, timeout=30).json()
         data = j.get("data", []) if isinstance(j, dict) else []
@@ -416,7 +434,8 @@ def perps():
             sym = str(x.get("symbol", ""))
             raw = str(x.get("base") or re.sub(r"USDT$", "", sym)).upper()
             b = norm(raw)
-            if b in res["okx"] or (b in res["bingx"] and b not in crypto):
+            known = b in res["okx"] or b in res["bingx"]
+            if known and (b not in crypto or same_price(sym, b)):
                 res["bitunix"][b] = sym
             if b in stockset or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
                 odd.append(sym + ("" if b in res["bitunix"] else " (Krypto)"))
