@@ -345,9 +345,82 @@ def macro():
         json.dump(res, f, separators=(",", ":"))
 
 
+def perps():
+    """Aktien-Perpetuals auf OKX, BingX und Bitunix (für das ⚡ in den Aktien-Tabellen)."""
+    import re
+    ua = {"User-Agent": "Mozilla/5.0"}
+    res = {"updated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "okx": {}, "bingx": {}, "bitunix": {}}
+    crypto = set()
+    # OKX kennzeichnet Aktien sauber (instCategory 3)
+    try:
+        j = requests.get("https://www.okx.com/api/v5/public/instruments?instType=SWAP", headers=ua, timeout=30).json()
+        for x in j.get("data", []):
+            b = x["instId"].split("-")[0].upper()
+            if str(x.get("instCategory")) == "3":
+                res["okx"][b] = x["instId"]
+            else:
+                crypto.add(b)
+        print("OKX Aktien-Perps:", len(res["okx"]), "z. B.", list(res["okx"].items())[:8])
+    except Exception as e:
+        print("OKX fehlgeschlagen:", repr(e)[:200])
+    try:  # Krypto-Kürzel von Binance zum Aussortieren
+        j = requests.get("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=250&page=1", headers=ua, timeout=30).json()
+        crypto |= {str(c.get("symbol", "")).upper() for c in j if isinstance(c, dict)}
+    except Exception:
+        pass
+
+    def norm(b):
+        b = b.upper()
+        b = re.sub(r"^(NCSK|NCSI|NCCO|NCFX|NCS)", "", b)
+        b = re.sub(r"\d*USDT?$", "", b) if len(b) > 5 else b
+        return b
+
+    def keep(b, raw):
+        stocky = raw != b or bool(re.search(r"(STOCK|XSTOCK)$", raw))
+        return b and (stocky or b not in crypto)
+
+    try:
+        j = requests.get("https://open-api.bingx.com/openApi/swap/v2/quote/contracts", headers=ua, timeout=30).json()
+        data = j.get("data", []) if isinstance(j, dict) else []
+        odd = []
+        for x in data:
+            sym = str(x.get("symbol", ""))
+            raw = sym.split("-")[0].upper()
+            b = norm(raw)
+            if keep(b, raw):
+                res["bingx"][b] = sym
+            if raw != b or len(raw) > 6 or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
+                odd.append(sym)
+        print("BingX Kontrakte:", len(data), "nach Filter:", len(res["bingx"]), "auffällige:", odd[:25])
+    except Exception as e:
+        print("BingX fehlgeschlagen:", repr(e)[:200])
+    try:
+        j = requests.get("https://fapi.bitunix.com/api/v1/futures/market/trading_pairs", headers=ua, timeout=30).json()
+        data = j.get("data", []) if isinstance(j, dict) else []
+        odd = []
+        for x in data:
+            sym = str(x.get("symbol", ""))
+            raw = str(x.get("base") or re.sub(r"USDT$", "", sym)).upper()
+            b = norm(raw)
+            if keep(b, raw):
+                res["bitunix"][b] = sym
+            if raw != b or len(raw) > 6 or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
+                odd.append(sym)
+        print("Bitunix Kontrakte:", len(data), "nach Filter:", len(res["bitunix"]), "auffällige:", odd[:25])
+    except Exception as e:
+        print("Bitunix fehlgeschlagen:", repr(e)[:200])
+    old = load_json("data/perps.json", {})
+    for k in ("okx", "bingx", "bitunix"):
+        if not res[k] and old.get(k):
+            res[k] = old[k]
+    os.makedirs("data", exist_ok=True)
+    with open("data/perps.json", "w", encoding="utf-8") as f:
+        json.dump(res, f, separators=(",", ":"))
+
+
 if __name__ == "__main__":
     main()
-    for fn in (world, macro):
+    for fn in (world, macro, perps):
         try:
             fn()
         except Exception as e:
