@@ -401,6 +401,8 @@ def perps():
             b = norm(raw)
             if raw.startswith("NCSK") and b:  # nur Aktien-Kennung NCSK…2USD
                 res["bingx"][b] = sym
+            elif not raw.startswith("NC"):
+                crypto.add(raw)  # BingX-Krypto-Kürzel als Filter für Bitunix
             if b in stockset or any(t in raw for t in ("TSLA", "NVDA", "AAPL", "SOFTBANK", "SFTB")):
                 odd.append(sym + ("" if raw.startswith("NCSK") else " (Krypto)"))
         print("BingX Kontrakte:", len(data), "als Aktie erkannt:", len(res["bingx"]), "Treffer:", odd[:40])
