@@ -1331,6 +1331,14 @@ $("sCopy").onclick=async()=>{const ta=$("swl");try{await navigator.clipboard.wri
 $("sSave").onclick=()=>{const v=$("swl").value;if(!v){$("sMsg").textContent="Erst Aktien auswählen";return}const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"text/plain"}));a.download="bayazit-aktien-"+new Date().toISOString().slice(0,10)+".txt";document.body.appendChild(a);a.click();a.remove();$("sMsg").textContent="Datei gespeichert"};
 (()=>{const s=LS("bcsStk");S.ssel=new Set(s?.sel||[]);S.sstars=new Set(s?.stars||[])})();
 fillFilter();render();setMode(S.mode||"krypto");loadAll();
+// ---------- TradingView-Links am Android-Handy direkt in der App öffnen ----------
+if(/Android/i.test(navigator.userAgent))document.addEventListener("click",e=>{
+  const a=e.target.closest&&e.target.closest('a[href*="tradingview.com/"]');if(!a||e.defaultPrevented)return;
+  let u;try{u=new URL(a.href)}catch(_){return}
+  if(!/(^|\.)tradingview\.com$/.test(u.hostname)||u.pathname.startsWith("/external-embedding"))return;
+  e.preventDefault();
+  location.href="intent://"+u.host+u.pathname+u.search+u.hash.replace("#","%23")+"#Intent;scheme=https;package=com.tradingview.tradingviewapp;S.browser_fallback_url="+encodeURIComponent(u.href)+";end";
+},true);
 </script>
 </body>
 </html>
