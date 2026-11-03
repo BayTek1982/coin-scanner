@@ -158,7 +158,8 @@ def compute(rows):
             s -= P[i - L]
         xs.append((math.log(p) - math.log(s / L)) * (i + 1) ** A if i >= L - 1 else None)
     hist = []
-    for i in range(L - 1, len(P)):
+    # erstes Jahr nach Beginn der Berechnung auslassen: zu wenig Vergleichswerte, die Werte springen dort zwischen 0 und 1
+    for i in range(L - 1 + 365, len(P)):
         win = [x for x in xs[max(L - 1, i - W + 1):i + 1]]
         mn, mx = min(win), max(win)
         r = (xs[i] - mn) / (mx - mn) if mx > mn else 0.5
