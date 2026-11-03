@@ -100,18 +100,43 @@ def okx(sym):
     return out
 
 
-def merge(cm, ex):
-    """Coin Metrics nur verwenden, wenn die Kurse in der Überlappung zur Börse passen (gleicher Coin)."""
-    if cm and ex:
-        both = [d for d in ex if d in cm][-60:]
-        if both:
-            dev = sorted(abs(cm[d] / ex[d] - 1) for d in both)[len(both) // 2]
-            if dev > 0.05:
-                cm = {}
-        else:
-            cm = {} if min(ex) - max(cm) > 3 else cm
-    allp = dict(cm)
-    allp.update(ex)
+def coingecko(cid):
+    """Tageskurse des letzten Jahres (Ersatz, wenn keine Börse aktuelle Kerzen liefert)."""
+    time.sleep(8)
+    r = get(f"https://api.coingecko.com/api/v3/coins/{cid}/market_chart?vs_currency=usd&days=365&interval=daily", tries=2)
+    if not r:
+        return {}
+    out = {}
+    for t, p in r.json().get("prices") or []:
+        if p:
+            out[day(t)] = float(p)
+    return out
+
+
+TODAY = day(time.time() * 1000)
+
+
+def fresh(d):
+    return bool(d) and max(d) >= TODAY - 3
+
+
+def merge(*sources):
+    """Quellen nach Vorrang (wichtigste zuerst) zusammenführen. Eine Quelle wird nur genommen,
+    wenn ihre Kurse in der Überlappung zu den bisherigen passen (gleicher Coin, kein falscher Ticker)."""
+    allp = {}
+    for src in sources:
+        if not src:
+            continue
+        if allp:
+            both = [d for d in src if d in allp][-60:]
+            if both:
+                dev = sorted(abs(src[d] / allp[d] - 1) for d in both)[len(both) // 2]
+                if dev > 0.05:
+                    continue
+            elif min(abs(d - e) for d in (min(src), max(src)) for e in (min(allp), max(allp))) > 3:
+                continue
+        for d, p in src.items():
+            allp.setdefault(d, p)
     if not allp:
         return []
     days = sorted(allp)
@@ -174,16 +199,22 @@ def main():
            "model": {"L": L, "a": A, "w": W}, "coins": {}}
     for c in coins:
         sym = c["sym"]
-        ex = binance(sym)
-        src = "Binance"
-        if len(ex) < 30:
-            ex, src = okx(sym), "OKX"
-        cm = coinmetrics(sym) if ex else {}
-        rows = merge(cm, ex)
+        bn = binance(sym)
+        ox = {} if fresh(bn) else okx(sym)
+        ex, src = (bn, "Binance") if fresh(bn) else (ox, "OKX") if fresh(ox) else ({}, "")
+        cm = coinmetrics(sym)
+        cg = {} if ex else coingecko(c["id"])
+        if not ex and fresh(cg):
+            src = "CoinGecko"
+        stale = bn if len(bn) >= len(ox) else ox  # veraltete Börsenkerzen (z. B. nach Delisting) nur als alte Historie
+        rows = merge(ex, cg, stale, cm)
+        if not rows or rows[-1][0] < TODAY - 3:
+            print(f"{sym}: keine aktuellen Kurse (Börse delistet?)")
+            continue
         if len(rows) < MIN_DAYS:
             print(f"{sym}: zu wenig Historie ({len(rows)} Tage)")
             continue
-        if cm and rows[0][0] < min(ex):
+        if cm and rows[0][0] < min(ex or cg or {TODAY: 0}):
             src = "Coin Metrics + " + src
         hist, live = compute(rows)
         live.update({"id": c["id"], "name": c["name"], "src": src, "risk": round(hist[-1][2], 4)})
@@ -194,6 +225,9 @@ def main():
     if not out["coins"]:
         print("Keine Daten – Datei bleibt unverändert")
         sys.exit(1)
+    for fn in os.listdir("data/risk"):
+        if fn.endswith(".json") and fn[:-5] not in out["coins"]:
+            os.remove(os.path.join("data/risk", fn))
     with open("data/risk.json", "w") as f:
         json.dump(out, f, separators=(",", ":"))
 

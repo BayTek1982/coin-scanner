@@ -122,7 +122,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
 .rkt{width:100%}.rkt td{padding:3px 8px;text-align:right}.rkt td:first-child,.rkt th:first-child{text-align:left}.rkt tr.cur td{font-weight:800;background:var(--panel);border-top:2px solid var(--fg);border-bottom:2px solid var(--fg)}
 .rkt thead th{position:sticky;top:0;background:var(--panel)}
 .rkbands{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;height:150px;align-items:end;margin-top:6px}
-.rkb{display:grid;grid-template-rows:auto 1fr auto;height:100%;text-align:center;font:.66rem var(--f-num);color:var(--muted)}.rkb i{align-self:end;border-radius:3px 3px 0 0;display:block}
+.rkb{display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-align:center;font:.66rem var(--f-num);color:var(--muted);min-width:0}.rkb span{margin-bottom:3px;white-space:nowrap}.rkb i{border-radius:3px 3px 0 0;display:block}.rkb small{margin-top:3px;font-size:.58rem;white-space:nowrap;overflow:hidden}
 .rkb.on{color:var(--fg);font-weight:700}.rkb.on i{outline:2px solid var(--fg)}
 .bubtile{cursor:pointer}.bubtile:hover{border-color:var(--accent)}
 #rkCv{width:100%;height:min(55vh,460px);display:block;touch-action:pan-y;cursor:crosshair}
@@ -192,7 +192,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <span class="label">Chain</span>
     <select id="chainSel" aria-label="Chain"><option value="">Alle Chains</option></select>
     <span class="label" style="margin-left:4px">Sortieren</span>
-    <button class="chip" data-tf="h">1H</button><button class="chip" data-tf="d">24H</button><button class="chip" data-tf="w">7T</button><button class="chip" data-tf="m">30T</button><button class="chip" data-tf="score">Score</button>
+    <button class="chip" data-tf="h">1H</button><button class="chip" data-tf="d">24H</button><button class="chip" data-tf="w">7T</button><button class="chip" data-tf="m">30T</button><button class="chip" data-tf="score">Score</button><button class="chip" data-tf="rk">Risiko</button><button class="chip" data-tf="bub">Blase</button>
   </div>
 
   <section class="panel" id="eigenPanel" hidden>
@@ -215,9 +215,9 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <table>
       <thead><tr>
         <th class="l"></th><th class="l"><input type="checkbox" id="chkAll" aria-label="Alle sichtbaren auswählen"></th>
-        <th class="l" data-sort="r">#</th><th class="l" data-sort="name">Coin</th><th data-sort="p">Preis $</th>
+        <th class="l" data-sort="r">#</th><th class="l" data-sort="name">Coin</th><th data-sort="p">Preis $</th><th data-sort="rk" title="Bayazit Risiko-Indikator: 0 = historisch billig, 1 = historisch teuer">Risiko</th><th data-sort="bub" title="Blasen-Risiko: Kurs ÷ 20-Wochen-SMA">Blase</th>
         <th data-sort="h">1H</th><th data-sort="d">24H</th><th data-sort="w">7T</th><th data-sort="m">30T</th>
-        <th data-sort="score">Score</th><th data-sort="rk" title="Bayazit Risiko-Indikator: 0 = historisch billig, 1 = historisch teuer">Risiko</th><th data-sort="bub" title="Blasen-Risiko: Kurs ÷ 20-Wochen-SMA">Blase</th><th data-sort="mc">MarketCap</th><th data-sort="v">Volumen 24h</th><th data-sort="w">7 Tage</th><th class="l" data-sort="chain">Chain</th><th class="l" data-sort="ex">Börsen</th><th class="l">Mehr</th>
+        <th data-sort="score">Score</th><th data-sort="mc">MarketCap</th><th data-sort="v">Volumen 24h</th><th data-sort="w">7 Tage</th><th class="l" data-sort="chain">Chain</th><th class="l" data-sort="ex">Börsen</th><th class="l">Mehr</th>
       </tr></thead>
       <tbody id="tb"><tr><td colspan="18" class="empty">Lade Live-Daten …</td></tr></tbody>
     </table>
@@ -420,7 +420,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   <div class="bubrange" id="bubRange"><button class="chip" data-br="182">6 Monate</button><button class="chip" data-br="365">1 Jahr</button><button class="chip" data-br="1095">3 Jahre</button><button class="chip" data-br="0">Alles</button></div>
   <canvas id="bubCv"></canvas>
   <div class="bubleg"><span><i style="background:#1d2bd6"></i>&lt; 0,5</span><span><i style="background:#2f6bff"></i>0,5–0,75</span><span><i style="background:#18c7e6"></i>0,75–1</span><span><i style="background:#22c55e"></i>1–1,25</span><span><i style="background:#e6d200"></i>1,25–1,5</span><span><i style="background:#f59e0b"></i>1,5–1,75</span><span><i style="background:#f2591a"></i>1,75–2</span><span><i style="background:#e11d2e"></i>&gt; 2</span><span><i style="background:#4a90e2;height:3px;vertical-align:3px"></i>Kurs (log)</span></div>
-  <p class="hint">Zeitraum wählen: mit Maus oder Finger waagerecht über den Chart ziehen. Doppelklick oder „Alles“ zeigt wieder den ganzen Verlauf. Balken = Kurs geteilt durch den 20-Wochen-Durchschnitt (laufende Woche mit aktuellem Kurs, wie bei Into The Cryptoverse). Daten: Binance-Tageskerzen (ab 2017), sonst OKX. Bitcoin-Verlauf vor 2017 ist hier daher nicht enthalten.</p>
+  <p class="hint">Zeitraum wählen: mit Maus oder Finger waagerecht über den Chart ziehen. Doppelklick oder „Alles“ zeigt wieder den ganzen Verlauf. Balken = Kurs geteilt durch den 20-Wochen-Durchschnitt (laufende Woche mit aktuellem Kurs, wie bei Into The Cryptoverse). Daten: Binance-Tageskerzen (ab 2017), sonst OKX, sonst Coin Metrics und CoinGecko. Veraltete Börsendaten (z. B. nach einem Delisting) werden nicht verwendet.</p>
 </dialog>
 <script>
 "use strict";
@@ -428,7 +428,8 @@ const CG="https://api.coingecko.com/api/v3";
 const MK=cat=>`${CG}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=true&price_change_percentage=1h,24h,7d,30d${cat?"&category="+encodeURIComponent(cat):""}`;
 const EXCH=[
   {k:"O",name:"OKX",url:"https://www.okx.com/api/v5/market/tickers?instType=SPOT"},
-  {k:"B",name:"Binance",url:"https://data-api.binance.vision/api/v3/ticker/price"},
+  {k:"B",name:"Binance",url:"https://data-api.binance.vision/api/v3/ticker/24hr?type=MINI",
+   parse:j=>{const o=new Set(),t=Date.now()-2*864e5;(Array.isArray(j)?j:[]).forEach(x=>{const m=String(x.symbol).match(/^([A-Z0-9]+)USDT$/);if(m&&+x.closeTime>t)o.add(m[1])});return o}},
   {k:"H",name:"Hyperliquid",url:"https://api.hyperliquid.xyz/info",post:{type:"meta"},
    parse:j=>{const o=new Set();S.hlLev={};(j.universe||[]).filter(u=>!u.isDelisted).forEach(u=>{let n=String(u.name).toUpperCase();if(/^K[A-Z0-9]{2,}$/.test(n)&&u.name[0]==="k")n=n.slice(1);o.add(n);S.hlLev[n]=u.maxLeverage});return o}}
 ];
@@ -548,7 +549,7 @@ async function loadAll(){
   S.tokenCoins=[];
   btn.disabled=false;btn.textContent="Aktualisieren";
   renderTiles();render();
-  if(cgOk){loadBub();loadRisk()}
+  if(cgOk)loadRisk().then(loadBub)
   if(S.mode==="flows"){derivLoaded=0;loadFlows()}
 }
 
@@ -651,10 +652,10 @@ function render(){
     <td class="l">${c.r??"–"}</td>
     <td class="l coin"><a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym(c))}" target="_blank" rel="noopener">${esc(c.sym)}</a>${S.newMap?.[c.sym]?`<span class="tag newtag" title="neu gelistet: ${esc(S.newMap[c.sym].txt)}">NEU</span>`:""}${tok?`<span class="tag">${esc(c.issuer)}</span>`:`<span>${esc(c.name)}</span>`}</td>
     <td>${fmtP(c.p)}</td>
-    ${["h","d","w","m"].map(t=>`<td class="${t===k?"sel":""}">${pct(c[t])}</td>`).join("")}
-    <td class="${k==="score"?"sel":""}">${pct(c.score,true)}</td>
     <td class="${k==="rk"?"sel":""}">${rkCell(c)}</td>
     <td class="${k==="bub"?"sel":""}">${bubCell(c)}</td>
+    ${["h","d","w","m"].map(t=>`<td class="${t===k?"sel":""}">${pct(c[t])}</td>`).join("")}
+    <td class="${k==="score"?"sel":""}">${pct(c.score,true)}</td>
     <td>${c.mc?fmtB(c.mc):"–"}</td><td>${c.v?fmtB(c.v):"–"}</td>
     <td>${spark(c.spark,(c.w??0)>=0)}</td>
     <td class="l chain">${(()=>{const ch=chainOf(c);return ch?`<span class="${ch.own?"flat":""}" title="${ch.a?esc(ch.a):""}">${esc(ch.n)}${ch.more>0?` <small>+${ch.more}</small>`:""}</span>`:'<span class="flat">–</span>'})()}</td>
@@ -1412,7 +1413,7 @@ const fmtRk=r=>r.toLocaleString("de-DE",{minimumFractionDigits:3,maximumFraction
 function rkAt(R,p){const M=S.risk.model,x=(Math.log(p)-Math.log((R.s+p)/M.L))*R.n**M.a;return Math.max(0,Math.min(1,(x-R.mn)/(R.mx-R.mn)))}
 function rkPrice(R,r){const M=S.risk.model,k=(R.mn+r*(R.mx-R.mn))/R.n**M.a;let lo=Math.log(1e-12),hi=Math.log(1e12);
   for(let i=0;i<120;i++){const m=(lo+hi)/2;(m-Math.log((R.s+Math.exp(m))/M.L)<k)?lo=m:hi=m}return Math.exp(lo)}
-const rkInfo=c=>c&&S.risk?.coins?.[c.sym];
+const rkInfo=c=>{const R=c&&S.risk?.coins?.[c.sym];return R&&R.last_day>=Math.floor(Date.now()/864e5)-4?R:null};
 function rkOf(c){const R=rkInfo(c);return R&&c.p?rkAt(R,c.p):null}
 function rkCell(c){const v=rkOf(c);if(v==null)return'<span class="flat" title="Kein Risiko-Wert: weniger als 2 Jahre Kursdaten oder nicht unter den Top 100">–</span>';
   return`<button class="bub" data-rk="${esc(c.id)}" title="${rkTxt(v)} · Tippen für Details" style="--bc:${rkCol(v)}">${v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}</button>`}
@@ -1448,7 +1449,7 @@ function rkTables(R,p,cur){
   $("rkFiat").innerHTML=`<table class="mini rkt"><thead><tr><th class="l">Preis</th><th>Risiko</th></tr></thead><tbody>${rows}</tbody></table>`;
   [$("rkKey"),$("rkFiat")].forEach(b=>{const c=b.querySelector("tr.cur");if(c)b.scrollTop=c.offsetTop-b.clientHeight/2})}
 function rkBands(D,cur){const cnt=Array(10).fill(0);D.forEach(d=>cnt[Math.min(9,Math.floor(d[2]*10))]++);const mx=Math.max(...cnt),ci=Math.min(9,Math.floor(cur*10));
-  $("rkBands").innerHTML=cnt.map((v,i)=>{const pc=v/D.length*100;return`<div class="rkb${i===ci?" on":""}" title="${(i/10).toLocaleString("de-DE")}–${((i+1)/10).toLocaleString("de-DE")}: ${pc.toLocaleString("de-DE",{maximumFractionDigits:1})} % der Tage"><span>${pc.toLocaleString("de-DE",{maximumFractionDigits:pc<10?1:0})}%</span><i style="height:${Math.max(2,v/mx*100)}%;background:${rkCol(i/10+.05)}"></i><small>${(i/10).toLocaleString("de-DE")}</small></div>`}).join("")}
+  $("rkBands").innerHTML=cnt.map((v,i)=>{const pc=v/D.length*100;return`<div class="rkb${i===ci?" on":""}" title="${(i/10).toLocaleString("de-DE")}–${((i+1)/10).toLocaleString("de-DE")}: ${pc.toLocaleString("de-DE",{maximumFractionDigits:1})} % der Tage"><span>${pc.toLocaleString("de-DE",{maximumFractionDigits:pc<10?1:0})}%</span><i style="height:${Math.max(3,v/mx*110).toFixed(0)}px;background:${rkCol(i/10+.05)}"></i><small>${(i/10).toLocaleString("de-DE",{minimumFractionDigits:1})}</small></div>`}).join("")}
 async function openRk(c){if(!c)return;const dlg=$("rkDlg"),R=rkInfo(c);$("rkTitle").textContent=`${c.sym} · Bayazit Risiko-Indikator`;
   $("rkKey").innerHTML=$("rkFiat").innerHTML=$("rkBands").innerHTML="";RV.D=[];$("rkCv").getContext("2d").clearRect(0,0,9999,9999);if(!dlg.open)dlg.showModal();
   if(!R){$("rkSub").textContent="Für diesen Coin gibt es keinen Risiko-Wert: weniger als 2 Jahre Kursdaten oder nicht unter den Top 100.";return}
@@ -1479,16 +1480,21 @@ const wkStart=t=>{const d=Math.floor(t/864e5);return(d-((d+3)%7))*864e5};
 function bubOf(c){const b=c&&S.bub?.[c.sym];if(!b||b.n<19||!c.p)return null;return c.p/((b.s+c.p)/20)}
 function bubCell(c){const v=bubOf(c);if(v==null)return'<span class="flat">–</span>';
   return`<button class="bub" data-bub="${esc(c.id)}" title="${bubTxt(v)} · Tippen für Chart" style="--bc:${bubCol(v)}">${fmtR(v)}</button>`}
+// wöchentliche Schlusskurse aus einem Tagesverlauf [[t,kurs,…]] (nur wenn er bis heute reicht)
+function weeklyFromDaily(D,wk){if(!D?.length||D[D.length-1][0]<Date.now()-3*864e5)return null;const W=new Map();
+  D.forEach(d=>{const w=wkStart(d[0]);if(w<wk)W.set(w,d[1])});const ws=[...W.keys()].sort((a,b)=>a-b);if(!ws.length||ws[ws.length-1]!==wk-7*864e5)return null;return ws.slice(-19).map(w=>W.get(w))}
 async function bubFetch(c){const now=Date.now(),wk=wkStart(now);let closes=null;
+  // Börsenkerzen nur verwenden, wenn sie bis in die laufende Woche reichen (sonst z. B. nach Delisting veraltet)
   if(c.fl.includes("B")){try{const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${c.sym}USDT&interval=1w&limit=21`);
-    closes=j.filter(k=>+k[0]<wk).slice(-19).map(k=>+k[4])}catch(e){}}
-  if(!closes&&c.fl.includes("O")){const j=await getJSON(`https://www.okx.com/api/v5/market/candles?instId=${c.sym}-USDT&bar=1Wutc&limit=21`);
-    closes=(j.data||[]).filter(k=>+k[0]<wk).slice(0,19).map(k=>+k[4])}
+    if(j.length&&+j[j.length-1][0]>=wk)closes=j.filter(k=>+k[0]<wk).slice(-19).map(k=>+k[4])}catch(e){}}
+  if(!closes&&c.fl.includes("O")){try{const j=await getJSON(`https://www.okx.com/api/v5/market/candles?instId=${c.sym}-USDT&bar=1Wutc&limit=21`);const d=j.data||[];
+    if(d.length&&+d[0][0]>=wk)closes=d.filter(k=>+k[0]<wk).slice(0,19).map(k=>+k[4])}catch(e){}}
+  if(!closes&&rkInfo(c)){try{closes=weeklyFromDaily(await rkHistory(c.sym),wk)}catch(e){}}
   if(!closes)return null;return{s:closes.reduce((a,b)=>a+b,0),n:closes.length,wk}}
 let bubBusy=false;
 async function loadBub(){if(bubBusy)return;bubBusy=true;S.bub=S.bub||LS("bcsBub")||{};
   const wk=wkStart(Date.now()),seen=new Set(),todo=[];
-  [...(S.base||[]),...S.coins].forEach(c=>{if(seen.has(c.sym))return;seen.add(c.sym);if(S.bub[c.sym]?.wk===wk)return;if(/[BO]/.test(c.fl))todo.push(c)});
+  [...(S.base||[]),...S.coins].forEach(c=>{if(seen.has(c.sym))return;seen.add(c.sym);if(S.bub[c.sym]?.wk===wk)return;if(/[BO]/.test(c.fl)||rkInfo(c))todo.push(c)});
   if(S.btc)todo.sort((a,b)=>(b.sym==="BTC")-(a.sym==="BTC"));
   let i=0,last=0;
   const work=async()=>{while(i<todo.length){const c=todo[i++];try{const r=await bubFetch(c);if(r)S.bub[c.sym]=r}catch(e){}
@@ -1501,10 +1507,12 @@ function renderBubTile(){const v=bubOf(S.btc);if(v==null)return;const e=$("tBub"
 const bubHist={};
 async function bubHistory(c){if(bubHist[c.sym])return bubHist[c.sym];let rows=[],src="";
   if(c.fl.includes("B")){try{let start=0;for(let p=0;p<8;p++){const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${c.sym}USDT&interval=1d&limit=1000&startTime=${start}`,20000);
-      if(!j.length)break;rows.push(...j.map(k=>[+k[0],+k[4]]));if(j.length<1000)break;start=+j[j.length-1][0]+1}src="Binance"}catch(e){rows=[]}}
+      if(!j.length)break;rows.push(...j.map(k=>[+k[0],+k[4]]));if(j.length<1000)break;start=+j[j.length-1][0]+1}src="Binance"}catch(e){rows=[]}
+    if(rows.length&&rows[rows.length-1][0]<Date.now()-3*864e5)rows=[]}
   if(!rows.length&&c.fl.includes("O")){let after="";for(let p=0;p<25;p++){const j=await getJSON(`https://www.okx.com/api/v5/market/history-candles?instId=${c.sym}-USDT&bar=1Dutc&limit=100${after?"&after="+after:""}`);
       const d=j.data||[];if(!d.length)break;rows.push(...d.map(k=>[+k[0],+k[4]]));after=d[d.length-1][0];if(d.length<100)break}
-    rows.sort((a,b)=>a[0]-b[0]);src="OKX"}
+    rows.sort((a,b)=>a[0]-b[0]);src="OKX";if(rows.length&&rows[rows.length-1][0]<Date.now()-3*864e5)rows=[]}
+  if(!rows.length&&rkInfo(c)){try{const D=await rkHistory(c.sym);if(D.length&&D[D.length-1][0]>=Date.now()-3*864e5){rows=D.map(d=>[d[0],d[1]]);src=D.src||"Risiko-Daten"}}catch(e){}}
   const out=[],wc=[];let cw=null,cc=null;
   for(const[t,cl]of rows){const w=wkStart(t);if(cw!==null&&w!==cw)wc.push(cc);cw=w;cc=cl;
     if(wc.length>=19){let s=cl;for(let i=wc.length-19;i<wc.length;i++)s+=wc[i];out.push([t,cl,cl/(s/20)])}}
@@ -1546,8 +1554,8 @@ function drawBub(){const cv=$("bubCv");if(!cv||!BV.D.length)return;const dpr=dev
     g.textAlign="left";lines.forEach((s,k)=>{g.fillStyle=k===1?bubCol(d[2]):fg;g.fillText(s,bx+8,T+22+k*15)})}}}
 async function openBub(c){if(!c)return;const dlg=$("bubDlg");$("bubTitle").textContent=`${c.sym} · Blasen-Risiko (Kurs ÷ 20-Wochen-SMA)`;$("bubSub").textContent="Lade Verlauf …";
   BV.D=[];const g=$("bubCv").getContext("2d");g.clearRect(0,0,9999,9999);if(!dlg.open)dlg.showModal();
-  if(!/[BO]/.test(c.fl)){$("bubSub").textContent="Für diesen Coin gibt es keinen Verlauf (nicht auf Binance oder OKX gelistet).";return}
-  try{const D=await bubHistory(c);if(D.length<2){$("bubSub").textContent="Zu wenig Verlauf: der Coin ist noch keine 20 Wochen gelistet.";return}
+  if(!/[BO]/.test(c.fl)&&!rkInfo(c)){$("bubSub").textContent="Für diesen Coin gibt es keinen Verlauf (nicht auf Binance oder OKX gehandelt).";return}
+  try{const D=await bubHistory(c);if(D.length<2){$("bubSub").textContent="Kein aktueller Verlauf: entweder ist der Coin noch keine 20 Wochen gelistet oder keine Börse liefert aktuelle Kurse.";return}
     BV.D=D;const v=bubOf(c)??D[D.length-1][2];
     $("bubSub").innerHTML=`aktuell <b style="color:${bubCol(v)}">${fmtR(v)}</b> · ${bubTxt(v)} · Verlauf ab ${new Date(D[0][0]).toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})} · Quelle: ${esc(D.src)}`;
     bubSetRange(0)}catch(e){$("bubSub").textContent="Verlauf gerade nicht abrufbar. Bitte später erneut versuchen."}}
