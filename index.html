@@ -413,7 +413,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   <canvas id="rkCv"></canvas>
   <p class="msg" id="rkSrc" style="margin:4px 0 0"></p>
   <div style="margin-top:12px"><b style="font-size:.85rem">Zeit in Risikostufen</b><span class="msg"> · Anteil aller Tage, umrandet = aktuelle Stufe</span><div class="rkbands" id="rkBands"></div></div>
-  <p class="hint">Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse (deren genaue Formel ist nicht öffentlich, die Werte weichen daher ab): Abstand des Kurses zum 374-Tage-Durchschnitt (logarithmisch). 0 = so tief unter dem Durchschnitt wie noch nie in der ganzen Historie, 1 = so hoch darüber wie zuletzt im laufenden 4-Jahres-Zyklus. Unten zählt die ganze Historie, weil die Tiefs über die Zyklen ähnlich tief bleiben, oben nur der letzte Zyklus, weil die Hochs von Zyklus zu Zyklus kleiner werden. Die Tabellen sind mit dem heutigen Stand gerechnet und verschieben sich jeden Tag ein wenig. Zeitraum im Verlauf: waagerecht über den Chart ziehen, Doppelklick zeigt alles. Kein Kauf- oder Verkaufssignal.</p>
+  <p class="hint">Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse (deren genaue Formel ist nicht öffentlich, die Werte weichen daher ab): Abstand des Kurses zum 374-Tage-Durchschnitt (logarithmisch). 0,5 = Kurs genau auf dem Durchschnitt. 0 = so tief darunter wie noch nie in der ganzen Historie, 1 = so hoch darüber wie zuletzt im laufenden 4-Jahres-Zyklus. Unten zählt die ganze Historie, weil die Tiefs über die Zyklen ähnlich tief bleiben, oben nur der letzte Zyklus, weil die Hochs von Zyklus zu Zyklus kleiner werden. Die Tabellen sind mit dem heutigen Stand gerechnet und verschieben sich jeden Tag ein wenig. Zeitraum im Verlauf: waagerecht über den Chart ziehen, Doppelklick zeigt alles. Kein Kauf- oder Verkaufssignal.</p>
 </dialog>
 <dialog id="bubDlg" class="bubdlg" aria-label="Blasen-Risiko-Chart">
   <div class="bubhead"><div><b id="bubTitle">–</b><span class="msg" id="bubSub"></span></div><button class="chip" id="bubClose" aria-label="Schließen">✕ Schließen</button></div>
@@ -1405,13 +1405,15 @@ const fmtD=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-dig
 
 // ---------- Bayazit Risiko-Indikator (0 = historisch billig, 1 = historisch teuer) ----------
 // Modell (Berechnung täglich per GitHub Actions in risk.py): x = ln(Kurs / 374-Tage-SMA),
-// Risiko = Lage von x zwischen tiefstem x der ganzen Historie und höchstem x der letzten 4 Jahre. Live mit dem aktuellen Kurs nachgerechnet.
+// Risiko: 0,5 = Kurs auf dem Durchschnitt, 0 = tiefstes x der ganzen Historie, 1 = höchstes x der letzten 4 Jahre. Live mit dem aktuellen Kurs nachgerechnet.
 const rkCol=r=>`hsl(${Math.round((1-r)*120)},75%,${r>.4&&r<.65?42:46}%)`;
 const rkBg=r=>`hsla(${Math.round((1-r)*120)},75%,50%,.2)`;
 const rkTxt=r=>r<.2?"Sehr niedrig – historisch günstig":r<.4?"Niedrig":r<.6?"Mittel":r<.8?"Hoch":"Sehr hoch – historisch teuer";
 const fmtRk=r=>r.toLocaleString("de-DE",{minimumFractionDigits:3,maximumFractionDigits:3});
-function rkAt(R,p){const M=S.risk.model,x=(Math.log(p)-Math.log((R.s+p)/M.L))*R.n**M.a;return Math.max(0,Math.min(1,(x-R.mn)/(R.mx-R.mn)))}
-function rkPrice(R,r){const M=S.risk.model,k=(R.mn+r*(R.mx-R.mn))/R.n**M.a;let lo=Math.log(1e-12),hi=Math.log(1e12);
+// 0,5 = Kurs auf dem 374-Tage-Durchschnitt; darunter bis zum tiefsten Wert der ganzen Historie (0), darüber bis zum höchsten der letzten 4 Jahre (1)
+function rkScale(x,R){const r=x>=0?(R.mx>0?.5+.5*x/R.mx:1):(R.mn<0?.5-.5*x/R.mn:0);return Math.max(0,Math.min(1,r))}
+function rkAt(R,p){const M=S.risk.model,x=(Math.log(p)-Math.log((R.s+p)/M.L))*R.n**M.a;return rkScale(x,R)}
+function rkPrice(R,r){const M=S.risk.model,k=(r>=.5?(2*r-1)*R.mx:(1-2*r)*R.mn)/R.n**M.a;let lo=Math.log(1e-12),hi=Math.log(1e12);
   for(let i=0;i<120;i++){const m=(lo+hi)/2;(m-Math.log((R.s+Math.exp(m))/M.L)<k)?lo=m:hi=m}return Math.exp(lo)}
 const rkInfo=c=>{const R=c&&S.risk?.coins?.[c.sym];return R&&R.last_day>=Math.floor(Date.now()/864e5)-4?R:null};
 function rkOf(c){const R=rkInfo(c);return R&&c.p?rkAt(R,c.p):null}

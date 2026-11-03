@@ -1,9 +1,9 @@
 """Bayazit Risiko-Indikator (0 = historisch billig, 1 = historisch teuer) für die größten Coins.
 Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse:
   x = ln(Kurs / 374-Tage-Durchschnitt)
-  Risiko = Lage von x zwischen dem tiefsten x der gesamten Historie und dem höchsten x der letzten 4 Jahre, 0 bis 1
-Die Tiefs (gemessen am Durchschnitt) bleiben über die Zyklen ähnlich tief, die Hochs werden kleiner:
-deshalb unten die ganze Historie als Maßstab, oben nur der letzte Zyklus (4 Jahre).
+  Kurs genau auf dem Durchschnitt = 0,5
+  darunter: 0,5 → 0 bis zum tiefsten x der gesamten Historie (die Tiefs bleiben über die Zyklen ähnlich tief)
+  darüber:  0,5 → 1 bis zum höchsten x der letzten 4 Jahre (die Hochs werden von Zyklus zu Zyklus kleiner)
 Kurse: Coin Metrics Community-Daten (lange Historie, z. B. BTC ab 2010), ergänzt um Binance bzw. OKX Tageskerzen.
 Ergebnis: data/risk.json (Werte für die Live-Berechnung im Scanner) und data/risk/<SYMBOL>.json (Verlauf).
 Läuft automatisch über GitHub Actions (.github/workflows/risk.yml)."""
@@ -149,6 +149,15 @@ def merge(*sources):
     return [(d, allp[d]) for d in days[start:] if allp[d] > 0]
 
 
+def scale(x, mn, mx):
+    """x → Risiko 0 bis 1 (0,5 = Kurs auf dem Durchschnitt)."""
+    if x >= 0:
+        r = 0.5 + 0.5 * x / mx if mx > 0 else 1.0
+    else:
+        r = 0.5 - 0.5 * x / mn if mn < 0 else 0.0
+    return max(0.0, min(1.0, r))
+
+
 def compute(rows):
     """Liefert Verlauf [(tag, kurs, risiko)] und die Werte für die Live-Berechnung."""
     P = [p for _, p in rows]
@@ -167,8 +176,7 @@ def compute(rows):
     for i in range(L - 1 + 365, len(P)):
         mx = max(xs[max(L - 1, i - W + 1):i + 1])
         mn = mins[i]
-        r = (xs[i] - mn) / (mx - mn) if mx > mn else 0.5
-        hist.append((rows[i][0], P[i], max(0.0, min(1.0, r))))
+        hist.append((rows[i][0], P[i], scale(xs[i], mn, mx)))
     # Werte für "heute" (letzte Kerze = laufender Tag, wird live durch den aktuellen Kurs ersetzt)
     i = len(P) - 1
     win = xs[max(L - 1, i - W + 1):i]  # Fenster ohne den laufenden Tag
@@ -202,7 +210,7 @@ def main():
     if not coins:
         coins = [{"sym": "BTC", "id": "bitcoin", "name": "Bitcoin"}, {"sym": "ETH", "id": "ethereum", "name": "Ethereum"}]
     out = {"updated": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
-           "model": {"L": L, "a": A, "w": W}, "coins": {}}
+           "model": {"L": L, "a": A, "w": W, "v": 2}, "coins": {}}
     for c in coins:
         sym = c["sym"]
         bn = binance(sym)
