@@ -413,7 +413,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   <canvas id="rkCv"></canvas>
   <p class="msg" id="rkSrc" style="margin:4px 0 0"></p>
   <div style="margin-top:12px"><b style="font-size:.85rem">Zeit in Risikostufen</b><span class="msg"> · Anteil aller Tage, umrandet = aktuelle Stufe</span><div class="rkbands" id="rkBands"></div></div>
-  <p class="hint">Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse (deren genaue Formel ist nicht öffentlich, die Werte weichen daher ab): Abstand des Kurses zum 374-Tage-Durchschnitt (logarithmisch, über die Zeit gewichtet), eingeordnet zwischen dem tiefsten und höchsten Wert der letzten 4 Jahre. 0 = so billig wie seit 4 Jahren nicht, 1 = so teuer wie seit 4 Jahren nicht. Die Tabellen sind mit dem heutigen Stand gerechnet und verschieben sich jeden Tag ein wenig. Zeitraum im Verlauf: waagerecht über den Chart ziehen, Doppelklick zeigt alles. Kein Kauf- oder Verkaufssignal.</p>
+  <p class="hint">Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse (deren genaue Formel ist nicht öffentlich, die Werte weichen daher ab): Abstand des Kurses zum 374-Tage-Durchschnitt (logarithmisch). 0 = so tief unter dem Durchschnitt wie noch nie in der ganzen Historie, 1 = so hoch darüber wie zuletzt im laufenden 4-Jahres-Zyklus. Unten zählt die ganze Historie, weil die Tiefs über die Zyklen ähnlich tief bleiben, oben nur der letzte Zyklus, weil die Hochs von Zyklus zu Zyklus kleiner werden. Die Tabellen sind mit dem heutigen Stand gerechnet und verschieben sich jeden Tag ein wenig. Zeitraum im Verlauf: waagerecht über den Chart ziehen, Doppelklick zeigt alles. Kein Kauf- oder Verkaufssignal.</p>
 </dialog>
 <dialog id="bubDlg" class="bubdlg" aria-label="Blasen-Risiko-Chart">
   <div class="bubhead"><div><b id="bubTitle">–</b><span class="msg" id="bubSub"></span></div><button class="chip" id="bubClose" aria-label="Schließen">✕ Schließen</button></div>
@@ -1404,8 +1404,8 @@ function chartTip(c,st,D,x,lines,col){if(st.x0!=null&&st.x1!=null){c.g.fillStyle
 const fmtD=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
 
 // ---------- Bayazit Risiko-Indikator (0 = historisch billig, 1 = historisch teuer) ----------
-// Modell (Berechnung täglich per GitHub Actions in risk.py): x = ln(Kurs / 374-Tage-SMA) · Tage^0,395,
-// Risiko = Lage von x zwischen tiefstem und höchstem x der letzten 4 Jahre. Live mit dem aktuellen Kurs nachgerechnet.
+// Modell (Berechnung täglich per GitHub Actions in risk.py): x = ln(Kurs / 374-Tage-SMA),
+// Risiko = Lage von x zwischen tiefstem x der ganzen Historie und höchstem x der letzten 4 Jahre. Live mit dem aktuellen Kurs nachgerechnet.
 const rkCol=r=>`hsl(${Math.round((1-r)*120)},75%,${r>.4&&r<.65?42:46}%)`;
 const rkBg=r=>`hsla(${Math.round((1-r)*120)},75%,50%,.2)`;
 const rkTxt=r=>r<.2?"Sehr niedrig – historisch günstig":r<.4?"Niedrig":r<.6?"Mittel":r<.8?"Hoch":"Sehr hoch – historisch teuer";
