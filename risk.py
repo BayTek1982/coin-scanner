@@ -1,8 +1,9 @@
 """Bayazit Risiko-Indikator (0 = historisch billig, 1 = historisch teuer) für die größten Coins.
 Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse:
-  x = ln(Kurs / 374-Tage-Durchschnitt) * (Tage seit Beginn) ^ 0.395
-  Risiko = x im Verhältnis zum tiefsten und höchsten x der letzten 4 Jahre (ein Zyklus), 0 bis 1
-Die 4-Jahres-Normierung gleicht aus, dass die Ausschläge von Zyklus zu Zyklus kleiner werden.
+  x = ln(Kurs / 374-Tage-Durchschnitt)
+  Risiko = Lage von x zwischen dem tiefsten x der gesamten Historie und dem höchsten x der letzten 4 Jahre, 0 bis 1
+Die Tiefs (gemessen am Durchschnitt) bleiben über die Zyklen ähnlich tief, die Hochs werden kleiner:
+deshalb unten die ganze Historie als Maßstab, oben nur der letzte Zyklus (4 Jahre).
 Kurse: Coin Metrics Community-Daten (lange Historie, z. B. BTC ab 2010), ergänzt um Binance bzw. OKX Tageskerzen.
 Ergebnis: data/risk.json (Werte für die Live-Berechnung im Scanner) und data/risk/<SYMBOL>.json (Verlauf).
 Läuft automatisch über GitHub Actions (.github/workflows/risk.yml)."""
@@ -18,7 +19,7 @@ import time
 import requests
 
 L = 374            # Tage für den gleitenden Durchschnitt
-A = 0.395          # Gewichtung der Zeit
+A = 0.0            # Gewichtung der Zeit (0 = keine; die frühere 0.395 drückte spätere Tiefs immer wieder auf 0)
 W = 1460           # Normierungsfenster in Tagen (4 Jahre)
 MIN_DAYS = L + 365  # mindestens gut 2 Jahre Kursdaten
 TOP = 100          # so viele Coins nach Marktkapitalisierung
@@ -157,11 +158,15 @@ def compute(rows):
         if i >= L:
             s -= P[i - L]
         xs.append((math.log(p) - math.log(s / L)) * (i + 1) ** A if i >= L - 1 else None)
-    hist = []
+    hist, gmin, mins = [], float("inf"), []
+    for i in range(len(P)):
+        if xs[i] is not None:
+            gmin = min(gmin, xs[i])
+        mins.append(gmin)
     # erstes Jahr nach Beginn der Berechnung auslassen: zu wenig Vergleichswerte, die Werte springen dort zwischen 0 und 1
     for i in range(L - 1 + 365, len(P)):
-        win = [x for x in xs[max(L - 1, i - W + 1):i + 1]]
-        mn, mx = min(win), max(win)
+        mx = max(xs[max(L - 1, i - W + 1):i + 1])
+        mn = mins[i]
         r = (xs[i] - mn) / (mx - mn) if mx > mn else 0.5
         hist.append((rows[i][0], P[i], max(0.0, min(1.0, r))))
     # Werte für "heute" (letzte Kerze = laufender Tag, wird live durch den aktuellen Kurs ersetzt)
@@ -170,7 +175,7 @@ def compute(rows):
     live = {
         "n": i + 1,                       # Zeitindex des laufenden Tages
         "s": round(sum(P[i - L + 1:i]), 10),  # Summe der 373 Schlusskurse davor
-        "mn": min(win), "mx": max(win),
+        "mn": mins[i - 1], "mx": max(win),
         "days": len(P), "start": rows[0][0], "last_day": rows[-1][0],
     }
     return hist, live
