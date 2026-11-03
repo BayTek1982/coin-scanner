@@ -115,6 +115,23 @@ a.ext{color:var(--accent)}
 .lk:hover{border-color:var(--accent)}.lk small{color:var(--muted);font-weight:400;font-size:.74rem}
 td.more a{display:inline-block;font:600 .68rem var(--f-body);padding:2px 6px;border-radius:4px;background:var(--chip);color:var(--fg);text-decoration:none;margin-right:3px}
 td.more a:hover{background:var(--accent);color:var(--accent-ink)}
+.bub{font:600 .8rem var(--f-num);border:0;cursor:pointer;background:transparent;color:var(--fg);padding:2px 4px;border-radius:4px;display:inline-flex;align-items:center;gap:5px}.bub:hover{background:var(--chip)}.bub::before{content:"";width:9px;height:9px;border-radius:2px;background:var(--bc)}
+.rkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:10px}
+.rkcol{display:grid;gap:6px;min-width:0}.rkcol>b{font-size:.85rem}
+.rktab{max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+.rkt{width:100%}.rkt td{padding:3px 8px;text-align:right}.rkt td:first-child,.rkt th:first-child{text-align:left}.rkt tr.cur td{font-weight:800;background:var(--panel);border-top:2px solid var(--fg);border-bottom:2px solid var(--fg)}
+.rkt thead th{position:sticky;top:0;background:var(--panel)}
+.rkbands{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;height:150px;align-items:end;margin-top:6px}
+.rkb{display:grid;grid-template-rows:auto 1fr auto;height:100%;text-align:center;font:.66rem var(--f-num);color:var(--muted)}.rkb i{align-self:end;border-radius:3px 3px 0 0;display:block}
+.rkb.on{color:var(--fg);font-weight:700}.rkb.on i{outline:2px solid var(--fg)}
+.bubtile{cursor:pointer}.bubtile:hover{border-color:var(--accent)}
+#rkCv{width:100%;height:min(55vh,460px);display:block;touch-action:pan-y;cursor:crosshair}
+.bubdlg{width:min(1200px,96vw);max-width:none;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);padding:14px;box-sizing:border-box}
+.bubdlg::backdrop{background:rgba(0,0,0,.6)}
+.bubhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.bubhead>div{flex:1;min-width:200px;display:grid;gap:2px}
+.bubrange{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 6px}.bubrange .chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+#bubCv{width:100%;height:min(62vh,520px);display:block;touch-action:pan-y;cursor:crosshair}
+.bubleg{display:flex;gap:10px;flex-wrap:wrap;font:.72rem var(--f-num);color:var(--muted);margin-top:6px}.bubleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 @media (min-width:1400px){body{font-size:16px}.mood{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
 </style>
 </head>
@@ -141,6 +158,8 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <div class="tile"><span class="label">Top-20-Index · 24 Std.</span><span class="v" id="tT20">–</span><span class="s">Die 20 größten Coins, nach Größe gewichtet</span></div>
     <div class="tile"><span class="label">Altcoin-Index · 30 Tage</span><span class="v" id="tAlt">–</span><div class="meter"><i id="tAltM" style="left:50%"></i></div><span class="s" id="tAltS"></span></div>
     <div class="tile"><span class="label">Angst &amp; Gier</span><div class="gauge"><svg id="fngSvg" width="92" height="54" viewBox="0 0 92 54" aria-hidden="true"></svg><span class="v" id="tFng">–</span></div><span class="s" id="tFngS"></span></div>
+    <div class="tile bubtile" id="rkTile" role="button" tabindex="0" title="Details öffnen"><span class="label">BTC Risiko · 0 bis 1</span><span class="v" id="tRk">–</span><span class="s" id="tRkS">Bayazit Risiko-Indikator · Tippen für Details</span></div>
+    <div class="tile bubtile" id="bubTile" role="button" tabindex="0" title="Chart öffnen"><span class="label">BTC Blasen-Risiko</span><span class="v" id="tBub">–</span><span class="s" id="tBubS">Kurs ÷ 20-Wochen-SMA · Tippen für Chart</span></div>
   </section>
 
   <details class="panel linkbox">
@@ -198,9 +217,9 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
         <th class="l"></th><th class="l"><input type="checkbox" id="chkAll" aria-label="Alle sichtbaren auswählen"></th>
         <th class="l" data-sort="r">#</th><th class="l" data-sort="name">Coin</th><th data-sort="p">Preis $</th>
         <th data-sort="h">1H</th><th data-sort="d">24H</th><th data-sort="w">7T</th><th data-sort="m">30T</th>
-        <th data-sort="score">Score</th><th data-sort="mc">MarketCap</th><th data-sort="v">Volumen 24h</th><th data-sort="w">7 Tage</th><th class="l" data-sort="chain">Chain</th><th class="l" data-sort="ex">Börsen</th><th class="l">Mehr</th>
+        <th data-sort="score">Score</th><th data-sort="rk" title="Bayazit Risiko-Indikator: 0 = historisch billig, 1 = historisch teuer">Risiko</th><th data-sort="bub" title="Blasen-Risiko: Kurs ÷ 20-Wochen-SMA">Blase</th><th data-sort="mc">MarketCap</th><th data-sort="v">Volumen 24h</th><th data-sort="w">7 Tage</th><th class="l" data-sort="chain">Chain</th><th class="l" data-sort="ex">Börsen</th><th class="l">Mehr</th>
       </tr></thead>
-      <tbody id="tb"><tr><td colspan="16" class="empty">Lade Live-Daten …</td></tr></tbody>
+      <tbody id="tb"><tr><td colspan="18" class="empty">Lade Live-Daten …</td></tr></tbody>
     </table>
   </div>
 
@@ -378,12 +397,31 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   </div>
 
   <footer>
-    <span>Börsen: <b>O</b> OKX · <b>B</b> Binance · <b>H</b> Hyperliquid (Perpetuals). Chain = Blockchain, auf der der Coin als Token läuft („eigene Chain“ = eigene Blockchain wie Bitcoin oder Solana). DEX öffnet den Token bei DexScreener. Score = Vorsprung (+) oder Rückstand (−) gegenüber Bitcoin über 7 und 30 Tage, in Prozentpunkten. Altcoin-Index = Anteil der Top-50-Coins, die über 30 Tage besser liefen als Bitcoin.</span>
+    <span>Börsen: <b>O</b> OKX · <b>B</b> Binance · <b>H</b> Hyperliquid (Perpetuals). Chain = Blockchain, auf der der Coin als Token läuft („eigene Chain“ = eigene Blockchain wie Bitcoin oder Solana). DEX öffnet den Token bei DexScreener. Score = Vorsprung (+) oder Rückstand (−) gegenüber Bitcoin über 7 und 30 Tage, in Prozentpunkten. Blase = Kurs geteilt durch den 20-Wochen-Durchschnitt (unter 1 bärisch, 1–1,25 normal, über 1,5 riskant, über 2 Blasengefahr); ein Tipp auf den Wert öffnet den Verlauf. Risiko = Bayazit Risiko-Indikator von 0 (historisch billig) bis 1 (historisch teuer), einmal täglich neu berechnet. Altcoin-Index = Anteil der Top-50-Coins, die über 30 Tage besser liefen als Bitcoin.</span>
     <span>Daten: CoinGecko, alternative.me (Angst &amp; Gier), OKX, Binance. Kurse können wenige Minuten verzögert sein.</span>
     <span>Der Scanner sortiert vor und ist keine Anlageberatung. Einstieg nur nach eigener Chartanalyse.</span>
   </footer>
 </div>
 
+<dialog id="rkDlg" class="bubdlg" aria-label="Risiko-Indikator">
+  <div class="bubhead"><div><b id="rkTitle">–</b><span class="msg" id="rkSub"></span></div><button class="chip" id="rkClose" aria-label="Schließen">✕ Schließen</button></div>
+  <div class="rkgrid">
+    <div class="rkcol"><b>Risikostufen → Preis</b><div class="rktab" id="rkKey"></div></div>
+    <div class="rkcol"><b>Preis → Risiko</b><div class="rktab" id="rkFiat"></div></div>
+  </div>
+  <div class="bubrange" id="rkRange"><b style="align-self:center;margin-right:6px">Verlauf</b><button class="chip" data-rr="365">1 Jahr</button><button class="chip" data-rr="730">2 Jahre</button><button class="chip" data-rr="1460">4 Jahre</button><button class="chip" data-rr="0">Alles</button></div>
+  <canvas id="rkCv"></canvas>
+  <p class="msg" id="rkSrc" style="margin:4px 0 0"></p>
+  <div style="margin-top:12px"><b style="font-size:.85rem">Zeit in Risikostufen</b><span class="msg"> · Anteil aller Tage, umrandet = aktuelle Stufe</span><div class="rkbands" id="rkBands"></div></div>
+  <p class="hint">Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse (deren genaue Formel ist nicht öffentlich, die Werte weichen daher ab): Abstand des Kurses zum 374-Tage-Durchschnitt (logarithmisch, über die Zeit gewichtet), eingeordnet zwischen dem tiefsten und höchsten Wert der letzten 4 Jahre. 0 = so billig wie seit 4 Jahren nicht, 1 = so teuer wie seit 4 Jahren nicht. Die Tabellen sind mit dem heutigen Stand gerechnet und verschieben sich jeden Tag ein wenig. Zeitraum im Verlauf: waagerecht über den Chart ziehen, Doppelklick zeigt alles. Kein Kauf- oder Verkaufssignal.</p>
+</dialog>
+<dialog id="bubDlg" class="bubdlg" aria-label="Blasen-Risiko-Chart">
+  <div class="bubhead"><div><b id="bubTitle">–</b><span class="msg" id="bubSub"></span></div><button class="chip" id="bubClose" aria-label="Schließen">✕ Schließen</button></div>
+  <div class="bubrange" id="bubRange"><button class="chip" data-br="182">6 Monate</button><button class="chip" data-br="365">1 Jahr</button><button class="chip" data-br="1095">3 Jahre</button><button class="chip" data-br="0">Alles</button></div>
+  <canvas id="bubCv"></canvas>
+  <div class="bubleg"><span><i style="background:#1d2bd6"></i>&lt; 0,5</span><span><i style="background:#2f6bff"></i>0,5–0,75</span><span><i style="background:#18c7e6"></i>0,75–1</span><span><i style="background:#22c55e"></i>1–1,25</span><span><i style="background:#e6d200"></i>1,25–1,5</span><span><i style="background:#f59e0b"></i>1,5–1,75</span><span><i style="background:#f2591a"></i>1,75–2</span><span><i style="background:#e11d2e"></i>&gt; 2</span><span><i style="background:#4a90e2;height:3px;vertical-align:3px"></i>Kurs (log)</span></div>
+  <p class="hint">Zeitraum wählen: mit Maus oder Finger waagerecht über den Chart ziehen. Doppelklick oder „Alles“ zeigt wieder den ganzen Verlauf. Balken = Kurs geteilt durch den 20-Wochen-Durchschnitt (laufende Woche mit aktuellem Kurs, wie bei Into The Cryptoverse). Daten: Binance-Tageskerzen (ab 2017), sonst OKX. Bitcoin-Verlauf vor 2017 ist hier daher nicht enthalten.</p>
+</dialog>
 <script>
 "use strict";
 const CG="https://api.coingecko.com/api/v3";
@@ -510,6 +548,7 @@ async function loadAll(){
   S.tokenCoins=[];
   btn.disabled=false;btn.textContent="Aktualisieren";
   renderTiles();render();
+  if(cgOk){loadBub();loadRisk()}
   if(S.mode==="flows"){derivLoaded=0;loadFlows()}
 }
 
@@ -579,7 +618,7 @@ function rows(){const k=key(),L=LISTS[S.tab];if(!L)return[];
   return list.slice().sort((a,b)=>{if(k==="r"){const x=a.r??1e9,y=b.r??1e9;return S.dir===-1?x-y:y-x}
     if(k==="name"){const c=a.sym.localeCompare(b.sym,"de");return S.dir===-1?c:-c}
     if(k==="chain"){const c=(chainOf(a)?.n||"~").localeCompare(chainOf(b)?.n||"~","de");return S.dir===-1?c:-c}
-    const val=c=>k==="ex"?c.fl.length:c[k];const x=val(a)??-1e12,y=val(b)??-1e12;return S.dir===-1?y-x:x-y})}
+    const val=c=>k==="ex"?c.fl.length:k==="bub"?bubOf(c):k==="rk"?rkOf(c):c[k];const x=val(a)??-1e12,y=val(b)??-1e12;return S.dir===-1?y-x:x-y})}
 // Pfeil ▲▼ an der gewählten Spaltenüberschrift; Text-Spalten starten mit A–Z / Rang 1
 const ASC_FIRST=new Set(["r","name","n","sec","sym","chain"]);
 function arrows(sel,attr,k,dir){document.querySelectorAll(sel).forEach(th=>{th.querySelector(".arr")?.remove();const on=th.getAttribute(attr)===k;th.classList.toggle("sel",on);
@@ -614,6 +653,8 @@ function render(){
     <td>${fmtP(c.p)}</td>
     ${["h","d","w","m"].map(t=>`<td class="${t===k?"sel":""}">${pct(c[t])}</td>`).join("")}
     <td class="${k==="score"?"sel":""}">${pct(c.score,true)}</td>
+    <td class="${k==="rk"?"sel":""}">${rkCell(c)}</td>
+    <td class="${k==="bub"?"sel":""}">${bubCell(c)}</td>
     <td>${c.mc?fmtB(c.mc):"–"}</td><td>${c.v?fmtB(c.v):"–"}</td>
     <td>${spark(c.spark,(c.w??0)>=0)}</td>
     <td class="l chain">${(()=>{const ch=chainOf(c);return ch?`<span class="${ch.own?"flat":""}" title="${ch.a?esc(ch.a):""}">${esc(ch.n)}${ch.more>0?` <small>+${ch.more}</small>`:""}</span>`:'<span class="flat">–</span>'})()}</td>
@@ -623,20 +664,20 @@ function render(){
   let html="";
   if(S.tab==="token"){const groups=new Map();R.forEach(c=>{const t=tokenInfo(c.name);c.issuer=t.issuer;(groups.get(t.base)||groups.set(t.base,[]).get(t.base)).push(c)});
     for(const[name,list]of groups){const ak=["h","d","w","m"].includes(k)?k:"d",vals=list.map(c=>c[ak]).filter(v=>v!=null);const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-      html+=`<tr class="grp"><td colspan="16">${esc(name)}<span>${list.length} ${list.length===1?"Variante":"Varianten"} · Ø ${pct(avg).replace(/<[^>]+>/g,"")}</span></td></tr>`+list.map(c=>row(c,true)).join("")}}
+      html+=`<tr class="grp"><td colspan="18">${esc(name)}<span>${list.length} ${list.length===1?"Variante":"Varianten"} · Ø ${pct(avg).replace(/<[^>]+>/g,"")}</span></td></tr>`+list.map(c=>row(c,true)).join("")}}
   else html=R.map(c=>row(c,false)).join("");
-  $("tb").innerHTML=R.length?html:`<tr><td colspan="16" class="empty">${S.tab==="watch"?"Noch keine Coins markiert. Tippe in einer Liste auf ☆, um einen Coin hier zu sammeln.":S.tab==="token"?"Keine tokenisierten Aktien gefunden.":"Gerade erfüllt kein Coin diese Filter."}</td></tr>`;
+  $("tb").innerHTML=R.length?html:`<tr><td colspan="18" class="empty">${S.tab==="watch"?"Noch keine Coins markiert. Tippe in einer Liste auf ☆, um einen Coin hier zu sammeln.":S.tab==="token"?"Keine tokenisierten Aktien gefunden.":"Gerade erfüllt kein Coin diese Filter."}</td></tr>`;
   updateWL();fillChainSel();
 }
 function fillChainSel(){const sel=$("chainSel");if(!S.chains||!S.coins.length)return;const cnt={};S.coins.forEach(c=>{const n=chainOf(c)?.n;if(n)cnt[n]=(cnt[n]||0)+1});
   const opts=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<option value="${esc(n)}">${esc(n)} (${v})</option>`).join("");
   if(sel.dataset.o!==opts){sel.dataset.o=opts;sel.innerHTML='<option value="">Alle Chains</option>'+opts;sel.value=S.chain||""}}
 async function loadToken(){
-  $("tb").innerHTML='<tr><td colspan="16" class="empty">Lade tokenisierte Aktien …</td></tr>';
+  $("tb").innerHTML='<tr><td colspan="18" class="empty">Lade tokenisierte Aktien …</td></tr>';
   try{const res=await Promise.allSettled(["tokenized-stock","xstocks-ecosystem"].map(c=>getJSON(MK(c))));
     const seen=new Set(),out=[];res.forEach(r=>{if(r.status==="fulfilled"&&Array.isArray(r.value))r.value.forEach(c=>{if(!seen.has(c.id)&&(c.market_cap||c.total_volume)>0){seen.add(c.id);out.push(c)}})});
     if(!out.length)throw new Error("leer");S.tokenCoins=enrich(out.map(mapCoin));render()}
-  catch(e){$("tb").innerHTML='<tr><td colspan="16" class="empty">CoinGecko antwortet gerade nicht. Bitte gleich erneut versuchen.</td></tr>'}
+  catch(e){$("tb").innerHTML='<tr><td colspan="18" class="empty">CoinGecko antwortet gerade nicht. Bitte gleich erneut versuchen.</td></tr>'}
 }
 function tokenInfo(name){const n=String(name||"");
   const issuer=/ondo/i.test(n)?"Ondo":/robinhood/i.test(n)?"Robinhood":/bstocks?/i.test(n)?"bStocks":/xstock/i.test(n)?"xStock":"Token";
@@ -1331,6 +1372,194 @@ $("sCopy").onclick=async()=>{const ta=$("swl");try{await navigator.clipboard.wri
 $("sSave").onclick=()=>{const v=$("swl").value;if(!v){$("sMsg").textContent="Erst Aktien auswählen";return}const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"text/plain"}));a.download="bayazit-aktien-"+new Date().toISOString().slice(0,10)+".txt";document.body.appendChild(a);a.click();a.remove();$("sMsg").textContent="Datei gespeichert"};
 (()=>{const s=LS("bcsStk");S.ssel=new Set(s?.sel||[]);S.sstars=new Set(s?.stars||[])})();
 fillFilter();render();setMode(S.mode||"krypto");loadAll();
+// ---------- Gemeinsam: Chart mit Zeitraum-Auswahl per Ziehen (Maus und Finger) ----------
+function zoomable(cv,st,draw,onAll,onZoom){const px=e=>e.clientX-cv.getBoundingClientRect().left;let down=null;
+  const idx=X=>{const G=st.geo;if(!G)return null;const i=Math.round((X-G.L)/G.pw*(G.n-1));return st.a+Math.max(0,Math.min(G.n-1,i))};
+  cv.addEventListener("pointerdown",e=>{if(!st.D.length)return;down={x:px(e),id:e.pointerId}});
+  cv.addEventListener("pointermove",e=>{if(!st.D.length)return;const X=px(e);
+    if(down&&Math.abs(X-down.x)>6){if(st.x0==null){try{cv.setPointerCapture(down.id)}catch(_){}st.x0=down.x}st.x1=X;draw();return}
+    if(!down||e.pointerType==="mouse"){st.hov=idx(X);draw()}});
+  cv.addEventListener("pointerup",e=>{if(!down)return;const X=px(e);
+    if(st.x0!=null){const a=idx(Math.min(st.x0,X)),b=idx(Math.max(st.x0,X));st.x0=st.x1=null;if(b-a>=5){st.a=a;st.b=b;onZoom&&onZoom()}st.hov=null}
+    else st.hov=idx(X);down=null;draw()});
+  cv.addEventListener("pointercancel",()=>{down=null;st.x0=st.x1=null;draw()});
+  cv.addEventListener("pointerleave",e=>{if(!down&&e.pointerType==="mouse"){st.hov=null;draw()}});
+  cv.addEventListener("dblclick",onAll)}
+function chartBase(cv,st){const dpr=devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;
+  const g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const cs=getComputedStyle(document.documentElement),C=k=>cs.getPropertyValue(k).trim();
+  const sm=W<600,L=sm?50:68,R=sm?34:44,T=12,B=24,pw=W-L-R,ph=H-T-B;g.font=`${sm?10:11}px ${C("--f-num")}`;g.lineWidth=1;
+  return{g,W,H,sm,L,R,T,B,pw,ph,C}}
+function chartDates(c,D,x){const n=D.length,span=D[n-1][0]-D[0][0],ticks=c.sm?4:7;c.g.fillStyle=c.C("--muted");
+  for(let k=0;k<=ticks;k++){const i=Math.round((n-1)*k/ticks),dt=new Date(D[i][0]);
+    const lab=span>6*365*864e5?String(dt.getUTCFullYear()):dt.toLocaleDateString("de-DE",{month:"short",year:"2-digit",timeZone:"UTC"});
+    c.g.textAlign=k===0?"left":k===ticks?"right":"center";c.g.fillText(lab,x(i),c.H-6)}}
+function chartTip(c,st,D,x,lines,col){if(st.x0!=null&&st.x1!=null){c.g.fillStyle="rgba(74,144,226,.22)";c.g.fillRect(Math.min(st.x0,st.x1),c.T,Math.abs(st.x1-st.x0),c.ph)}
+  if(st.hov==null||st.x0!=null)return;const i=st.hov-st.a;if(i<0||i>=D.length)return;const g=c.g,X=x(i),T=c.T,ln=c.C("--line");
+  g.strokeStyle=c.C("--muted");g.setLineDash([3,3]);g.beginPath();g.moveTo(X,T);g.lineTo(X,T+c.ph);g.stroke();g.setLineDash([]);
+  const L=lines(D[i]),bw=Math.max(...L.map(s=>g.measureText(s).width))+16,bh=L.length*15+10;let bx=X+10;if(bx+bw>c.L+c.pw)bx=X-10-bw;
+  g.fillStyle=c.C("--panel");g.strokeStyle=ln;g.fillRect(bx,T+6,bw,bh);g.strokeRect(bx,T+6,bw,bh);
+  g.textAlign="left";L.forEach((s,k)=>{g.fillStyle=k===1?col(D[i]):c.C("--fg");g.fillText(s,bx+8,T+22+k*15)})}
+const fmtD=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"});
+
+// ---------- Bayazit Risiko-Indikator (0 = historisch billig, 1 = historisch teuer) ----------
+// Modell (Berechnung täglich per GitHub Actions in risk.py): x = ln(Kurs / 374-Tage-SMA) · Tage^0,395,
+// Risiko = Lage von x zwischen tiefstem und höchstem x der letzten 4 Jahre. Live mit dem aktuellen Kurs nachgerechnet.
+const rkCol=r=>`hsl(${Math.round((1-r)*120)},75%,${r>.4&&r<.65?42:46}%)`;
+const rkBg=r=>`hsla(${Math.round((1-r)*120)},75%,50%,.2)`;
+const rkTxt=r=>r<.2?"Sehr niedrig – historisch günstig":r<.4?"Niedrig":r<.6?"Mittel":r<.8?"Hoch":"Sehr hoch – historisch teuer";
+const fmtRk=r=>r.toLocaleString("de-DE",{minimumFractionDigits:3,maximumFractionDigits:3});
+function rkAt(R,p){const M=S.risk.model,x=(Math.log(p)-Math.log((R.s+p)/M.L))*R.n**M.a;return Math.max(0,Math.min(1,(x-R.mn)/(R.mx-R.mn)))}
+function rkPrice(R,r){const M=S.risk.model,k=(R.mn+r*(R.mx-R.mn))/R.n**M.a;let lo=Math.log(1e-12),hi=Math.log(1e12);
+  for(let i=0;i<120;i++){const m=(lo+hi)/2;(m-Math.log((R.s+Math.exp(m))/M.L)<k)?lo=m:hi=m}return Math.exp(lo)}
+const rkInfo=c=>c&&S.risk?.coins?.[c.sym];
+function rkOf(c){const R=rkInfo(c);return R&&c.p?rkAt(R,c.p):null}
+function rkCell(c){const v=rkOf(c);if(v==null)return'<span class="flat" title="Kein Risiko-Wert: weniger als 2 Jahre Kursdaten oder nicht unter den Top 100">–</span>';
+  return`<button class="bub" data-rk="${esc(c.id)}" title="${rkTxt(v)} · Tippen für Details" style="--bc:${rkCol(v)}">${v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}</button>`}
+async function loadRisk(){try{const r=await fetch("data/risk.json?t="+Date.now());if(!r.ok)throw 0;S.risk=await r.json()}catch(e){S.risk=null}renderRkTile();if(!SPEC[S.tab])render()}
+function renderRkTile(){const v=rkOf(S.btc);if(v==null)return;const e=$("tRk");e.textContent=fmtRk(v);e.style.color=rkCol(v);$("tRkS").textContent=rkTxt(v).split(" – ")[0]+" · Tippen für Details"}
+
+const RV={D:[],a:0,b:0,hov:null,x0:null,x1:null,geo:null};
+const rkHist={};
+async function rkHistory(sym){if(rkHist[sym])return rkHist[sym];const r=await fetch(`data/risk/${encodeURIComponent(sym)}.json?t=`+Math.floor(Date.now()/36e5));if(!r.ok)throw 0;
+  const j=await r.json();const D=j.d.map(([d,p,k])=>[d*864e5,p,k]);D.src=j.src;rkHist[sym]=D;return D}
+function rkSetRange(days){const D=RV.D;RV.b=D.length-1;if(!days)RV.a=0;else{const t=D[RV.b][0]-days*864e5;RV.a=Math.max(0,D.findIndex(d=>d[0]>=t))}
+  RV.hov=null;document.querySelectorAll("#rkRange [data-rr]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.rr===days));drawRk()}
+function drawRk(){const cv=$("rkCv");if(!cv||!RV.D.length)return;const c=chartBase(cv,RV),g=c.g,D=RV.D.slice(RV.a,RV.b+1),n=D.length;if(n<2)return;
+  RV.geo={L:c.L,pw:c.pw,n};const x=i=>c.L+i/(n-1)*c.pw;
+  let pmn=Infinity,pmx=0;D.forEach(d=>{if(d[1]<pmn)pmn=d[1];if(d[1]>pmx)pmx=d[1]});
+  const lp0=Math.log10(pmn)-.05,lp1=Math.log10(pmx)+.05,yp=p=>c.T+c.ph*(1-(Math.log10(p)-lp0)/(lp1-lp0)),yr=r=>c.T+c.ph*(1-r);
+  [0,.2,.4,.6,.8,1].forEach(v=>{const y=yr(v);g.strokeStyle=c.C("--line");g.setLineDash(v===0||v===1?[]:[3,4]);g.beginPath();g.moveTo(c.L,y);g.lineTo(c.L+c.pw,y);g.stroke();
+    g.fillStyle=rkCol(v);g.textAlign="left";g.fillText(v.toLocaleString("de-DE",{minimumFractionDigits:1}),c.L+c.pw+5,y+4)});g.setLineDash([]);
+  g.textAlign="right";for(let k=0;k<=4;k++){const v=10**(lp0+(lp1-lp0)*k/4);g.fillStyle=c.C("--muted");g.fillText(fmtP(v),c.L-5,yp(v)+4)}
+  g.strokeStyle="#4a90e2";g.lineWidth=1.6;g.beginPath();D.forEach((d,i)=>{i?g.lineTo(x(i),yp(d[1])):g.moveTo(x(i),yp(d[1]))});g.stroke();
+  g.lineWidth=1.5;for(let i=1;i<n;i++){g.strokeStyle=rkCol(D[i][2]);g.beginPath();g.moveTo(x(i-1),yr(D[i-1][2]));g.lineTo(x(i),yr(D[i][2]));g.stroke()}g.lineWidth=1;
+  chartDates(c,D,x);chartTip(c,RV,D,x,d=>[fmtD(d[0]),rkTxt(d[2]).split(" – ")[0],"Risiko: "+fmtRk(d[2]),"Kurs: "+fmtP(d[1])+" $"],d=>rkCol(d[2]))}
+function niceStep(v){const e=10**Math.floor(Math.log10(v)),f=v/e;return(f<1.5?1:f<2.25?2:f<3.5?2.5:f<7.5?5:10)*e}
+function rkTables(R,p,cur){
+  const now=`<tr class="cur"><td>${fmtRk(cur)}</td><td>${fmtP(p)} $</td></tr>`;let rows="",done=false;
+  for(let k=0;k<=40;k++){const r=k/40;if(!done&&r>cur){rows+=now;done=true}rows+=`<tr style="background:${rkBg(r)}"><td>${fmtRk(r)}</td><td>${fmtP(rkPrice(R,r))} $</td></tr>`}
+  if(!done)rows+=now;$("rkKey").innerHTML=`<table class="mini rkt"><thead><tr><th class="l">Risiko</th><th>Preis</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const p0=rkPrice(R,0),p1=rkPrice(R,1),st=niceStep((p1-p0)/24),list=[];for(let v=Math.ceil(p0/st)*st;v<p1&&list.length<40;v+=st)list.push(v);
+  rows=`<tr style="background:${rkBg(0)}"><td>${fmtP(p0)} $</td><td>${fmtRk(0)}</td></tr>`;done=false;
+  list.forEach(v=>{if(!done&&v>p){rows+=`<tr class="cur"><td>${fmtP(p)} $</td><td>${fmtRk(cur)}</td></tr>`;done=true}const r=rkAt(R,v);rows+=`<tr style="background:${rkBg(r)}"><td>${fmtP(v)} $</td><td>${fmtRk(r)}</td></tr>`});
+  if(!done)rows+=`<tr class="cur"><td>${fmtP(p)} $</td><td>${fmtRk(cur)}</td></tr>`;
+  rows+=`<tr style="background:${rkBg(1)}"><td>${fmtP(p1)} $</td><td>${fmtRk(1)}</td></tr>`;
+  $("rkFiat").innerHTML=`<table class="mini rkt"><thead><tr><th class="l">Preis</th><th>Risiko</th></tr></thead><tbody>${rows}</tbody></table>`;
+  [$("rkKey"),$("rkFiat")].forEach(b=>{const c=b.querySelector("tr.cur");if(c)b.scrollTop=c.offsetTop-b.clientHeight/2})}
+function rkBands(D,cur){const cnt=Array(10).fill(0);D.forEach(d=>cnt[Math.min(9,Math.floor(d[2]*10))]++);const mx=Math.max(...cnt),ci=Math.min(9,Math.floor(cur*10));
+  $("rkBands").innerHTML=cnt.map((v,i)=>{const pc=v/D.length*100;return`<div class="rkb${i===ci?" on":""}" title="${(i/10).toLocaleString("de-DE")}–${((i+1)/10).toLocaleString("de-DE")}: ${pc.toLocaleString("de-DE",{maximumFractionDigits:1})} % der Tage"><span>${pc.toLocaleString("de-DE",{maximumFractionDigits:pc<10?1:0})}%</span><i style="height:${Math.max(2,v/mx*100)}%;background:${rkCol(i/10+.05)}"></i><small>${(i/10).toLocaleString("de-DE")}</small></div>`}).join("")}
+async function openRk(c){if(!c)return;const dlg=$("rkDlg"),R=rkInfo(c);$("rkTitle").textContent=`${c.sym} · Bayazit Risiko-Indikator`;
+  $("rkKey").innerHTML=$("rkFiat").innerHTML=$("rkBands").innerHTML="";RV.D=[];$("rkCv").getContext("2d").clearRect(0,0,9999,9999);if(!dlg.open)dlg.showModal();
+  if(!R){$("rkSub").textContent="Für diesen Coin gibt es keinen Risiko-Wert: weniger als 2 Jahre Kursdaten oder nicht unter den Top 100.";return}
+  const p=c.p,cur=rkAt(R,p);
+  $("rkSub").innerHTML=`Kurs ${fmtP(p)} $ · Risiko <b style="color:${rkCol(cur)}">${fmtRk(cur)}</b> · ${rkTxt(cur)}${R.days<1460?' · <span style="color:var(--warn)">kurze Historie (unter 4 Jahren), Werte schwanken stärker</span>':""}`;
+  rkTables(R,p,cur);
+  try{let D=(await rkHistory(c.sym)).slice();const today=Math.floor(Date.now()/864e5)*864e5,last=D[D.length-1];
+    if(last&&last[0]===today)D[D.length-1]=[today,p,cur];else D.push([today,p,cur]);RV.D=D;
+    $("rkSrc").textContent=`Verlauf ab ${new Date(D[0][0]).toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})} · Quelle: ${D.src||R.src} · berechnet ${S.risk.updated?fmtT(Date.parse(S.risk.updated)):"–"}`;
+    rkBands(D,cur);rkSetRange(0)}catch(e){$("rkSrc").textContent="Verlauf gerade nicht abrufbar."}}
+(()=>{zoomable($("rkCv"),RV,drawRk,()=>rkSetRange(0),()=>document.querySelectorAll("#rkRange [data-rr]").forEach(x=>x.setAttribute("aria-pressed",false)));
+  $("rkRange").onclick=e=>{const b=e.target.closest("[data-rr]");if(b&&RV.D.length)rkSetRange(+b.dataset.rr)};
+  $("rkClose").onclick=()=>$("rkDlg").close();
+  $("rkDlg").addEventListener("click",e=>{if(e.target===$("rkDlg"))$("rkDlg").close()});
+  addEventListener("resize",()=>{if($("rkDlg").open)drawRk()});
+  const findCoin=id=>[...S.coins,...(S.base||[]),...(S.tokenCoins||[])].find(c=>c.id===id);
+  $("tb").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");if(b){e.preventDefault();openRk(findCoin(b.dataset.rk))}});
+  const tile=$("rkTile");tile.onclick=()=>openRk(S.btc);tile.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openRk(S.btc)}};
+})();
+// ---------- Blasen-Risiko: Kurs / 20-Wochen-SMA (wie "Short Term Bubble Risk" von Into The Cryptoverse) ----------
+const BUB=[[.5,"#1d2bd6"],[.75,"#2f6bff"],[1,"#18c7e6"],[1.25,"#22c55e"],[1.5,"#e6d200"],[1.75,"#f59e0b"],[2,"#f2591a"],[Infinity,"#e11d2e"]];
+const bubCol=v=>BUB.find(b=>v<b[0])[1];
+const bubTxt=v=>v<1?"Bärisch (unter 20W-SMA)":v<1.25?"Business as usual":v<1.5?"Läuft heiß":v<1.75?"Riskant":v<2?"Sehr riskant":"Blasengefahr";
+const fmtR=v=>v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
+// Wochenbeginn Montag 00:00 UTC (wie Binance/OKX-Wochenkerzen)
+const wkStart=t=>{const d=Math.floor(t/864e5);return(d-((d+3)%7))*864e5};
+// gespeichert je Coin: Summe der letzten 19 abgeschlossenen Wochen-Schlusskurse; die laufende Woche zählt mit dem Live-Kurs
+function bubOf(c){const b=c&&S.bub?.[c.sym];if(!b||b.n<19||!c.p)return null;return c.p/((b.s+c.p)/20)}
+function bubCell(c){const v=bubOf(c);if(v==null)return'<span class="flat">–</span>';
+  return`<button class="bub" data-bub="${esc(c.id)}" title="${bubTxt(v)} · Tippen für Chart" style="--bc:${bubCol(v)}">${fmtR(v)}</button>`}
+async function bubFetch(c){const now=Date.now(),wk=wkStart(now);let closes=null;
+  if(c.fl.includes("B")){try{const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${c.sym}USDT&interval=1w&limit=21`);
+    closes=j.filter(k=>+k[0]<wk).slice(-19).map(k=>+k[4])}catch(e){}}
+  if(!closes&&c.fl.includes("O")){const j=await getJSON(`https://www.okx.com/api/v5/market/candles?instId=${c.sym}-USDT&bar=1Wutc&limit=21`);
+    closes=(j.data||[]).filter(k=>+k[0]<wk).slice(0,19).map(k=>+k[4])}
+  if(!closes)return null;return{s:closes.reduce((a,b)=>a+b,0),n:closes.length,wk}}
+let bubBusy=false;
+async function loadBub(){if(bubBusy)return;bubBusy=true;S.bub=S.bub||LS("bcsBub")||{};
+  const wk=wkStart(Date.now()),seen=new Set(),todo=[];
+  [...(S.base||[]),...S.coins].forEach(c=>{if(seen.has(c.sym))return;seen.add(c.sym);if(S.bub[c.sym]?.wk===wk)return;if(/[BO]/.test(c.fl))todo.push(c)});
+  if(S.btc)todo.sort((a,b)=>(b.sym==="BTC")-(a.sym==="BTC"));
+  let i=0,last=0;
+  const work=async()=>{while(i<todo.length){const c=todo[i++];try{const r=await bubFetch(c);if(r)S.bub[c.sym]=r}catch(e){}
+    if(Date.now()-last>1500){last=Date.now();renderBubTile();if(S.mode!=="flows"&&!SPEC[S.tab])render()}}};
+  await Promise.all(Array.from({length:6},work));
+  LS("bcsBub",S.bub);bubBusy=false;renderBubTile();if(!SPEC[S.tab])render()}
+function renderBubTile(){const v=bubOf(S.btc);if(v==null)return;const e=$("tBub");e.textContent=fmtR(v);e.style.color=bubCol(v);$("tBubS").textContent=bubTxt(v)+" · Tippen für Chart"}
+
+// ---- Verlauf (Tageskerzen) und Chart mit Zeitraum-Auswahl ----
+const bubHist={};
+async function bubHistory(c){if(bubHist[c.sym])return bubHist[c.sym];let rows=[],src="";
+  if(c.fl.includes("B")){try{let start=0;for(let p=0;p<8;p++){const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${c.sym}USDT&interval=1d&limit=1000&startTime=${start}`,20000);
+      if(!j.length)break;rows.push(...j.map(k=>[+k[0],+k[4]]));if(j.length<1000)break;start=+j[j.length-1][0]+1}src="Binance"}catch(e){rows=[]}}
+  if(!rows.length&&c.fl.includes("O")){let after="";for(let p=0;p<25;p++){const j=await getJSON(`https://www.okx.com/api/v5/market/history-candles?instId=${c.sym}-USDT&bar=1Dutc&limit=100${after?"&after="+after:""}`);
+      const d=j.data||[];if(!d.length)break;rows.push(...d.map(k=>[+k[0],+k[4]]));after=d[d.length-1][0];if(d.length<100)break}
+    rows.sort((a,b)=>a[0]-b[0]);src="OKX"}
+  const out=[],wc=[];let cw=null,cc=null;
+  for(const[t,cl]of rows){const w=wkStart(t);if(cw!==null&&w!==cw)wc.push(cc);cw=w;cc=cl;
+    if(wc.length>=19){let s=cl;for(let i=wc.length-19;i<wc.length;i++)s+=wc[i];out.push([t,cl,cl/(s/20)])}}
+  out.src=src;bubHist[c.sym]=out;return out}
+const BV={D:[],a:0,b:0,hov:null,x0:null,x1:null,geo:null};
+function bubSetRange(days){const D=BV.D;BV.b=D.length-1;if(!days){BV.a=0}else{const t=D[BV.b][0]-days*864e5;BV.a=Math.max(0,D.findIndex(d=>d[0]>=t))}
+  BV.hov=null;document.querySelectorAll("#bubRange [data-br]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.br===days));drawBub()}
+function drawBub(){const cv=$("bubCv");if(!cv||!BV.D.length)return;const dpr=devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+  cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const D=BV.D.slice(BV.a,BV.b+1);if(D.length<2)return;
+  const cs=getComputedStyle(document.documentElement),fg=cs.getPropertyValue("--fg").trim(),mu=cs.getPropertyValue("--muted").trim(),ln=cs.getPropertyValue("--line").trim();
+  const sm=W<600,L=sm?50:68,R=sm?34:44,T=12,B=24,pw=W-L-R,ph=H-T-B,n=D.length;BV.geo={L,pw,n};
+  const x=i=>L+(n===1?0:i/(n-1)*pw);
+  let pmn=Infinity,pmx=0,rmn=.6,rmx=2.2;D.forEach(d=>{if(d[1]<pmn)pmn=d[1];if(d[1]>pmx)pmx=d[1];if(d[2]<rmn)rmn=d[2];if(d[2]>rmx)rmx=d[2]});
+  const lp0=Math.log10(pmn)-.05,lp1=Math.log10(pmx)+.05,yp=p=>T+ph*(1-(Math.log10(p)-lp0)/(lp1-lp0));
+  const lr0=Math.log(rmn*.95),lr1=Math.log(rmx*1.05),yr=r=>T+ph*(1-(Math.log(r)-lr0)/(lr1-lr0));
+  g.font=`${sm?10:11}px ${cs.getPropertyValue("--f-num")}`;g.lineWidth=1;
+  // Raster + rechte Achse (Blasen-Wert)
+  [.5,.75,1,1.25,1.5,2,3].filter(v=>v>=rmn*.95&&v<=rmx*1.05).forEach(v=>{const y=yr(v);g.strokeStyle=ln;g.setLineDash(v===1?[]:[3,4]);g.beginPath();g.moveTo(L,y);g.lineTo(L+pw,y);g.stroke();
+    g.fillStyle=mu;g.textAlign="left";g.fillText(fmtR(v).replace(/,?0+$/,"").replace(/,$/,""),L+pw+5,y+4)});g.setLineDash([]);
+  // linke Achse (Kurs, logarithmisch)
+  g.textAlign="right";for(let k=0;k<=4;k++){const lv=lp0+(lp1-lp0)*k/4,v=10**lv;g.fillStyle=mu;g.fillText(fmtP(v),L-5,yp(v)+4)}
+  // Balken
+  const bw=Math.max(1,pw/n+.5),y1=yr(1);D.forEach((d,i)=>{const y=yr(d[2]);g.fillStyle=bubCol(d[2]);g.fillRect(x(i)-bw/2,Math.min(y,y1),bw,Math.max(1,Math.abs(y-y1)))});
+  // Kurslinie
+  g.strokeStyle="#4a90e2";g.lineWidth=1.6;g.beginPath();D.forEach((d,i)=>{const X=x(i),Y=yp(d[1]);i?g.lineTo(X,Y):g.moveTo(X,Y)});g.stroke();g.lineWidth=1;
+  // Datumsachse
+  const span=D[n-1][0]-D[0][0],ticks=sm?4:7;g.fillStyle=mu;g.textAlign="center";
+  for(let k=0;k<=ticks;k++){const i=Math.round((n-1)*k/ticks),dt=new Date(D[i][0]);
+    const lab=span>6*365*864e5?String(dt.getUTCFullYear()):dt.toLocaleDateString("de-DE",{month:"short",year:"2-digit",timeZone:"UTC"});
+    g.textAlign=k===0?"left":k===ticks?"right":"center";g.fillText(lab,x(i),H-6)}
+  // Auswahl beim Ziehen
+  if(BV.x0!=null&&BV.x1!=null){g.fillStyle="rgba(74,144,226,.22)";g.fillRect(Math.min(BV.x0,BV.x1),T,Math.abs(BV.x1-BV.x0),ph)}
+  // Fadenkreuz + Info
+  if(BV.hov!=null&&BV.x0==null){const i=BV.hov-BV.a;if(i>=0&&i<n){const d=D[i],X=x(i);g.strokeStyle=mu;g.setLineDash([3,3]);g.beginPath();g.moveTo(X,T);g.lineTo(X,T+ph);g.stroke();g.setLineDash([]);
+    const lines=[new Date(d[0]).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"}),bubTxt(d[2]),"Blase: "+fmtR(d[2]),"Kurs: "+fmtP(d[1])+" $"];
+    const bwid=Math.max(...lines.map(s=>g.measureText(s).width))+16,bh=lines.length*15+10;let bx=X+10;if(bx+bwid>L+pw)bx=X-10-bwid;
+    g.fillStyle=cs.getPropertyValue("--panel").trim();g.strokeStyle=ln;g.fillRect(bx,T+6,bwid,bh);g.strokeRect(bx,T+6,bwid,bh);
+    g.textAlign="left";lines.forEach((s,k)=>{g.fillStyle=k===1?bubCol(d[2]):fg;g.fillText(s,bx+8,T+22+k*15)})}}}
+async function openBub(c){if(!c)return;const dlg=$("bubDlg");$("bubTitle").textContent=`${c.sym} · Blasen-Risiko (Kurs ÷ 20-Wochen-SMA)`;$("bubSub").textContent="Lade Verlauf …";
+  BV.D=[];const g=$("bubCv").getContext("2d");g.clearRect(0,0,9999,9999);if(!dlg.open)dlg.showModal();
+  if(!/[BO]/.test(c.fl)){$("bubSub").textContent="Für diesen Coin gibt es keinen Verlauf (nicht auf Binance oder OKX gelistet).";return}
+  try{const D=await bubHistory(c);if(D.length<2){$("bubSub").textContent="Zu wenig Verlauf: der Coin ist noch keine 20 Wochen gelistet.";return}
+    BV.D=D;const v=bubOf(c)??D[D.length-1][2];
+    $("bubSub").innerHTML=`aktuell <b style="color:${bubCol(v)}">${fmtR(v)}</b> · ${bubTxt(v)} · Verlauf ab ${new Date(D[0][0]).toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})} · Quelle: ${esc(D.src)}`;
+    bubSetRange(0)}catch(e){$("bubSub").textContent="Verlauf gerade nicht abrufbar. Bitte später erneut versuchen."}}
+(()=>{zoomable($("bubCv"),BV,drawBub,()=>bubSetRange(0),()=>document.querySelectorAll("#bubRange [data-br]").forEach(x=>x.setAttribute("aria-pressed",false)));
+  $("bubRange").onclick=e=>{const b=e.target.closest("[data-br]");if(b&&BV.D.length)bubSetRange(+b.dataset.br)};
+  $("bubClose").onclick=()=>$("bubDlg").close();
+  $("bubDlg").addEventListener("click",e=>{if(e.target===$("bubDlg"))$("bubDlg").close()});
+  addEventListener("resize",()=>{if($("bubDlg").open)drawBub()});
+  const findCoin=id=>[...S.coins,...(S.base||[]),...(S.tokenCoins||[])].find(c=>c.id===id);
+  $("tb").addEventListener("click",e=>{const b=e.target.closest("[data-bub]");if(b){e.preventDefault();openBub(findCoin(b.dataset.bub))}});
+  const tile=$("bubTile");tile.onclick=()=>openBub(S.btc);tile.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openBub(S.btc)}};
+})();
 // ---------- TradingView-Links am Android-Handy direkt in der App öffnen ----------
 if(/Android/i.test(navigator.userAgent))document.addEventListener("click",e=>{
   const a=e.target.closest&&e.target.closest('a[href*="tradingview.com/"]');if(!a||e.defaultPrevented)return;
