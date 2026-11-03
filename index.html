@@ -1494,7 +1494,7 @@ async function bubFetch(c){const now=Date.now(),wk=wkStart(now);let closes=null;
   if(!closes&&rkInfo(c)){try{closes=weeklyFromDaily(await rkHistory(c.sym),wk)}catch(e){}}
   if(!closes)return null;return{s:closes.reduce((a,b)=>a+b,0),n:closes.length,wk}}
 let bubBusy=false;
-async function loadBub(){if(bubBusy)return;bubBusy=true;S.bub=S.bub||LS("bcsBub")||{};
+async function loadBub(){if(bubBusy)return;bubBusy=true;S.bub=S.bub||LS("bcsBub2")||{};
   const wk=wkStart(Date.now()),seen=new Set(),todo=[];
   [...(S.base||[]),...S.coins].forEach(c=>{if(seen.has(c.sym))return;seen.add(c.sym);if(S.bub[c.sym]?.wk===wk)return;if(/[BO]/.test(c.fl)||rkInfo(c))todo.push(c)});
   if(S.btc)todo.sort((a,b)=>(b.sym==="BTC")-(a.sym==="BTC"));
@@ -1502,7 +1502,7 @@ async function loadBub(){if(bubBusy)return;bubBusy=true;S.bub=S.bub||LS("bcsBub"
   const work=async()=>{while(i<todo.length){const c=todo[i++];try{const r=await bubFetch(c);if(r)S.bub[c.sym]=r}catch(e){}
     if(Date.now()-last>1500){last=Date.now();renderBubTile();if(S.mode!=="flows"&&!SPEC[S.tab])render()}}};
   await Promise.all(Array.from({length:6},work));
-  LS("bcsBub",S.bub);bubBusy=false;renderBubTile();if(!SPEC[S.tab])render()}
+  LS("bcsBub2",S.bub);bubBusy=false;renderBubTile();if(!SPEC[S.tab])render()}
 function renderBubTile(){const v=bubOf(S.btc);if(v==null)return;const e=$("tBub");e.textContent=fmtR(v);e.style.color=bubCol(v);$("tBubS").textContent=bubTxt(v)+" · Tippen für Chart"}
 
 // ---- Verlauf (Tageskerzen) und Chart mit Zeitraum-Auswahl ----
