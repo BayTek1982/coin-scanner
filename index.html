@@ -419,8 +419,8 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   <div class="bubhead"><div><b id="bubTitle">–</b><span class="msg" id="bubSub"></span></div><button class="chip" id="bubClose" aria-label="Schließen">✕ Schließen</button></div>
   <div class="bubrange" id="bubRange"><button class="chip" data-br="182">6 Monate</button><button class="chip" data-br="365">1 Jahr</button><button class="chip" data-br="1095">3 Jahre</button><button class="chip" data-br="0">Alles</button></div>
   <canvas id="bubCv"></canvas>
-  <div class="bubleg"><span><i style="background:#1d2bd6"></i>&lt; 0,5</span><span><i style="background:#2f6bff"></i>0,5–0,75</span><span><i style="background:#18c7e6"></i>0,75–1</span><span><i style="background:#22c55e"></i>1–1,25</span><span><i style="background:#e6d200"></i>1,25–1,5</span><span><i style="background:#f59e0b"></i>1,5–1,75</span><span><i style="background:#f2591a"></i>1,75–2</span><span><i style="background:#e11d2e"></i>&gt; 2</span><span><i style="background:#4a90e2;height:3px;vertical-align:3px"></i>Kurs (log)</span></div>
-  <p class="hint">Zeitraum wählen: mit Maus oder Finger waagerecht über den Chart ziehen. Doppelklick oder „Alles“ zeigt wieder den ganzen Verlauf. Balken = Kurs geteilt durch den 20-Wochen-Durchschnitt (laufende Woche mit aktuellem Kurs, wie bei Into The Cryptoverse). Daten: Binance-Tageskerzen (ab 2017), sonst OKX, sonst Coin Metrics und CoinGecko. Veraltete Börsendaten (z. B. nach einem Delisting) werden nicht verwendet.</p>
+  <div class="bubleg" id="bubLeg"><span><i style="background:#1d2bd6"></i>&lt; 0,5</span><span><i style="background:#2f6bff"></i>0,5–0,75</span><span><i style="background:#18c7e6"></i>0,75–1</span><span><i style="background:#22c55e"></i>1–1,25</span><span><i style="background:#e6d200"></i>1,25–1,5</span><span><i style="background:#f59e0b"></i>1,5–1,75</span><span><i style="background:#f2591a"></i>1,75–2</span><span><i style="background:#e11d2e"></i>&gt; 2</span><span><i style="background:#4a90e2;height:3px;vertical-align:3px"></i>Kurs (log)</span></div>
+  <p class="hint" id="bubHint">Zeitraum wählen: mit Maus oder Finger waagerecht über den Chart ziehen. Doppelklick oder „Alles“ zeigt wieder den ganzen Verlauf. Balken = Kurs geteilt durch den 20-Wochen-Durchschnitt (laufende Woche mit aktuellem Kurs, wie bei Into The Cryptoverse). Daten: Binance-Tageskerzen (ab 2017), sonst OKX, sonst Coin Metrics und CoinGecko. Veraltete Börsendaten (z. B. nach einem Delisting) werden nicht verwendet.</p>
 </dialog>
 <script>
 "use strict";
@@ -974,14 +974,14 @@ async function loadWorld(){try{const r=await fetch("data/world.json?t="+Date.now
   stamp("stWorld",`Stand ${fmtT(j.updated)} · Quelle: Yahoo Finance`);$("worldBody").innerHTML=j.items.map(w=>`<tr><td class="l"><a class="ext" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(w.tv)}" target="_blank" rel="noopener">${esc(w.n)}</a></td><td class="l" style="font-family:var(--f-body);color:var(--muted)">${esc(w.r)}</td><td>${w.p!=null?w.p.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2}):"–"}</td><td>${pct(w.d)}</td><td>${pct(w.w)}</td><td>${pct(w.m)}</td><td class="flat">${new Date(w.t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</td></tr>`).join("")}
   catch(e){$("worldBody").innerHTML='<tr><td colspan="7" class="empty">Noch keine Daten. Sie kommen mit dem nächsten automatischen Kurs-Lauf.</td></tr>'}}
 let STK=null,stkLoading=false;
-async function loadStocks(){if(stkLoading)return;stkLoading=true;
+async function loadStocks(){if(stkLoading)return;stkLoading=true;loadSRisk();
   try{const r=await fetch("data/stocks.json?t="+Date.now());if(r.ok)STK=await r.json()}catch(e){}
   try{const r=await fetch("data/russell.json?t="+Date.now());if(r.ok){const j=await r.json();Object.values(j.indices).forEach(ix=>ix.updated=j.updated);if(STK)Object.assign(STK.indices,j.indices);else STK=j}}catch(e){}
   stkLoading=false;showIndex()}
 const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
 function ySym(y){const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+(m[2]==="HK"?m[1].replace(/^0+/,""):m[1].replace(/-/g,"_"));return y.replace(/-/g,".")}
 function stockRows(k){const ix=STK?.indices?.[k];if(!ix)return null;const b=ix.bench||{};
-  const list=ix.items.map(c=>Object.assign({},c,{score:c.w!=null&&c.m!=null&&b.w!=null?0.5*(c.w-b.w)+0.5*(c.m-b.m):null}));
+  const list=ix.items.map(c=>Object.assign({},c,{score:c.w!=null&&c.m!=null&&b.w!=null?0.5*(c.w-b.w)+0.5*(c.m-b.m):null,rk:srkOf(c),ht:shtOf(c)}));
   const f=S.stf||"score",dir=S.sdir||-1;
   if(f==="tk")list.forEach(c=>{c.tk=tokensFor(c.n,ix.cur==="$"?c.y.replace(/-/g,"."):ySym(c.y)).length+perpsFor(c,ix.cur).length});
   if(f==="n"||f==="sec")return list.sort((a,c)=>{const r=String(a[f]||"").localeCompare(String(c[f]||""),"de");return dir===-1?r:-r});
@@ -991,17 +991,17 @@ function showStocks(k){const ix=STK.indices[k],R=stockRows(k),cur=ix.cur,f=S.stf
   document.querySelectorAll("[data-stf]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.stf===f));
   $("stkBar").hidden=false;$("idxTable").style.minWidth="900px";
   $("stkStand").textContent=`Stand ${new Date(ix.updated||STK.updated).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} Uhr · Index: 1T ${b.d!=null?b.d.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %, 30T ${b.m!=null?b.m.toLocaleString("de-DE",{maximumFractionDigits:1}):"–"} %`;
-  $("idxHead").innerHTML=`<tr><th class="l"></th><th class="l"></th><th class="l" data-ssort="n">Unternehmen</th><th data-ssort="p">Kurs ${cur}</th><th data-ssort="d">1T</th><th data-ssort="w">7T</th><th data-ssort="m">30T</th><th data-ssort="score">Score</th><th data-ssort="mc">Börsenwert</th><th data-ssort="v">Umsatz</th><th data-ssort="m">30 Tage</th><th class="l" data-ssort="tk">🪙 Token / ⚡ Perp</th><th class="l" data-ssort="sec">Sektor</th></tr>`;
+  $("idxHead").innerHTML=`<tr><th class="l"></th><th class="l"></th><th class="l" data-ssort="n">Unternehmen</th><th data-ssort="p">Kurs ${cur}</th><th data-ssort="rk" title="Bayazit Risiko-Indikator: 0 = historisch billig, 1 = historisch teuer">Risiko</th><th data-ssort="ht" title="Hitze: Kurs ÷ 20-Wochen-Schnitt, Farben nach der eigenen Geschichte der Aktie">Hitze</th><th data-ssort="d">1T</th><th data-ssort="w">7T</th><th data-ssort="m">30T</th><th data-ssort="score">Score</th><th data-ssort="mc">Börsenwert</th><th data-ssort="v">Umsatz</th><th data-ssort="m">30 Tage</th><th class="l" data-ssort="tk">🪙 Token / ⚡ Perp</th><th class="l" data-ssort="sec">Sektor</th></tr>`;
   arrows("#idxHead th[data-ssort]","data-ssort",f,S.sdir||-1);
   const LIM=300,more=R.length>LIM&&!S.showAll;const RR=more?R.slice(0,LIM):R;
   $("idxBody").innerHTML=RR.map(c=>{const tv=ySym(c.y),toks=tokensFor(c.n,cur==="$"?c.y.replace(/-/g,"."):tv);const id=k+":"+c.y;
     return`<tr><td class="l"><button class="star${S.sstars.has(c.y)?" on":""}" data-sstar="${esc(c.y)}" aria-label="${esc(c.n)} merken">${S.sstars.has(c.y)?"★":"☆"}</button></td>
     <td class="l"><input type="checkbox" data-ssel="${esc(c.y)}" ${S.ssel.has(c.y)?"checked":""} aria-label="${esc(c.n)} exportieren"></td>
     <td class="l coin"><a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tv)}" target="_blank" rel="noopener">${esc(c.n)}</a><span>${esc(tv.split(":").pop())}</span></td>
-    <td>${fmtP(c.p)}</td><td class="${f==="d"?"sel":""}">${pct(c.d)}</td><td class="${f==="w"?"sel":""}">${pct(c.w)}</td><td class="${f==="m"?"sel":""}">${pct(c.m)}</td>
+    <td>${fmtP(c.p)}</td><td class="${f==="rk"?"sel":""}">${srkCell(c,k)}</td><td class="${f==="ht"?"sel":""}">${shtCell(c,k)}</td><td class="${f==="d"?"sel":""}">${pct(c.d)}</td><td class="${f==="w"?"sel":""}">${pct(c.w)}</td><td class="${f==="m"?"sel":""}">${pct(c.m)}</td>
     <td class="${f==="score"?"sel":""}">${pct(c.score,true)}</td><td>${c.mc?fmtB(c.mc):"–"}</td><td>${c.v?fmtB(c.v):"–"}</td><td>${spark(c.spark,(c.m??0)>=0)}</td>
     <td class="l">${(()=>{const ps=perpsFor(c,cur),h=toks.map(t=>`<span class="coinpill">🪙 ${esc(t.sym)} · ${esc(t.issuer)}</span>`).join("")+ps.map(p=>`<a class="coinpill" style="text-decoration:none" href="${esc(p.url)}" target="_blank" rel="noopener" title="Aktien-Perpetual auf ${p.ex} (${esc(p.id)}): Hebel-Kontrakt, kein Token">⚡ ${p.ex}</a>`).join("");return h||'<span class="flat">–</span>'})()}</td>
-    <td class="l" style="font-family:var(--f-body);color:var(--muted)">${esc(c.sec||"")}</td></tr>`}).join("")+(more?`<tr><td colspan="13" class="empty">Gezeigt werden die ersten ${LIM} von ${R.length} nach deiner Sortierung. <button class="btn ghost" id="showAll">Alle ${R.length} anzeigen</button></td></tr>`:"")||'<tr><td colspan="13" class="empty">Für diesen Index liegen noch keine Kurse vor.</td></tr>';
+    <td class="l" style="font-family:var(--f-body);color:var(--muted)">${esc(c.sec||"")}</td></tr>`}).join("")+(more?`<tr><td colspan="15" class="empty">Gezeigt werden die ersten ${LIM} von ${R.length} nach deiner Sortierung. <button class="btn ghost" id="showAll">Alle ${R.length} anzeigen</button></td></tr>`:"")||'<tr><td colspan="15" class="empty">Für diesen Index liegen noch keine Kurse vor.</td></tr>';
   const sa=document.getElementById("showAll");if(sa)sa.onclick=()=>{S.showAll=true;showIndex()};
   updateSWL()}
 function updateSWL(){if(!STK||!S.ssel)return;const all=new Map();Object.values(STK.indices).forEach(ix=>ix.items.forEach(c=>all.set(c.y,c)));
@@ -1412,8 +1412,8 @@ const rkTxt=r=>r<.2?"Sehr niedrig – historisch günstig":r<.4?"Niedrig":r<.6?"
 const fmtRk=r=>r.toLocaleString("de-DE",{minimumFractionDigits:3,maximumFractionDigits:3});
 // 0,5 = Kurs auf dem 374-Tage-Durchschnitt; darunter bis zum tiefsten Wert der ganzen Historie (0), darüber bis zum höchsten der letzten 4 Jahre (1)
 function rkScale(x,R){const r=x>=0?(R.mx>0?.5+.5*x/R.mx:1):(R.mn<0?.5-.5*x/R.mn:0);return Math.max(0,Math.min(1,r))}
-function rkAt(R,p){const M=S.risk.model,x=(Math.log(p)-Math.log((R.s+p)/M.L))*R.n**M.a;return rkScale(x,R)}
-function rkPrice(R,r){const M=S.risk.model,k=(r>=.5?(2*r-1)*R.mx:(1-2*r)*R.mn)/R.n**M.a;let lo=Math.log(1e-12),hi=Math.log(1e12);
+function rkAt(R,p){const M=R.M||S.risk.model,x=(Math.log(p)-Math.log((R.s+p)/M.L))*(R.n||1)**(M.a||0);return rkScale(x,R)}
+function rkPrice(R,r){const M=R.M||S.risk.model,k=(r>=.5?(2*r-1)*R.mx:(1-2*r)*R.mn)/(R.n||1)**(M.a||0);let lo=Math.log(1e-12),hi=Math.log(1e12);
   for(let i=0;i<120;i++){const m=(lo+hi)/2;(m-Math.log((R.s+Math.exp(m))/M.L)<k)?lo=m:hi=m}return Math.exp(lo)}
 const rkInfo=c=>{const R=c&&S.risk?.coins?.[c.sym];return R&&R.last_day>=Math.floor(Date.now()/864e5)-4?R:null};
 function rkOf(c){const R=rkInfo(c);return R&&c.p?rkAt(R,c.p):null}
@@ -1439,28 +1439,29 @@ function drawRk(){const cv=$("rkCv");if(!cv||!RV.D.length)return;const c=chartBa
   g.lineWidth=1.5;for(let i=1;i<n;i++){g.strokeStyle=rkCol(D[i][2]);g.beginPath();g.moveTo(x(i-1),yr(D[i-1][2]));g.lineTo(x(i),yr(D[i][2]));g.stroke()}g.lineWidth=1;
   chartDates(c,D,x);chartTip(c,RV,D,x,d=>[fmtD(d[0]),rkTxt(d[2]).split(" – ")[0],"Risiko: "+fmtRk(d[2]),"Kurs: "+fmtP(d[1])+" $"],d=>rkCol(d[2]))}
 function niceStep(v){const e=10**Math.floor(Math.log10(v)),f=v/e;return(f<1.5?1:f<2.25?2:f<3.5?2.5:f<7.5?5:10)*e}
+let RK_U="$";
 function rkTables(R,p,cur){
-  const now=`<tr class="cur"><td>${fmtRk(cur)}</td><td>${fmtP(p)} $</td></tr>`;let rows="",done=false;
-  for(let k=0;k<=40;k++){const r=k/40;if(!done&&r>cur){rows+=now;done=true}rows+=`<tr style="background:${rkBg(r)}"><td>${fmtRk(r)}</td><td>${fmtP(rkPrice(R,r))} $</td></tr>`}
+  const now=`<tr class="cur"><td>${fmtRk(cur)}</td><td>${fmtP(p)} ${RK_U}</td></tr>`;let rows="",done=false;
+  for(let k=0;k<=40;k++){const r=k/40;if(!done&&r>cur){rows+=now;done=true}rows+=`<tr style="background:${rkBg(r)}"><td>${fmtRk(r)}</td><td>${fmtP(rkPrice(R,r))} ${RK_U}</td></tr>`}
   if(!done)rows+=now;$("rkKey").innerHTML=`<table class="mini rkt"><thead><tr><th class="l">Risiko</th><th>Preis</th></tr></thead><tbody>${rows}</tbody></table>`;
   const p0=rkPrice(R,0),p1=rkPrice(R,1),st=niceStep((p1-p0)/24),list=[];for(let v=Math.ceil(p0/st)*st;v<p1&&list.length<40;v+=st)list.push(v);
-  rows=`<tr style="background:${rkBg(0)}"><td>${fmtP(p0)} $</td><td>${fmtRk(0)}</td></tr>`;done=false;
-  list.forEach(v=>{if(!done&&v>p){rows+=`<tr class="cur"><td>${fmtP(p)} $</td><td>${fmtRk(cur)}</td></tr>`;done=true}const r=rkAt(R,v);rows+=`<tr style="background:${rkBg(r)}"><td>${fmtP(v)} $</td><td>${fmtRk(r)}</td></tr>`});
-  if(!done)rows+=`<tr class="cur"><td>${fmtP(p)} $</td><td>${fmtRk(cur)}</td></tr>`;
-  rows+=`<tr style="background:${rkBg(1)}"><td>${fmtP(p1)} $</td><td>${fmtRk(1)}</td></tr>`;
+  rows=`<tr style="background:${rkBg(0)}"><td>${fmtP(p0)} ${RK_U}</td><td>${fmtRk(0)}</td></tr>`;done=false;
+  list.forEach(v=>{if(!done&&v>p){rows+=`<tr class="cur"><td>${fmtP(p)} ${RK_U}</td><td>${fmtRk(cur)}</td></tr>`;done=true}const r=rkAt(R,v);rows+=`<tr style="background:${rkBg(r)}"><td>${fmtP(v)} ${RK_U}</td><td>${fmtRk(r)}</td></tr>`});
+  if(!done)rows+=`<tr class="cur"><td>${fmtP(p)} ${RK_U}</td><td>${fmtRk(cur)}</td></tr>`;
+  rows+=`<tr style="background:${rkBg(1)}"><td>${fmtP(p1)} ${RK_U}</td><td>${fmtRk(1)}</td></tr>`;
   $("rkFiat").innerHTML=`<table class="mini rkt"><thead><tr><th class="l">Preis</th><th>Risiko</th></tr></thead><tbody>${rows}</tbody></table>`;
   [$("rkKey"),$("rkFiat")].forEach(b=>{const c=b.querySelector("tr.cur");if(c)b.scrollTop=c.offsetTop-b.clientHeight/2})}
 function rkBands(D,cur){const cnt=Array(10).fill(0);D.forEach(d=>cnt[Math.min(9,Math.floor(d[2]*10))]++);const mx=Math.max(...cnt),ci=Math.min(9,Math.floor(cur*10));
   $("rkBands").innerHTML=cnt.map((v,i)=>{const pc=v/D.length*100;return`<div class="rkb${i===ci?" on":""}" title="${(i/10).toLocaleString("de-DE")}–${((i+1)/10).toLocaleString("de-DE")}: ${pc.toLocaleString("de-DE",{maximumFractionDigits:1})} % der Tage"><span>${pc.toLocaleString("de-DE",{maximumFractionDigits:pc<10?1:0})}%</span><i style="height:${Math.max(3,v/mx*110).toFixed(0)}px;background:${rkCol(i/10+.05)}"></i><small>${(i/10).toLocaleString("de-DE",{minimumFractionDigits:1})}</small></div>`}).join("")}
-async function openRk(c){if(!c)return;const dlg=$("rkDlg"),R=rkInfo(c);$("rkTitle").textContent=`${c.sym} · Bayazit Risiko-Indikator`;
+async function openRk(c,o){if(!c)return;const dlg=$("rkDlg"),R=o?o.R:rkInfo(c);RK_U=o?.unit||"$";$("rkTitle").textContent=`${o?.name||c.sym} · Bayazit Risiko-Indikator`;
   $("rkKey").innerHTML=$("rkFiat").innerHTML=$("rkBands").innerHTML="";RV.D=[];$("rkCv").getContext("2d").clearRect(0,0,9999,9999);if(!dlg.open)dlg.showModal();
-  if(!R){$("rkSub").textContent="Für diesen Coin gibt es keinen Risiko-Wert: weniger als 2 Jahre Kursdaten oder nicht unter den Top 100.";return}
+  if(!R){$("rkSub").textContent=o?"Für diesen Wert gibt es keinen Risiko-Wert: weniger als 2 Jahre Kursdaten.":"Für diesen Coin gibt es keinen Risiko-Wert: weniger als 2 Jahre Kursdaten oder nicht unter den Top 100.";return}
   const p=c.p,cur=rkAt(R,p);
-  $("rkSub").innerHTML=`Kurs ${fmtP(p)} $ · Risiko <b style="color:${rkCol(cur)}">${fmtRk(cur)}</b> · ${rkTxt(cur)}${R.days<1460?' · <span style="color:var(--warn)">kurze Historie (unter 4 Jahren), Werte schwanken stärker</span>':""}`;
+  $("rkSub").innerHTML=`Kurs ${fmtP(p)} ${RK_U} · Risiko <b style="color:${rkCol(cur)}">${fmtRk(cur)}</b> · ${rkTxt(cur)}${R.days<(o?1008:1460)?' · <span style="color:var(--warn)">kurze Historie (unter 4 Jahren), Werte schwanken stärker</span>':""}`;
   rkTables(R,p,cur);
-  try{let D=(await rkHistory(c.sym)).slice();const today=Math.floor(Date.now()/864e5)*864e5,last=D[D.length-1];
+  try{let D=(o?await o.hist():await rkHistory(c.sym)).slice();const today=Math.floor(Date.now()/864e5)*864e5,last=D[D.length-1];
     if(last&&last[0]===today)D[D.length-1]=[today,p,cur];else D.push([today,p,cur]);RV.D=D;
-    $("rkSrc").textContent=`Verlauf ab ${new Date(D[0][0]).toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})} · Quelle: ${D.src||R.src} · berechnet ${S.risk.updated?fmtT(Date.parse(S.risk.updated)):"–"}`;
+    $("rkSrc").textContent=`Verlauf ab ${new Date(D[0][0]).toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})} · Quelle: ${o?"Yahoo Finance (bereinigt um Splits und Dividenden) · Aktien: 1 = höchster Stand der letzten 10 Jahre":D.src||R.src} · berechnet ${(o?o.upd:S.risk.updated)?fmtT(Date.parse(o?o.upd:S.risk.updated)):"–"}`;
     rkBands(D,cur);rkSetRange(0)}catch(e){$("rkSrc").textContent="Verlauf gerade nicht abrufbar."}}
 (()=>{zoomable($("rkCv"),RV,drawRk,()=>rkSetRange(0),()=>document.querySelectorAll("#rkRange [data-rr]").forEach(x=>x.setAttribute("aria-pressed",false)));
   $("rkRange").onclick=e=>{const b=e.target.closest("[data-rr]");if(b&&RV.D.length)rkSetRange(+b.dataset.rr)};
@@ -1473,8 +1474,11 @@ async function openRk(c){if(!c)return;const dlg=$("rkDlg"),R=rkInfo(c);$("rkTitl
 })();
 // ---------- Hitze: Kurs / 20-Wochen-SMA (wie "Short Term Bubble Risk" von Into The Cryptoverse) ----------
 const BUB=[[.5,"#1d2bd6"],[.75,"#2f6bff"],[1,"#18c7e6"],[1.25,"#22c55e"],[1.5,"#e6d200"],[1.75,"#f59e0b"],[2,"#f2591a"],[Infinity,"#e11d2e"]];
-const bubCol=v=>BUB.find(b=>v<b[0])[1];
-const bubTxt=v=>v<1?"Kalt (unter dem Schnitt)":v<1.25?"Normal":v<1.5?"Warm":v<1.75?"Heiß":v<2?"Sehr heiß":"Überhitzt";
+// Aktien: eigene Stufen je Aktie (BUB_TH = [15 %, 50 % unter dem Schnitt, 1, 50 %, 75 %, 90 %, 97 % darüber])
+let BUB_TH=null;
+const bubIdx=v=>{if(BUB_TH){const k=BUB_TH.findIndex(t=>v<t);return k<0?7:k}return BUB.findIndex(b=>v<b[0])};
+const bubCol=v=>BUB[bubIdx(v)][1];
+const bubTxt=v=>["Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Normal","Warm","Heiß","Sehr heiß","Überhitzt"][bubIdx(v)];
 const fmtR=v=>v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
 // Wochenbeginn Montag 00:00 UTC (wie Binance/OKX-Wochenkerzen)
 const wkStart=t=>{const d=Math.floor(t/864e5);return(d-((d+3)%7))*864e5};
@@ -1528,12 +1532,12 @@ function drawBub(){const cv=$("bubCv");if(!cv||!BV.D.length)return;const dpr=dev
   const cs=getComputedStyle(document.documentElement),fg=cs.getPropertyValue("--fg").trim(),mu=cs.getPropertyValue("--muted").trim(),ln=cs.getPropertyValue("--line").trim();
   const sm=W<600,L=sm?50:68,R=sm?34:44,T=12,B=24,pw=W-L-R,ph=H-T-B,n=D.length;BV.geo={L,pw,n};
   const x=i=>L+(n===1?0:i/(n-1)*pw);
-  let pmn=Infinity,pmx=0,rmn=.6,rmx=2.2;D.forEach(d=>{if(d[1]<pmn)pmn=d[1];if(d[1]>pmx)pmx=d[1];if(d[2]<rmn)rmn=d[2];if(d[2]>rmx)rmx=d[2]});
+  let pmn=Infinity,pmx=0,rmn=BUB_TH?Math.min(.95,BUB_TH[0]):.6,rmx=BUB_TH?Math.max(1.05,BUB_TH[6]):2.2;D.forEach(d=>{if(d[1]<pmn)pmn=d[1];if(d[1]>pmx)pmx=d[1];if(d[2]<rmn)rmn=d[2];if(d[2]>rmx)rmx=d[2]});
   const lp0=Math.log10(pmn)-.05,lp1=Math.log10(pmx)+.05,yp=p=>T+ph*(1-(Math.log10(p)-lp0)/(lp1-lp0));
   const lr0=Math.log(rmn*.95),lr1=Math.log(rmx*1.05),yr=r=>T+ph*(1-(Math.log(r)-lr0)/(lr1-lr0));
   g.font=`${sm?10:11}px ${cs.getPropertyValue("--f-num")}`;g.lineWidth=1;
   // Raster + rechte Achse (Hitze-Wert)
-  [.5,.75,1,1.25,1.5,2,3].filter(v=>v>=rmn*.95&&v<=rmx*1.05).forEach(v=>{const y=yr(v);g.strokeStyle=ln;g.setLineDash(v===1?[]:[3,4]);g.beginPath();g.moveTo(L,y);g.lineTo(L+pw,y);g.stroke();
+  (BUB_TH?BUB_TH.filter(v=>v!==1).concat([1]):[.5,.75,1,1.25,1.5,2,3]).filter(v=>v>=rmn*.95&&v<=rmx*1.05).forEach(v=>{const y=yr(v);g.strokeStyle=ln;g.setLineDash(v===1?[]:[3,4]);g.beginPath();g.moveTo(L,y);g.lineTo(L+pw,y);g.stroke();
     g.fillStyle=mu;g.textAlign="left";g.fillText(fmtR(v).replace(/,?0+$/,"").replace(/,$/,""),L+pw+5,y+4)});g.setLineDash([]);
   // linke Achse (Kurs, logarithmisch)
   g.textAlign="right";for(let k=0;k<=4;k++){const lv=lp0+(lp1-lp0)*k/4,v=10**lv;g.fillStyle=mu;g.fillText(fmtP(v),L-5,yp(v)+4)}
@@ -1554,11 +1558,11 @@ function drawBub(){const cv=$("bubCv");if(!cv||!BV.D.length)return;const dpr=dev
     const bwid=Math.max(...lines.map(s=>g.measureText(s).width))+16,bh=lines.length*15+10;let bx=X+10;if(bx+bwid>L+pw)bx=X-10-bwid;
     g.fillStyle=cs.getPropertyValue("--panel").trim();g.strokeStyle=ln;g.fillRect(bx,T+6,bwid,bh);g.strokeRect(bx,T+6,bwid,bh);
     g.textAlign="left";lines.forEach((s,k)=>{g.fillStyle=k===1?bubCol(d[2]):fg;g.fillText(s,bx+8,T+22+k*15)})}}}
-async function openBub(c){if(!c)return;const dlg=$("bubDlg");$("bubTitle").textContent=`${c.sym} · Hitze (Kurs ÷ 20-Wochen-Schnitt)`;$("bubSub").textContent="Lade Verlauf …";
+async function openBub(c,o){if(!c)return;const dlg=$("bubDlg");BUB_TH=o?.th||null;bubLegend();$("bubTitle").textContent=`${o?.name||c.sym} · Hitze (Kurs ÷ 20-Wochen-Schnitt)`;$("bubSub").textContent="Lade Verlauf …";
   BV.D=[];const g=$("bubCv").getContext("2d");g.clearRect(0,0,9999,9999);if(!dlg.open)dlg.showModal();
-  if(!/[BO]/.test(c.fl)&&!rkInfo(c)){$("bubSub").textContent="Für diesen Coin gibt es keinen Verlauf (nicht auf Binance oder OKX gehandelt).";return}
-  try{const D=await bubHistory(c);if(D.length<2){$("bubSub").textContent="Kein aktueller Verlauf: entweder ist der Coin noch keine 20 Wochen gelistet oder keine Börse liefert aktuelle Kurse.";return}
-    BV.D=D;const v=bubOf(c)??D[D.length-1][2];
+  if(!o&&!/[BO]/.test(c.fl)&&!rkInfo(c)){$("bubSub").textContent="Für diesen Coin gibt es keinen Verlauf (nicht auf Binance oder OKX gehandelt).";return}
+  try{const D=o?await o.hist():await bubHistory(c);if(D.length<2){$("bubSub").textContent="Kein aktueller Verlauf: entweder ist der Coin noch keine 20 Wochen gelistet oder keine Börse liefert aktuelle Kurse.";return}
+    BV.D=D;const v=(o?o.cur:bubOf(c))??D[D.length-1][2];
     $("bubSub").innerHTML=`aktuell <b style="color:${bubCol(v)}">${fmtR(v)}</b> · ${bubTxt(v)} · Verlauf ab ${new Date(D[0][0]).toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})} · Quelle: ${esc(D.src)}`;
     bubSetRange(0)}catch(e){$("bubSub").textContent="Verlauf gerade nicht abrufbar. Bitte später erneut versuchen."}}
 (()=>{zoomable($("bubCv"),BV,drawBub,()=>bubSetRange(0),()=>document.querySelectorAll("#bubRange [data-br]").forEach(x=>x.setAttribute("aria-pressed",false)));
@@ -1570,6 +1574,40 @@ async function openBub(c){if(!c)return;const dlg=$("bubDlg");$("bubTitle").textC
   $("tb").addEventListener("click",e=>{const b=e.target.closest("[data-bub]");if(b){e.preventDefault();openBub(findCoin(b.dataset.bub))}});
   const tile=$("bubTile");tile.onclick=()=>openBub(S.btc);tile.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openBub(S.btc)}};
 })();
+// ---------- Aktien: Risiko und Hitze (Berechnung nachts per GitHub Actions in stock_risk.py) ----------
+// Rückgängig: stock_risk.py, den Workflow und data/srisk* löschen – dann zeigen die Spalten nur "–".
+const srFile=y=>y.replace(/[^A-Za-z0-9.\-]/g,"_");
+async function loadSRisk(){if(S.srisk!==undefined)return;S.srisk=null;
+  try{const r=await fetch("data/srisk.json?t="+Date.now());if(!r.ok)throw 0;S.srisk=await r.json()}catch(e){S.srisk=null}
+  if(S.mode==="aktien"&&STK)showIndex()}
+function srInfo(c){const R=c&&S.srisk?.s?.[c.y];if(!R||R.ld<Math.floor(Date.now()/864e5)-7)return null;
+  if(!R.M)R.M={L:S.srisk.model.L,a:0};return R}
+function srkOf(c){const R=srInfo(c);return R&&R.s!=null&&c.p?rkAt(R,c.p):null}
+function shtOf(c){const R=srInfo(c);if(!R||!c.p||!R.wc)return null;const wk=wkStart(Date.now())/864e5;
+  const done=R.wc.filter(w=>w[0]<wk).slice(-19);if(done.length<19)return null;const s=done.reduce((a,w)=>a+w[1],0);return c.p/((s+c.p)/20)}
+function shtCol(c,v){const o=BUB_TH;BUB_TH=srInfo(c)?.th||null;const r=[bubCol(v),bubTxt(v)];BUB_TH=o;return r}
+function srkCell(c,k){const v=c.rk!==undefined?c.rk:srkOf(c);if(v==null)return'<span class="flat" title="Kein Risiko-Wert: weniger als 2 Jahre Kursdaten (Russell 2000 ist nicht enthalten)">–</span>';
+  return`<button class="bub" data-srk="${esc(k+"|"+c.y)}" title="${rkTxt(v)} · Tippen für Details" style="--bc:${rkCol(v)}">${v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}</button>`}
+function shtCell(c,k){const v=c.ht!==undefined?c.ht:shtOf(c);if(v==null)return'<span class="flat">–</span>';const [col,txt]=shtCol(c,v);
+  return`<button class="bub" data-sht="${esc(k+"|"+c.y)}" title="${txt} (gemessen an der eigenen Geschichte) · Tippen für Chart" style="--bc:${col}">${fmtR(v)}</button>`}
+const srHist={};
+async function srHistory(y){if(srHist[y])return srHist[y];const r=await fetch(`data/srisk/${encodeURIComponent(srFile(y))}.json?t=`+Math.floor(Date.now()/36e5));if(!r.ok)throw 0;
+  const j=await r.json();return srHist[y]=j.d}
+function withLive(D,p,v){D=D.slice();const today=Math.floor(Date.now()/864e5)*864e5,last=D[D.length-1];if(last&&last[0]>=today)D[D.length-1]=[today,p,v];else D.push([today,p,v]);return D}
+let BUB_LEG0=null,BUB_HINT0=null;
+function bubLegend(){const L=$("bubLeg"),H=$("bubHint");if(BUB_LEG0==null){BUB_LEG0=L.innerHTML;BUB_HINT0=H.textContent}
+  if(!BUB_TH){L.innerHTML=BUB_LEG0;H.textContent=BUB_HINT0;return}
+  const t=BUB_TH.map(v=>fmtR(v)),names=["Kalt","Kalt","Kalt","Normal","Warm","Heiß","Sehr heiß","Überhitzt"],edges=[null,...t,null];
+  L.innerHTML=BUB.map((b,i)=>`<span><i style="background:${b[1]}"></i>${names[i]} ${edges[i]==null?"unter "+edges[i+1]:edges[i+1]==null?"ab "+edges[i]:edges[i]+"–"+edges[i+1]}</span>`).join("")+'<span><i style="background:#4a90e2;height:3px;vertical-align:3px"></i>Kurs (log)</span>';
+  H.textContent="Zeitraum wählen: waagerecht über den Chart ziehen, Doppelklick zeigt alles. Balken = Kurs geteilt durch den 20-Wochen-Durchschnitt. Die Farbstufen gelten nur für diese Aktie: Normal bis zum Median aller Wochen über dem Schnitt, Warm ab Median, Heiß ab 75 %, Sehr heiß ab 90 %, Überhitzt ab den obersten 3 % ihrer eigenen Geschichte. Kurse: Yahoo Finance, bereinigt um Splits und Dividenden."}
+function stockByKey(key){const [k,y]=key.split("|");const ix=STK?.indices?.[k];const c=ix?.items.find(x=>x.y===y);return c?[c,ix]:[null,null]}
+(()=>{$("idxBody").addEventListener("click",e=>{const a=e.target.closest("[data-srk],[data-sht]");if(!a)return;e.preventDefault();
+  const [c,ix]=stockByKey(a.dataset.srk||a.dataset.sht);if(!c)return;const R=srInfo(c),name=`${c.n} (${ySym(c.y).split(":").pop()})`,unit=ix.cur;
+  if(a.dataset.srk){const cur=srkOf(c);openRk({sym:c.y,p:c.p},{R,unit,name,upd:S.srisk?.updated,
+      hist:async()=>withLive((await srHistory(c.y)).filter(d=>d[2]!=null).map(d=>[d[0]*864e5,d[1],d[2]]),c.p,cur)})}
+  else{const cur=shtOf(c);openBub({sym:c.y,fl:""},{th:R?.th||null,name,cur,
+      hist:async()=>{const D=withLive((await srHistory(c.y)).filter(d=>d[3]!=null).map(d=>[d[0]*864e5,d[1],d[3]]),c.p,cur);D.src="Yahoo Finance";return D}})}})})();
+$("bubDlg").addEventListener("close",()=>{BUB_TH=null});
 // ---------- TradingView-Links am Android-Handy direkt in der App öffnen ----------
 if(/Android/i.test(navigator.userAgent))document.addEventListener("click",e=>{
   const a=e.target.closest&&e.target.closest('a[href*="tradingview.com/"]');if(!a||e.defaultPrevented)return;
