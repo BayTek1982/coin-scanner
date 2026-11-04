@@ -159,7 +159,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <div class="tile"><span class="label">Altcoin-Index · 30 Tage</span><span class="v" id="tAlt">–</span><div class="meter"><i id="tAltM" style="left:50%"></i></div><span class="s" id="tAltS"></span></div>
     <div class="tile"><span class="label">Angst &amp; Gier</span><div class="gauge"><svg id="fngSvg" width="92" height="54" viewBox="0 0 92 54" aria-hidden="true"></svg><span class="v" id="tFng">–</span></div><span class="s" id="tFngS"></span></div>
     <div class="tile bubtile" id="rkTile" role="button" tabindex="0" title="Details öffnen"><span class="label">BTC Risiko · 0 bis 1</span><span class="v" id="tRk">–</span><span class="s" id="tRkS">Bayazit Risiko-Indikator · Tippen für Details</span></div>
-    <div class="tile bubtile" id="bubTile" role="button" tabindex="0" title="Chart öffnen"><span class="label">BTC Blasen-Risiko</span><span class="v" id="tBub">–</span><span class="s" id="tBubS">Kurs ÷ 20-Wochen-SMA · Tippen für Chart</span></div>
+    <div class="tile bubtile" id="bubTile" role="button" tabindex="0" title="Chart öffnen"><span class="label">BTC Hitze</span><span class="v" id="tBub">–</span><span class="s" id="tBubS">Kurs ÷ 20-Wochen-Schnitt · Tippen für Chart</span></div>
   </section>
 
   <details class="panel linkbox">
@@ -192,7 +192,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <span class="label">Chain</span>
     <select id="chainSel" aria-label="Chain"><option value="">Alle Chains</option></select>
     <span class="label" style="margin-left:4px">Sortieren</span>
-    <button class="chip" data-tf="h">1H</button><button class="chip" data-tf="d">24H</button><button class="chip" data-tf="w">7T</button><button class="chip" data-tf="m">30T</button><button class="chip" data-tf="score">Score</button><button class="chip" data-tf="rk">Risiko</button><button class="chip" data-tf="bub">Blase</button>
+    <button class="chip" data-tf="h">1H</button><button class="chip" data-tf="d">24H</button><button class="chip" data-tf="w">7T</button><button class="chip" data-tf="m">30T</button><button class="chip" data-tf="score">Score</button><button class="chip" data-tf="rk">Risiko</button><button class="chip" data-tf="bub">Hitze</button>
   </div>
 
   <section class="panel" id="eigenPanel" hidden>
@@ -215,7 +215,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <table>
       <thead><tr>
         <th class="l"></th><th class="l"><input type="checkbox" id="chkAll" aria-label="Alle sichtbaren auswählen"></th>
-        <th class="l" data-sort="r">#</th><th class="l" data-sort="name">Coin</th><th data-sort="p">Preis $</th><th data-sort="rk" title="Bayazit Risiko-Indikator: 0 = historisch billig, 1 = historisch teuer">Risiko</th><th data-sort="bub" title="Blasen-Risiko: Kurs ÷ 20-Wochen-SMA">Blase</th>
+        <th class="l" data-sort="r">#</th><th class="l" data-sort="name">Coin</th><th data-sort="p">Preis $</th><th data-sort="rk" title="Bayazit Risiko-Indikator: 0 = historisch billig, 1 = historisch teuer">Risiko</th><th data-sort="bub" title="Hitze: Kurs ÷ 20-Wochen-Schnitt">Hitze</th>
         <th data-sort="h">1H</th><th data-sort="d">24H</th><th data-sort="w">7T</th><th data-sort="m">30T</th>
         <th data-sort="score">Score</th><th data-sort="mc">MarketCap</th><th data-sort="v">Volumen 24h</th><th data-sort="w">7 Tage</th><th class="l" data-sort="chain">Chain</th><th class="l" data-sort="ex">Börsen</th><th class="l">Mehr</th>
       </tr></thead>
@@ -397,7 +397,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   </div>
 
   <footer>
-    <span>Börsen: <b>O</b> OKX · <b>B</b> Binance · <b>H</b> Hyperliquid (Perpetuals). Chain = Blockchain, auf der der Coin als Token läuft („eigene Chain“ = eigene Blockchain wie Bitcoin oder Solana). DEX öffnet den Token bei DexScreener. Score = Vorsprung (+) oder Rückstand (−) gegenüber Bitcoin über 7 und 30 Tage, in Prozentpunkten. Blase = Kurs geteilt durch den 20-Wochen-Durchschnitt (unter 1 bärisch, 1–1,25 normal, über 1,5 riskant, über 2 Blasengefahr); ein Tipp auf den Wert öffnet den Verlauf. Risiko = Bayazit Risiko-Indikator von 0 (historisch billig) bis 1 (historisch teuer), einmal täglich neu berechnet. Altcoin-Index = Anteil der Top-50-Coins, die über 30 Tage besser liefen als Bitcoin.</span>
+    <span>Börsen: <b>O</b> OKX · <b>B</b> Binance · <b>H</b> Hyperliquid (Perpetuals). Chain = Blockchain, auf der der Coin als Token läuft („eigene Chain“ = eigene Blockchain wie Bitcoin oder Solana). DEX öffnet den Token bei DexScreener. Score = Vorsprung (+) oder Rückstand (−) gegenüber Bitcoin über 7 und 30 Tage, in Prozentpunkten. Hitze = Kurs geteilt durch den 20-Wochen-Durchschnitt (unter 1 kalt, 1–1,25 normal, über 1,5 heiß, über 2 überhitzt); ein Tipp auf den Wert öffnet den Verlauf. Risiko = Bayazit Risiko-Indikator von 0 (historisch billig) bis 1 (historisch teuer), einmal täglich neu berechnet. Altcoin-Index = Anteil der Top-50-Coins, die über 30 Tage besser liefen als Bitcoin.</span>
     <span>Daten: CoinGecko, alternative.me (Angst &amp; Gier), OKX, Binance. Kurse können wenige Minuten verzögert sein.</span>
     <span>Der Scanner sortiert vor und ist keine Anlageberatung. Einstieg nur nach eigener Chartanalyse.</span>
   </footer>
@@ -415,7 +415,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   <div style="margin-top:12px"><b style="font-size:.85rem">Zeit in Risikostufen</b><span class="msg"> · Anteil aller Tage, umrandet = aktuelle Stufe</span><div class="rkbands" id="rkBands"></div></div>
   <p class="hint">Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse (deren genaue Formel ist nicht öffentlich, die Werte weichen daher ab): Abstand des Kurses zum 374-Tage-Durchschnitt (logarithmisch). 0,5 = Kurs genau auf dem Durchschnitt. 0 = so tief darunter wie noch nie in der ganzen Historie, 1 = so hoch darüber wie zuletzt im laufenden 4-Jahres-Zyklus. Unten zählt die ganze Historie, weil die Tiefs über die Zyklen ähnlich tief bleiben, oben nur der letzte Zyklus, weil die Hochs von Zyklus zu Zyklus kleiner werden. Die Tabellen sind mit dem heutigen Stand gerechnet und verschieben sich jeden Tag ein wenig. Zeitraum im Verlauf: waagerecht über den Chart ziehen, Doppelklick zeigt alles. Kein Kauf- oder Verkaufssignal.</p>
 </dialog>
-<dialog id="bubDlg" class="bubdlg" aria-label="Blasen-Risiko-Chart">
+<dialog id="bubDlg" class="bubdlg" aria-label="Hitze-Chart">
   <div class="bubhead"><div><b id="bubTitle">–</b><span class="msg" id="bubSub"></span></div><button class="chip" id="bubClose" aria-label="Schließen">✕ Schließen</button></div>
   <div class="bubrange" id="bubRange"><button class="chip" data-br="182">6 Monate</button><button class="chip" data-br="365">1 Jahr</button><button class="chip" data-br="1095">3 Jahre</button><button class="chip" data-br="0">Alles</button></div>
   <canvas id="bubCv"></canvas>
@@ -1471,10 +1471,10 @@ async function openRk(c){if(!c)return;const dlg=$("rkDlg"),R=rkInfo(c);$("rkTitl
   $("tb").addEventListener("click",e=>{const b=e.target.closest("[data-rk]");if(b){e.preventDefault();openRk(findCoin(b.dataset.rk))}});
   const tile=$("rkTile");tile.onclick=()=>openRk(S.btc);tile.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openRk(S.btc)}};
 })();
-// ---------- Blasen-Risiko: Kurs / 20-Wochen-SMA (wie "Short Term Bubble Risk" von Into The Cryptoverse) ----------
+// ---------- Hitze: Kurs / 20-Wochen-SMA (wie "Short Term Bubble Risk" von Into The Cryptoverse) ----------
 const BUB=[[.5,"#1d2bd6"],[.75,"#2f6bff"],[1,"#18c7e6"],[1.25,"#22c55e"],[1.5,"#e6d200"],[1.75,"#f59e0b"],[2,"#f2591a"],[Infinity,"#e11d2e"]];
 const bubCol=v=>BUB.find(b=>v<b[0])[1];
-const bubTxt=v=>v<1?"Bärisch (unter 20W-SMA)":v<1.25?"Business as usual":v<1.5?"Läuft heiß":v<1.75?"Riskant":v<2?"Sehr riskant":"Blasengefahr";
+const bubTxt=v=>v<1?"Kalt (unter dem Schnitt)":v<1.25?"Normal":v<1.5?"Warm":v<1.75?"Heiß":v<2?"Sehr heiß":"Überhitzt";
 const fmtR=v=>v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2});
 // Wochenbeginn Montag 00:00 UTC (wie Binance/OKX-Wochenkerzen)
 const wkStart=t=>{const d=Math.floor(t/864e5);return(d-((d+3)%7))*864e5};
@@ -1532,7 +1532,7 @@ function drawBub(){const cv=$("bubCv");if(!cv||!BV.D.length)return;const dpr=dev
   const lp0=Math.log10(pmn)-.05,lp1=Math.log10(pmx)+.05,yp=p=>T+ph*(1-(Math.log10(p)-lp0)/(lp1-lp0));
   const lr0=Math.log(rmn*.95),lr1=Math.log(rmx*1.05),yr=r=>T+ph*(1-(Math.log(r)-lr0)/(lr1-lr0));
   g.font=`${sm?10:11}px ${cs.getPropertyValue("--f-num")}`;g.lineWidth=1;
-  // Raster + rechte Achse (Blasen-Wert)
+  // Raster + rechte Achse (Hitze-Wert)
   [.5,.75,1,1.25,1.5,2,3].filter(v=>v>=rmn*.95&&v<=rmx*1.05).forEach(v=>{const y=yr(v);g.strokeStyle=ln;g.setLineDash(v===1?[]:[3,4]);g.beginPath();g.moveTo(L,y);g.lineTo(L+pw,y);g.stroke();
     g.fillStyle=mu;g.textAlign="left";g.fillText(fmtR(v).replace(/,?0+$/,"").replace(/,$/,""),L+pw+5,y+4)});g.setLineDash([]);
   // linke Achse (Kurs, logarithmisch)
@@ -1550,11 +1550,11 @@ function drawBub(){const cv=$("bubCv");if(!cv||!BV.D.length)return;const dpr=dev
   if(BV.x0!=null&&BV.x1!=null){g.fillStyle="rgba(74,144,226,.22)";g.fillRect(Math.min(BV.x0,BV.x1),T,Math.abs(BV.x1-BV.x0),ph)}
   // Fadenkreuz + Info
   if(BV.hov!=null&&BV.x0==null){const i=BV.hov-BV.a;if(i>=0&&i<n){const d=D[i],X=x(i);g.strokeStyle=mu;g.setLineDash([3,3]);g.beginPath();g.moveTo(X,T);g.lineTo(X,T+ph);g.stroke();g.setLineDash([]);
-    const lines=[new Date(d[0]).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"}),bubTxt(d[2]),"Blase: "+fmtR(d[2]),"Kurs: "+fmtP(d[1])+" $"];
+    const lines=[new Date(d[0]).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",timeZone:"UTC"}),bubTxt(d[2]),"Hitze: "+fmtR(d[2]),"Kurs: "+fmtP(d[1])+" $"];
     const bwid=Math.max(...lines.map(s=>g.measureText(s).width))+16,bh=lines.length*15+10;let bx=X+10;if(bx+bwid>L+pw)bx=X-10-bwid;
     g.fillStyle=cs.getPropertyValue("--panel").trim();g.strokeStyle=ln;g.fillRect(bx,T+6,bwid,bh);g.strokeRect(bx,T+6,bwid,bh);
     g.textAlign="left";lines.forEach((s,k)=>{g.fillStyle=k===1?bubCol(d[2]):fg;g.fillText(s,bx+8,T+22+k*15)})}}}
-async function openBub(c){if(!c)return;const dlg=$("bubDlg");$("bubTitle").textContent=`${c.sym} · Blasen-Risiko (Kurs ÷ 20-Wochen-SMA)`;$("bubSub").textContent="Lade Verlauf …";
+async function openBub(c){if(!c)return;const dlg=$("bubDlg");$("bubTitle").textContent=`${c.sym} · Hitze (Kurs ÷ 20-Wochen-Schnitt)`;$("bubSub").textContent="Lade Verlauf …";
   BV.D=[];const g=$("bubCv").getContext("2d");g.clearRect(0,0,9999,9999);if(!dlg.open)dlg.showModal();
   if(!/[BO]/.test(c.fl)&&!rkInfo(c)){$("bubSub").textContent="Für diesen Coin gibt es keinen Verlauf (nicht auf Binance oder OKX gehandelt).";return}
   try{const D=await bubHistory(c);if(D.length<2){$("bubSub").textContent="Kein aktueller Verlauf: entweder ist der Coin noch keine 20 Wochen gelistet oder keine Börse liefert aktuelle Kurse.";return}
