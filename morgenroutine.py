@@ -57,7 +57,19 @@ KALENDER_DE = {  # häufige Termine auf Deutsch
     "Prelim UoM Consumer Sentiment": "Uni Michigan Verbraucherstimmung", "German Prelim CPI m/m": "Verbraucherpreise Deutschland",
     "German ifo Business Climate": "ifo-Geschäftsklima", "German ZEW Economic Sentiment": "ZEW-Konjunkturerwartungen",
     "Flash Manufacturing PMI": "Einkaufsmanager Industrie (vorläufig)", "Flash Services PMI": "Einkaufsmanager Dienstleistung (vorläufig)",
-    "CPI Flash Estimate y/y": "Verbraucherpreise Eurozone (Schnellschätzung)", "Bank Holiday": "Feiertag (Börse)",
+    "CPI Flash Estimate y/y": "Verbraucherpreise Eurozone (Schnellschätzung)",
+    "Average Hourly Earnings m/m": "Stundenlöhne", "Prelim UoM Inflation Expectations": "Uni Michigan Inflationserwartung",
+    "ISM Manufacturing Prices": "ISM Industrie Preise", "ISM Services Prices": "ISM Dienstleistung Preise",
+    "Empire State Manufacturing Index": "Empire State Industrie", "Philly Fed Manufacturing Index": "Philly Fed Industrie",
+    "Building Permits": "Baugenehmigungen", "Housing Starts": "Baubeginne", "Existing Home Sales": "Hausverkäufe (bestehend)",
+    "New Home Sales": "Neubauverkäufe", "Pending Home Sales m/m": "Schwebende Hausverkäufe", "Durable Goods Orders m/m": "Auftragseingang langlebige Güter",
+    "Core Durable Goods Orders m/m": "Kern-Auftragseingang langlebige Güter", "Trade Balance": "Handelsbilanz", "Industrial Production m/m": "Industrieproduktion",
+    "Final Manufacturing PMI": "Einkaufsmanager Industrie (endgültig)", "Final Services PMI": "Einkaufsmanager Dienstleistung (endgültig)",
+    "Revised UoM Consumer Sentiment": "Uni Michigan Verbraucherstimmung (revidiert)", "Revised UoM Inflation Expectations": "Uni Michigan Inflationserwartung (revidiert)",
+    "Employment Cost Index q/q": "Arbeitskostenindex", "Natural Gas Storage": "Erdgas-Lagerbestände", "Treasury Currency Report": "Währungsbericht US-Finanzministerium",
+    "Core CPI Flash Estimate y/y": "Kern-Verbraucherpreise Eurozone (Schnellschätzung)", "German Prelim GDP q/q": "BIP Deutschland (vorläufig)",
+    "Fed Chair Speaks": "Rede Fed-Chef", "ECB President Speaks": "Rede EZB-Präsidentin", "FOMC Member Speaks": "Rede Fed-Mitglied",
+    "German Factory Orders m/m": "Auftragseingang Industrie Deutschland", "German Industrial Production m/m": "Industrieproduktion Deutschland", "Bank Holiday": "Feiertag (Börse)",
 }
 
 fehler = []
