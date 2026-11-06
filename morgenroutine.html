@@ -275,18 +275,18 @@ function zeigen(d, verlauf) {
 
   // Termine
   const tage = {};
-  for (const e of d.kalender || []) (tage[e.zeit.slice(0, 10)] ||= []).push(e);
-  const heute = new Date().toISOString().slice(0, 10);
+  const heute = new Date().toLocaleDateString("sv-SE");
+  for (const e of d.kalender || []) if (e.zeit.slice(0, 10) >= heute) (tage[e.zeit.slice(0, 10)] ||= []).push(e);
   $("kal").innerHTML = Object.keys(tage).length ? Object.entries(tage).map(([tag, ev]) => {
     const dt = new Date(tag + "T12:00");
     const kopf = dt.toLocaleDateString("de-DE", {weekday: "long", day: "2-digit", month: "2-digit"}) + (ev[0].heute ? " · heute" : "");
     return `<div class="day">${kopf}</div>` + ev.map(e => `<div class="ev ${e.heute ? "heute" : ""}"><span class="z">${e.zeit.slice(11, 16)}</span><span class="${e.wichtig ? "h" : ""}">${esc(e.titel)} <span class="sub">${esc(e.land)}</span></span><span class="x">${e.prognose ? "Prog. " + esc(e.prognose) : ""}${e.vorher ? "<br>vorher " + esc(e.vorher) : ""}</span></div>`).join("");
-  }).join("") : '<div class="sub" style="margin-top:8px">Keine Termine gefunden.</div>';
+  }).join("") : '<div class="sub" style="margin-top:8px">Diese Woche keine weiteren Termine. Die neue Woche erscheint ab Montag – vorab im <a href="https://de.investing.com/economic-calendar/" target="_blank" rel="noopener">Wirtschaftskalender</a>.</div>';
 
   const ds = sp.dist_spy, dq = sp.dist_qqq;
   const dli = (n, x) => x ? `<li><span>${n}</span><span class="${x.anzahl >= 5 ? "ja" : "nein"}">${x.anzahl} ${x.anzahl === 1 ? "Tag" : "Tage"}${x.tage.length ? " · zuletzt " + datum(x.tage[x.tage.length - 1]) : ""}</span></li>` : "";
   $("dist").innerHTML = dli("SPY", ds) + dli("QQQ", dq);
-  $("earn").innerHTML = (d.earnings || []).length ? d.earnings.map(e => `<li><span>${tvLink(e.y, e.y)}</span><span class="${e.tage <= 7 ? "ja" : "nein"}">${datum(e.datum)} · ${e.tage <= 0 ? "heute" : "in " + e.tage + " Tagen"}</span></li>`).join("") : '<li class="sub">Keine Termine bekannt.</li>';
+  $("earn").innerHTML = (d.earnings || []).length ? d.earnings.map(e => `<li><span>${tvLink(e.y, e.y)}</span><span class="${e.tage >= 0 && e.tage <= 7 ? "ja" : "nein"}">${datum(e.datum)} · ${e.tage < 0 ? "gestern" : e.tage === 0 ? "heute" : e.tage === 1 ? "morgen" : "in " + e.tage + " Tagen"}</span></li>`).join("") : '<li class="sub">Keine Termine bekannt.</li>';
 
   // Verlauf
   const vr = [...verlauf].reverse().slice(0, 15);

@@ -212,6 +212,8 @@ def kalender():
         except Exception:
             continue
         titel = e.get("title", "")
+        if "Daylight Saving" in titel:
+            continue
         out.append({
             "zeit": zeit.strftime("%Y-%m-%dT%H:%M"), "land": "USA" if e["country"] == "USD" else "Eurozone",
             "titel": KALENDER_DE.get(titel, titel), "wichtig": e.get("impact") == "High",
