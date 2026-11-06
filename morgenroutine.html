@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Morgenroutine</title>
+<meta name="description" content="Tägliche Morgenroutine: VIX, Fear & Greed, Percent of Stocks, 21er Durchschnitt, Sektoren, Termine">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;
+  --accent:#c77a12;--accent-ink:#fff;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;--warn:#9a6a00;
+  --up-bg:#e3f4ea;--down-bg:#fbe5e3;--warn-bg:#fbf0d6;
+  --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;
+  --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;
+  --up-bg:#13301f;--down-bg:#3a1a18;--warn-bg:#352a10;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1500px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:end;justify-content:space-between}
+h1{font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em}
+h2{font-size:1.05rem;margin:0 0 10px}
+.sub{font-size:.8rem;color:var(--muted)}
+.stand{font-size:.82rem;color:var(--muted)}.stand b{font-family:var(--f-num);color:var(--fg);font-weight:600}
+.btn{font:600 .88rem var(--f-body);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.notice{font-size:.82rem;color:var(--warn);background:var(--warn-bg);border-radius:8px;padding:8px 12px;margin:0}
+section{display:grid;gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:3px;align-content:start;min-width:0}
+.tile .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.tile .v{font-family:var(--f-num);font-size:1.35rem;font-weight:600}
+.tile .s{font-size:.78rem;color:var(--muted)}
+.up{color:var(--up)}.down{color:var(--down)}.flat{color:var(--muted)}
+.ampel{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.amp{border-radius:10px;padding:11px 14px;border:1px solid var(--line);background:var(--panel);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.amp b{font-family:var(--f-num);white-space:nowrap}
+.amp.gruen{background:var(--up-bg);border-color:transparent}.amp.gruen b{color:var(--up)}
+.amp.rot{background:var(--down-bg);border-color:transparent}.amp.rot b{color:var(--down)}
+.amp.gelb{background:var(--warn-bg);border-color:transparent}.amp.gelb b{color:var(--warn)}
+.meter{height:6px;border-radius:3px;background:linear-gradient(90deg,#d9443a,#e8853a 25%,#c9c3b4 50%,#7fbf8f 75%,#1f9d57);position:relative;margin:8px 0 2px}
+.meter i{position:absolute;top:-4px;width:14px;height:14px;border-radius:50%;background:var(--fg);border:2px solid var(--panel);transform:translateX(-50%)}
+.spark{width:100%;height:30px;display:block;margin-top:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.list li{display:flex;justify-content:space-between;gap:10px;font-size:.9rem}
+.ja{font-weight:600;color:var(--down)}.nein{color:var(--muted)}
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel)}
+th.on::after{content:" ▾"}th.on.asc::after{content:" ▴"}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-num)}
+td a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--muted)}
+.grp td{background:var(--chip);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;text-align:left}
+.pill{display:inline-block;padding:2px 8px;border-radius:5px;font-size:.78rem;font-weight:600}
+.pill.Aufwärts{background:var(--up-bg);color:var(--up)}.pill.Abwärts{background:var(--down-bg);color:var(--down)}.pill.Gemischt{background:var(--warn-bg);color:var(--warn)}
+.neu{font-size:.68rem;font-weight:700;color:var(--accent);margin-left:4px}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.links a{font-size:.85rem;padding:7px 11px;border-radius:7px;background:var(--chip);color:var(--fg);text-decoration:none}
+.links a:hover{background:var(--line)}
+.ev{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;font-size:.88rem;padding:7px 0;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}.ev .z{font-family:var(--f-num);color:var(--muted)}.ev .x{font-size:.75rem;color:var(--muted);text-align:right}
+.ev.heute .z{color:var(--accent);font-weight:600}.ev .h{font-weight:600}
+.day{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-top:8px}
+footer{font-size:.75rem;color:var(--muted);line-height:1.5}
+@media (max-width:760px){.two{grid-template-columns:1fr}h1{font-size:1.35rem}.tile .v{font-size:1.15rem}th,td{padding:7px 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Morgenroutine</h1>
+    <div class="sub">Markt-Check für jeden Morgen · aktualisiert sich werktags von selbst</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <span class="stand" id="stand">Lade Daten …</span>
+    <button class="btn" id="neu" type="button">Neu laden</button>
+  </div>
+</header>
+<p class="notice" id="hinweis" hidden></p>
+
+<section>
+  <h2>Heute auf einen Blick</h2>
+  <div class="ampel" id="ampel"></div>
+</section>
+
+<section>
+  <h2>Stimmung &amp; Volatilität</h2>
+  <div class="grid" id="kacheln"></div>
+</section>
+
+<section class="two">
+  <div class="box"><h2>Panikzeichen (Boden möglich)</h2><ul class="list" id="panik"></ul></div>
+  <div class="box"><h2>Hedgingzeichen (Vorsicht oben)</h2><ul class="list" id="hedging"></ul></div>
+</section>
+
+<section>
+  <h2>Gleitender Durchschnitt (21er) – Tag und Woche</h2>
+  <div class="sub">„Tage“ und „Wochen“ = wie viele Kerzen in Folge über (+) bzw. unter (−) dem 21er Durchschnitt. „neu“ = heute gewechselt. Eigene Berechnung, nicht die O4W-Signale aus TradingView.</div>
+  <div class="tbl"><table id="tm"></table></div>
+</section>
+
+<section>
+  <h2>S&amp;P 500 Sektoren</h2>
+  <div class="sub" id="beste"></div>
+  <div class="tbl"><table id="ts"></table></div>
+</section>
+
+<section class="two">
+  <div class="box"><h2>Wirtschaftstermine diese Woche</h2><div class="sub">USA und Eurozone, deutsche Zeit. Fett = wichtig.</div><div id="kal"></div></div>
+  <div class="box">
+    <h2>Distribution Days</h2>
+    <div class="sub">Schluss mind. 0,2 % im Minus bei höherem Volumen als am Vortag, letzte 25 Sitzungen. Ab 5 wird es kritisch.</div>
+    <ul class="list" id="dist" style="margin-top:8px"></ul>
+    <h2 style="margin-top:16px">Earnings Watchlist</h2>
+    <ul class="list" id="earn"></ul>
+  </div>
+</section>
+
+<section>
+  <h2>Verlauf der letzten Tage</h2>
+  <div class="tbl"><table id="tv"></table></div>
+</section>
+
+<section>
+  <h2>Links für die Analyse</h2>
+  <div class="links">
+    <a href="https://www.tradingview.com/chart/?symbol=INDEX:MMFI" target="_blank" rel="noopener">MMFI (TradingView)</a>
+    <a href="https://www.tradingview.com/chart/?symbol=CBOE:VIX" target="_blank" rel="noopener">VIX (TradingView)</a>
+    <a href="http://vixcentral.com/" target="_blank" rel="noopener">VIXcentral</a>
+    <a href="https://edition.cnn.com/markets/fear-and-greed" target="_blank" rel="noopener">CNN Fear &amp; Greed</a>
+    <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" rel="noopener">CME FedWatch</a>
+    <a href="https://de.investing.com/economic-calendar/" target="_blank" rel="noopener">Wirtschaftskalender</a>
+    <a href="https://www.earningswhispers.com/calendar" target="_blank" rel="noopener">Earnings Whispers</a>
+    <a href="https://finviz.com/map.ashx?t=sec" target="_blank" rel="noopener">Finviz Heatmap</a>
+    <a href="https://finviz.com/screener.ashx" target="_blank" rel="noopener">Finviz Screener</a>
+    <a href="https://stockcharts.com/freecharts/pnf.php?c=SPY,P" target="_blank" rel="noopener">Point &amp; Figure SPY</a>
+  </div>
+</section>
+
+<footer>
+  Daten: Yahoo Finance (Kurse, VIX, VVIX, VIX3M), CNN (Fear &amp; Greed, Put/Call als 5-Tage-Schnitt), Forex Factory (Termine).
+  „Percent of Stocks“ ist eine eigene Berechnung (Anteil der S&amp;P-500-Aktien über ihrem 50-Tage-Durchschnitt) und kann leicht vom MMFI in TradingView abweichen.
+  Kurse sind Schlusskurse bzw. verzögert. Keine Anlageberatung.
+</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (x, d = 2) => x == null ? "–" : Number(x).toLocaleString("de-DE", {minimumFractionDigits: d, maximumFractionDigits: d});
+const pct = (x, d = 2) => x == null ? "–" : (x > 0 ? "+" : "") + fmt(x, d) + " %";
+const cls = x => x == null ? "flat" : x > 0 ? "up" : x < 0 ? "down" : "flat";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const tvLink = (sym, txt) => sym ? `<a href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">${esc(txt)}</a>` : esc(txt);
+const datum = s => { if (!s) return "–"; const [y, m, d] = s.slice(0, 10).split("-"); return `${d}.${m}.`; };
+
+function vergleich(jetzt, vor, d = 2, umgekehrt = false) {
+  if (jetzt == null || vor == null) return "";
+  const diff = jetzt - vor, gut = umgekehrt ? diff < 0 : diff > 0;
+  const pfeil = diff > 0 ? "▲" : diff < 0 ? "▼" : "►";
+  const c = diff === 0 ? "flat" : gut ? "up" : "down";
+  return `<span class="${c}">${pfeil} ${diff > 0 ? "+" : ""}${fmt(diff, d)}</span> ggü. Vortag (${fmt(vor, d)})`;
+}
+
+function spark(werte, farbe = "var(--accent)") {
+  const v = (werte || []).filter(x => x != null);
+  if (v.length < 2) return "";
+  const lo = Math.min(...v), hi = Math.max(...v), w = 120, h = 30;
+  const pts = v.map((x, i) => `${(i / (v.length - 1) * w).toFixed(1)},${(h - 3 - (hi > lo ? (x - lo) / (hi - lo) : .5) * (h - 6)).toFixed(1)}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${farbe}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+function kachel(k, v, s = "", extra = "") {
+  return `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${extra}<div class="s">${s}</div></div>`;
+}
+
+function streak(n, w) {
+  if (n == null) return "–";
+  const neu = Math.abs(n) === 1 ? '<span class="neu">neu</span>' : "";
+  return `<span class="${cls(n)}">${n > 0 ? "+" : ""}${n}</span>${neu}`;
+}
+
+// sortierbare Tabellen
+function tabelle(el, spalten, zeilen, gruppe) {
+  let sortKey = null, asc = false;
+  function zeichnen() {
+    let rows = [...zeilen];
+    if (sortKey) {
+      const sp = spalten.find(s => s.k === sortKey);
+      rows.sort((a, b) => {
+        const x = sp.sort ? sp.sort(a) : a[sortKey], y = sp.sort ? sp.sort(b) : b[sortKey];
+        if (x == null) return 1; if (y == null) return -1;
+        return (typeof x === "string" ? x.localeCompare(y, "de") : x - y) * (asc ? 1 : -1);
+      });
+    }
+    let html = "<thead><tr>" + spalten.map(s => `<th data-k="${s.k}" class="${s.k === sortKey ? "on" + (asc ? " asc" : "") : ""}">${s.t}</th>`).join("") + "</tr></thead><tbody>";
+    let g = null;
+    for (const r of rows) {
+      if (gruppe && !sortKey && r[gruppe] !== g) { g = r[gruppe]; html += `<tr class="grp"><td colspan="${spalten.length}">${esc(g)}</td></tr>`; }
+      html += "<tr>" + spalten.map(s => `<td class="${s.num ? "num" : ""}">${s.f ? s.f(r) : esc(r[s.k])}</td>`).join("") + "</tr>";
+    }
+    el.innerHTML = html + "</tbody>";
+    el.querySelectorAll("th").forEach(th => th.onclick = () => {
+      const k = th.dataset.k;
+      if (sortKey === k) { if (asc) { sortKey = null; asc = false; } else asc = true; } else { sortKey = k; asc = false; }
+      zeichnen();
+    });
+  }
+  zeichnen();
+}
+
+const MA_SPALTEN = [
+  {k: "n", t: "Markt", f: r => tvLink(r.tv, r.n)},
+  {k: "p", t: "Kurs", num: 1, f: r => fmt(r.p)},
+  {k: "d", t: "Tag", num: 1, f: r => `<span class="${cls(r.d)}">${pct(r.d)}</span>`},
+  {k: "w", t: "Woche", num: 1, f: r => `<span class="${cls(r.w)}">${pct(r.w)}</span>`},
+  {k: "m", t: "Monat", num: 1, f: r => `<span class="${cls(r.m)}">${pct(r.m)}</span>`},
+  {k: "abst", t: "Abst. 21er", num: 1, f: r => `<span class="${cls(r.abst)}">${pct(r.abst)}</span>`},
+  {k: "tage", t: "Tage", num: 1, f: r => streak(r.tage)},
+  {k: "wochen", t: "Wochen", num: 1, f: r => streak(r.wochen)},
+  {k: "trend", t: "Trend", f: r => `<span class="pill ${esc(r.trend)}">${esc(r.trend)}</span>`},
+];
+
+async function laden() {
+  const t = Date.now();
+  const [d, v] = await Promise.all([
+    fetch(`data/morgenroutine.json?t=${t}`).then(r => r.json()),
+    fetch(`data/morgenroutine_verlauf.json?t=${t}`).then(r => r.json()).catch(() => []),
+  ]);
+  zeigen(d, v);
+}
+
+function zeigen(d, verlauf) {
+  const st = new Date(d.stand);
+  $("stand").innerHTML = `Stand <b>${st.toLocaleDateString("de-DE", {weekday: "short", day: "2-digit", month: "2-digit"})} ${st.toLocaleTimeString("de-DE", {hour: "2-digit", minute: "2-digit"})}</b>`;
+  const alt = (d.alt || []).length ? `Diese Teile konnten beim letzten Abruf nicht geholt werden und zeigen den vorherigen Stand: ${d.alt.join(", ")}.` : "";
+  const stunden = (Date.now() - st) / 36e5;
+  const zuAlt = stunden > 30 ? `Die Daten sind ${Math.round(stunden)} Stunden alt.` : "";
+  $("hinweis").hidden = !(alt || zuAlt);
+  $("hinweis").textContent = [zuAlt, alt].filter(Boolean).join(" ");
+
+  const c = d.checks || {};
+  $("ampel").innerHTML = (c.ampel || []).map(a => `<div class="amp ${a.farbe}"><span>${esc(a.n)}</span><b>${esc(a.wert)}</b></div>`).join("");
+  const li = x => `<li><span>${esc(x.n)}</span><span class="${x.ja ? "ja" : "nein"}">${x.ja ? "ja" : "nein"}</span></li>`;
+  $("panik").innerHTML = (c.panik || []).map(li).join("");
+  $("hedging").innerHTML = (c.hedging || []).map(li).join("");
+
+  const vo = d.vola || {}, fg = d.fg || {}, mm = d.mmfi || {}, sp = d.spy || {};
+  const fgMeter = fg.wert != null ? `<div class="meter"><i style="left:${Math.max(0, Math.min(100, fg.wert))}%"></i></div>` : "";
+  $("kacheln").innerHTML = [
+    kachel("VIX", fmt(vo.vix), vergleich(vo.vix, vo.vix_vortag, 2, true) + `<br>Tageshoch ${fmt(vo.vix_hoch)} · Stand ${datum(vo.t)}`, spark(vo.vix_verlauf)),
+    kachel("VVIX", fmt(vo.vvix), vergleich(vo.vvix, vo.vvix_vortag, 2, true) + "<br>ab 130 Boden möglich, über 200 selten"),
+    kachel("Fear &amp; Greed", fg.wert == null ? "–" : `${fmt(fg.wert, 0)} <span style="font-size:.8rem">${esc(fg.stimmung)}</span>`,
+      vergleich(fg.wert, fg.vortag, 0) + `<br>Vorwoche ${fmt(fg.woche, 0)} · Vormonat ${fmt(fg.monat, 0)}`, fgMeter),
+    kachel("Percent of Stocks", mm.wert == null ? "–" : fmt(mm.wert, 1) + " %",
+      vergleich(mm.wert, mm.vortag, 1) + "<br>S&amp;P 500 über 50-Tage-Linie · unter 30 überverkauft, über 70 überkauft", spark(mm.verlauf)),
+    kachel("Put/Call (CNN)", fmt(fg.pcr), vergleich(fg.pcr, fg.pcr_vortag, 2, true) + "<br>5-Tage-Schnitt · über 1 = mehr Absicherung"),
+    kachel("VIX-Kurve", esc(vo.kurve || "–"), `VIX ${fmt(vo.vix)} / VIX3M ${fmt(vo.vix3m)} · VIX9D ${fmt(vo.vix9d)}<br>VIX unter VIX3M = Contango`),
+    kachel("SPY vom Hoch", pct(sp.vom_hoch), `52-Wochen-Hoch ${fmt(sp.hoch52)} $<br>ab −10 % ETF nachkaufen (nur im Abwärtstrend)`),
+    kachel("ADX SPY", fmt(sp.adx, 1), `DI+ ${fmt(sp.dip, 1)} · DI− ${fmt(sp.dim, 1)}<br>ab 40 Party vorbei, über 35 keine Aktien kaufen`),
+    kachel("VIX im Jahresvergleich", vo.vix_rang == null ? "–" : fmt(vo.vix_rang, 0) + " %", "0 % = Jahrestief, 100 % = Jahreshoch<br>hoch = Hohe-Vola-Trade möglich"),
+  ].join("");
+
+  tabelle($("tm"), MA_SPALTEN, d.maerkte || [], "g");
+  tabelle($("ts"), MA_SPALTEN, d.sektoren || []);
+  const b = d.beste_sektoren;
+  $("beste").innerHTML = b ? `Bester Sektor heute: <b>${esc(b.d)}</b> · Woche: <b>${esc(b.w)}</b> · Monat: <b>${esc(b.m)}</b>` : "";
+
+  // Termine
+  const tage = {};
+  for (const e of d.kalender || []) (tage[e.zeit.slice(0, 10)] ||= []).push(e);
+  const heute = new Date().toISOString().slice(0, 10);
+  $("kal").innerHTML = Object.keys(tage).length ? Object.entries(tage).map(([tag, ev]) => {
+    const dt = new Date(tag + "T12:00");
+    const kopf = dt.toLocaleDateString("de-DE", {weekday: "long", day: "2-digit", month: "2-digit"}) + (ev[0].heute ? " · heute" : "");
+    return `<div class="day">${kopf}</div>` + ev.map(e => `<div class="ev ${e.heute ? "heute" : ""}"><span class="z">${e.zeit.slice(11, 16)}</span><span class="${e.wichtig ? "h" : ""}">${esc(e.titel)} <span class="sub">${esc(e.land)}</span></span><span class="x">${e.prognose ? "Prog. " + esc(e.prognose) : ""}${e.vorher ? "<br>vorher " + esc(e.vorher) : ""}</span></div>`).join("");
+  }).join("") : '<div class="sub" style="margin-top:8px">Keine Termine gefunden.</div>';
+
+  const ds = sp.dist_spy, dq = sp.dist_qqq;
+  const dli = (n, x) => x ? `<li><span>${n}</span><span class="${x.anzahl >= 5 ? "ja" : "nein"}">${x.anzahl} ${x.anzahl === 1 ? "Tag" : "Tage"}${x.tage.length ? " · zuletzt " + datum(x.tage[x.tage.length - 1]) : ""}</span></li>` : "";
+  $("dist").innerHTML = dli("SPY", ds) + dli("QQQ", dq);
+  $("earn").innerHTML = (d.earnings || []).length ? d.earnings.map(e => `<li><span>${tvLink(e.y, e.y)}</span><span class="${e.tage <= 7 ? "ja" : "nein"}">${datum(e.datum)} · ${e.tage <= 0 ? "heute" : "in " + e.tage + " Tagen"}</span></li>`).join("") : '<li class="sub">Keine Termine bekannt.</li>';
+
+  // Verlauf
+  const vr = [...verlauf].reverse().slice(0, 15);
+  tabelle($("tv"), [
+    {k: "tag", t: "Tag", f: r => new Date(r.tag + "T12:00").toLocaleDateString("de-DE", {weekday: "short", day: "2-digit", month: "2-digit"})},
+    {k: "vix", t: "VIX", num: 1, f: r => fmt(r.vix)},
+    {k: "vvix", t: "VVIX", num: 1, f: r => fmt(r.vvix)},
+    {k: "fg", t: "F&amp;G", num: 1, f: r => fmt(r.fg, 0)},
+    {k: "mmfi", t: "Percent", num: 1, f: r => fmt(r.mmfi, 1)},
+    {k: "pcr", t: "Put/Call", num: 1, f: r => fmt(r.pcr)},
+    {k: "kurve", t: "VIX-Kurve"},
+    {k: "spx", t: "S&amp;P Trend", f: r => r.spx ? `<span class="pill ${esc(r.spx)}">${esc(r.spx)}</span>` : "–"},
+    {k: "panik", t: "Panik", num: 1, f: r => (r.panik ?? "–") + "/3"},
+    {k: "hedging", t: "Hedging", num: 1, f: r => (r.hedging ?? "–") + "/3"},
+  ], vr);
+}
+
+$("neu").onclick = () => laden().catch(fehler);
+function fehler(e) { $("hinweis").hidden = false; $("hinweis").textContent = "Daten konnten nicht geladen werden. Bitte später erneut versuchen."; console.error(e); }
+laden().catch(fehler);
+</script>
+</body>
+</html>
