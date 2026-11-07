@@ -219,27 +219,51 @@ def fear_greed():
     return out
 
 
-def tradingview(symbole, spalten=("close", "change", "change_abs")):
-    """Werte direkt von TradingView (öffentlicher Scanner, ohne Anmeldung)."""
-    body = {"symbols": {"tickers": list(symbole), "query": {"types": []}}, "columns": list(spalten)}
+TV_KOPF = {**UA, "Origin": "https://www.tradingview.com", "Referer": "https://www.tradingview.com/",
+           "Content-Type": "application/json", "Accept": "application/json"}
+
+
+def tradingview_wert(symbol):
+    """Schlusskurs und Veränderung eines TradingView-Symbols (öffentlicher Scanner, ohne Anmeldung)."""
+    gruende = []
+    # 1. Einzelabfrage
+    try:
+        rq = requests.get("https://scanner.tradingview.com/symbol", headers=TV_KOPF, timeout=30,
+                          params={"symbol": symbol, "fields": "close,change,change_abs", "no_404": "true"})
+        j = rq.json() if rq.ok else {}
+        if j.get("close") is not None:
+            return j
+        gruende.append(f"symbol {rq.status_code} {rq.text[:120]}")
+    except Exception as e:
+        gruende.append(f"symbol {e}")
+    # 2. Scanner-Liste
+    body = {"symbols": {"tickers": [symbol], "query": {"types": []}}, "columns": ["close", "change", "change_abs"]}
     for markt in ("global", "america"):
         try:
-            j = requests.post(f"https://scanner.tradingview.com/{markt}/scan", json=body, headers=UA, timeout=30).json()
-            out = {x["s"]: dict(zip(spalten, x["d"])) for x in j.get("data", [])}
-            if out:
-                return out
+            rq = requests.post(f"https://scanner.tradingview.com/{markt}/scan", json=body, headers=TV_KOPF, timeout=30)
+            for x in (rq.json() if rq.ok else {}).get("data", []):
+                if x.get("s") == symbol and x["d"][0] is not None:
+                    return dict(zip(["close", "change", "change_abs"], x["d"]))
+            gruende.append(f"{markt} {rq.status_code} {rq.text[:120]}")
         except Exception as e:
-            print("TradingView", markt, e)
-    return {}
+            gruende.append(f"{markt} {e}")
+    raise ValueError("; ".join(gruende))
 
 
 def mmfi():
     """MMFI = Percent of Stocks Above 50-Day Average (TradingView INDEX:MMFI)."""
-    tv = tradingview(["INDEX:MMFI"]).get("INDEX:MMFI")
-    if tv and tv.get("close") is not None:
+    try:
+        tv = tradingview_wert("INDEX:MMFI")
         wert = float(tv["close"])
-        vortag = wert - float(tv["change_abs"]) if tv.get("change_abs") is not None else None
+        if tv.get("change_abs") is not None:
+            vortag = wert - float(tv["change_abs"])
+        elif tv.get("change") is not None:
+            vortag = wert / (1 + float(tv["change"]) / 100)
+        else:
+            vortag = None
         return {"wert": r(wert, 2), "vortag": r(vortag, 2), "quelle": "TradingView (MMFI)"}
+    except Exception as e:
+        fehler.append(f"MMFI von TradingView: {e}")
     # Ersatz, falls TradingView nicht antwortet: Anteil der S&P-500-Aktien über ihrem 50-Tage-Durchschnitt
     st = load("data/stocks.json", {})
     tickers = [x["y"] for x in st.get("indices", {}).get("spx", {}).get("items", [])]
