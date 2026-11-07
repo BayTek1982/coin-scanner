@@ -40,7 +40,7 @@ SEKTOREN = [
     ("XLRE", "Immobilien (Real Estate)"), ("XLF", "Finanzen"), ("XLI", "Industrie"),
     ("XLY", "Zyklischer Konsum"), ("XLP", "Basiskonsum (Staples)"),
 ]
-VOLA = ["^VIX", "^VVIX", "^VIX3M", "^VIX9D"]
+VOLA = ["^VIX", "^VVIX", "^VIX3M", "^VIX9D", "^IXIC"]
 WATCHLIST = ["WMT", "BABA", "WDC", "MU", "COIN", "VST", "BAC", "GCT"]
 
 KALENDER_DE = {  # häufige Termine auf Deutsch
@@ -122,12 +122,42 @@ def serie_streak(close, ma):
     return n if last else -n
 
 
-def ma21(d):
-    """Kurs, Veränderungen und Lage zum 21er Durchschnitt (Tag und Woche)."""
+# Börsenschluss (deutsche Zeit) je Gruppe – vorher ist die heutige Tageskerze noch nicht geschlossen
+SCHLUSS = {"USA": (22, 15), "Europa": (17, 45), "Asien": (8, 0), "Rohstoffe": (23, 15), "Sektoren": (22, 15)}
+
+
+def geschlossen(d, gruppe):
+    """Nur geschlossene Tageskerzen behalten (zählt wie TradingView die Schlusskerzen)."""
+    jetzt = dt.datetime.now(BERLIN)
+    letzte = d.index[-1].date()
+    if gruppe == "Krypto":  # Krypto-Tageskerze schließt um 0 Uhr UTC
+        if letzte >= dt.datetime.now(dt.timezone.utc).date():
+            return d.iloc[:-1]
+        return d
+    h, m = SCHLUSS.get(gruppe, (22, 15))
+    if letzte == jetzt.date() and (jetzt.hour, jetzt.minute) < (h, m):
+        return d.iloc[:-1]
+    return d
+
+
+def wochen(c, gruppe):
+    """Wochenkerzen; die laufende Woche zählt erst, wenn sie geschlossen ist."""
+    regel = "W-SUN" if gruppe == "Krypto" else "W-FRI"
+    w = c.resample(regel).last().dropna()
+    ende = w.index[-1].date()  # Freitag bzw. Sonntag der letzten Woche
+    letzte = c.index[-1].date()
+    if letzte < ende:  # Woche noch nicht fertig
+        w = w.iloc[:-1]
+    return w
+
+
+def ma21(d, gruppe="USA"):
+    """Kurs, Veränderungen und Lage zum 21er EMA (Tag und Woche), nur geschlossene Kerzen."""
+    d = geschlossen(d, gruppe)
     c = d["Close"]
-    m = c.rolling(21).mean()
-    w = c.resample("W-FRI").last().dropna()
-    wm = w.rolling(21).mean()
+    m = c.ewm(span=21, adjust=False).mean()
+    w = wochen(c, gruppe)
+    wm = w.ewm(span=21, adjust=False).mean()
     p = float(c.iloc[-1])
 
     def chg(n):
@@ -146,32 +176,25 @@ def ma21(d):
     o = float(d["Open"].iloc[-1]) if "Open" in d else None
     return {
         "p": r(p, 2), "d": chg(1), "w": chg(5), "m": chg(21), "t": c.index[-1].strftime("%Y-%m-%d"),
-        "ma": r(m.iloc[-1], 2), "abst": r((p / float(m.iloc[-1]) - 1) * 100) if not math.isnan(m.iloc[-1]) else None,
+        "ma": r(m.iloc[-1], 2), "abst": r((p / float(m.iloc[-1]) - 1) * 100),
         "tage": sd, "wochen": sw, "trend": trend,
         "kerze": None if o is None or math.isnan(o) else ("grün" if p >= o else "rot"),
     }
 
 
-def adx(d, n=14):
-    h, l, c = d["High"], d["Low"], d["Close"]
-    up, dn = h.diff(), -l.diff()
-    plus = ((up > dn) & (up > 0)) * up
-    minus = ((dn > up) & (dn > 0)) * dn
-    tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
-    atr = tr.ewm(alpha=1 / n, adjust=False).mean()
-    pdi = 100 * plus.ewm(alpha=1 / n, adjust=False).mean() / atr
-    mdi = 100 * minus.ewm(alpha=1 / n, adjust=False).mean() / atr
-    dx = 100 * (pdi - mdi).abs() / (pdi + mdi)
-    a = dx.ewm(alpha=1 / n, adjust=False).mean()
-    return {"adx": r(a.iloc[-1], 1), "dip": r(pdi.iloc[-1], 1), "dim": r(mdi.iloc[-1], 1), "adx_vortag": r(a.iloc[-2], 1)}
-
-
 def distribution(d, fenster=25):
-    """Distribution Day: Schluss mind. 0,2 % im Minus bei höherem Volumen als am Vortag (letzte 25 Sitzungen)."""
+    """Distribution Day (Regel nach IBD/O'Neil): Index schließt mind. 0,2 % im Minus bei höherem Volumen
+    als am Vortag. Er zählt 25 Sitzungen lang – außer der Index steigt vorher um 5 % über den Schluss dieses Tages."""
+    d = geschlossen(d, "USA")
     c, v = d["Close"], d["Volume"]
     pct = c.pct_change() * 100
-    tage = [i.strftime("%Y-%m-%d") for i in d.index[-fenster:]
-            if pct.loc[i] <= -0.2 and v.loc[i] > v.shift().loc[i]]
+    tage = []
+    for i in d.index[-fenster:]:
+        if pct.loc[i] <= -0.2 and v.loc[i] > v.shift().loc[i] and v.loc[i] > 0:
+            spaeter = c.loc[i:].iloc[1:]
+            if len(spaeter) and float(spaeter.max()) >= float(c.loc[i]) * 1.05:
+                continue  # durch 5 % Anstieg erledigt
+            tage.append(i.strftime("%Y-%m-%d"))
     return {"anzahl": len(tage), "tage": tage}
 
 
@@ -196,20 +219,39 @@ def fear_greed():
     return out
 
 
+def tradingview(symbole, spalten=("close", "change", "change_abs")):
+    """Werte direkt von TradingView (öffentlicher Scanner, ohne Anmeldung)."""
+    body = {"symbols": {"tickers": list(symbole), "query": {"types": []}}, "columns": list(spalten)}
+    for markt in ("global", "america"):
+        try:
+            j = requests.post(f"https://scanner.tradingview.com/{markt}/scan", json=body, headers=UA, timeout=30).json()
+            out = {x["s"]: dict(zip(spalten, x["d"])) for x in j.get("data", [])}
+            if out:
+                return out
+        except Exception as e:
+            print("TradingView", markt, e)
+    return {}
+
+
 def mmfi():
-    """Anteil der S&P-500-Aktien über ihrem 50-Tage-Durchschnitt (wie MMFI, eigene Berechnung)."""
+    """MMFI = Percent of Stocks Above 50-Day Average (TradingView INDEX:MMFI)."""
+    tv = tradingview(["INDEX:MMFI"]).get("INDEX:MMFI")
+    if tv and tv.get("close") is not None:
+        wert = float(tv["close"])
+        vortag = wert - float(tv["change_abs"]) if tv.get("change_abs") is not None else None
+        return {"wert": r(wert, 2), "vortag": r(vortag, 2), "quelle": "TradingView (MMFI)"}
+    # Ersatz, falls TradingView nicht antwortet: Anteil der S&P-500-Aktien über ihrem 50-Tage-Durchschnitt
     st = load("data/stocks.json", {})
     tickers = [x["y"] for x in st.get("indices", {}).get("spx", {}).get("items", [])]
     if len(tickers) < 400:
-        raise ValueError("S&P-500-Liste fehlt")
+        raise ValueError("MMFI nicht erreichbar und S&P-500-Liste fehlt")
     df = yf.download(tickers, period="9mo", interval="1d", auto_adjust=False, progress=False, threads=True)["Close"]
     df = df.dropna(how="all")
     ma = df.rolling(50).mean()
     ok = ma.notna() & df.notna()
-    anteil = ((df > ma) & ok).sum(axis=1) / ok.sum(axis=1) * 100
-    anteil = anteil.dropna().iloc[-30:]
-    return {"wert": r(anteil.iloc[-1], 1), "vortag": r(anteil.iloc[-2], 1), "anzahl": int(ok.iloc[-1].sum()),
-            "verlauf": [r(x, 1) for x in anteil.tolist()], "t": anteil.index[-1].strftime("%Y-%m-%d")}
+    anteil = (((df > ma) & ok).sum(axis=1) / ok.sum(axis=1) * 100).dropna()
+    return {"wert": r(anteil.iloc[-1], 1), "vortag": r(anteil.iloc[-2], 1),
+            "quelle": "Ersatz: eigene Berechnung S&P 500 (MMFI nicht erreichbar)"}
 
 
 def kalender():
@@ -283,42 +325,39 @@ def main():
         out = []
         for k, n, y, g, tv in MAERKTE:
             if y in kurse:
-                out.append({"k": k, "n": n, "y": y, "g": g, "tv": tv, **ma21(kurse[y])})
+                out.append({"k": k, "n": n, "y": y, "g": g, "tv": tv, **ma21(kurse[y], g)})
         return out
 
     def sektoren():
         out = []
         for y, n in SEKTOREN:
             if y in kurse:
-                out.append({"y": y, "n": n, "tv": "AMEX:" + y, **ma21(kurse[y])})
+                out.append({"y": y, "n": n, "tv": "AMEX:" + y, **ma21(kurse[y], "Sektoren")})
         return out
 
     def vola():
-        v = kurse["^VIX"]
+        v = geschlossen(kurse["^VIX"], "USA")
         c, h = float(v["Close"].iloc[-1]), float(v["High"].iloc[-1])
         out = {"vix": r(c), "vix_vortag": r(v["Close"].iloc[-2]), "vix_hoch": r(h), "t": v.index[-1].strftime("%Y-%m-%d"),
                "vix_verlauf": [r(x) for x in v["Close"].iloc[-30:].tolist()]}
-        # Rang des VIX im 52-Wochen-Bereich (0 = Tief, 100 = Hoch)
-        y1 = v["Close"].iloc[-252:]
-        lo, hi = float(y1.min()), float(y1.max())
-        out["vix_rang"] = r((c - lo) / (hi - lo) * 100, 0) if hi > lo else None
         if "^VVIX" in kurse:
-            vv = kurse["^VVIX"]["Close"]
+            vv = geschlossen(kurse["^VVIX"], "USA")["Close"]
             out.update(vvix=r(vv.iloc[-1]), vvix_vortag=r(vv.iloc[-2]))
         if "^VIX3M" in kurse:
-            v3 = float(kurse["^VIX3M"]["Close"].iloc[-1])
+            v3 = float(geschlossen(kurse["^VIX3M"], "USA")["Close"].iloc[-1])
             out.update(vix3m=r(v3), kurve="Contango" if c < v3 else "Backwardation", kurve_ratio=r(c / v3, 3))
         if "^VIX9D" in kurse:
-            out["vix9d"] = r(kurse["^VIX9D"]["Close"].iloc[-1])
+            out["vix9d"] = r(geschlossen(kurse["^VIX9D"], "USA")["Close"].iloc[-1])
         out["umkehr"] = bool(h >= 20 and h - c >= 3)
         return out
 
     def spy_extra():
-        d = kurse["SPY"]
+        d = geschlossen(kurse["SPY"], "USA")
         hoch = float(d["High"].iloc[-252:].max())
         p = float(d["Close"].iloc[-1])
-        return {"vom_hoch": r((p / hoch - 1) * 100), "hoch52": r(hoch), **adx(d),
-                "dist_spy": distribution(d), "dist_qqq": distribution(kurse["QQQ"]) if "QQQ" in kurse else None}
+        return {"vom_hoch": r((p / hoch - 1) * 100), "hoch52": r(hoch),
+                "dist_spx": distribution(kurse["^GSPC"]) if "^GSPC" in kurse else None,
+                "dist_ndq": distribution(kurse["^IXIC"]) if "^IXIC" in kurse else None}
 
     schritt("maerkte", maerkte)
     schritt("sektoren", sektoren)
@@ -339,11 +378,11 @@ def main():
         {"n": "Fear & Greed unter 10", "ja": fg.get("wert") is not None and fg["wert"] < 10},
         {"n": "Put/Call größer als 1,30", "ja": fg.get("pcr") is not None and fg["pcr"] > 1.30},
     ]
-    dist = (spy.get("dist_spy") or {}).get("anzahl", 0)
+    dist = (spy.get("dist_spx") or {}).get("anzahl", 0)
     hedging = [
         {"n": "SPY steigt und VIX steigt", "ja": (spym.get("d") or 0) > 0 and vix_steigt},
         {"n": "Fear & Greed über 80", "ja": fg.get("wert") is not None and fg["wert"] > 80},
-        {"n": "Distribution Days SPY ab 5 (letzte 25 Tage)", "ja": dist >= 5},
+        {"n": "Distribution Days S&P 500 ab 5", "ja": dist >= 5},
     ]
     contango = v.get("kurve") == "Contango"
     bub = spx.get("trend") == "Aufwärts" and contango and spym.get("kerze") == "grün"
@@ -365,7 +404,11 @@ def main():
     }
     sek = res.get("sektoren", [])
     if sek:
-        res["beste_sektoren"] = {z: max(sek, key=lambda s: s.get(z) if s.get(z) is not None else -1e9)["n"] for z in ("d", "w", "m")}
+        def beste(z):
+            b = max(sek, key=lambda s: s.get(z) if s.get(z) is not None else -1e9)
+            sch = min(sek, key=lambda s: s.get(z) if s.get(z) is not None else 1e9)
+            return {"n": b["n"], "y": b["y"], "wert": b.get(z), "schwach": sch["n"], "schwach_wert": sch.get(z)}
+        res["beste_sektoren"] = {z: beste(z) for z in ("d", "w", "m")}
     res["fehler"] = fehler
 
     os.makedirs("data", exist_ok=True)
