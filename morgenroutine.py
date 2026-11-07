@@ -3,6 +3,7 @@ und speichert sie in data/morgenroutine.json (plus Verlauf in data/morgenroutine
 Läuft automatisch über GitHub Actions (.github/workflows/morgenroutine.yml).
 
 Quellen (alle kostenlos): Yahoo Finance (yfinance), CNN Fear & Greed, Forex-Factory-Wirtschaftskalender.
+Den MMFI gibt es nicht kostenlos zum Abrufen – er wird auf der Seite von Hand eingetragen.
 Hinweis: Die O4W-Signale gibt es nur in TradingView – hier steht eine eigene Berechnung über den 21er Durchschnitt."""
 import datetime as dt
 import json
@@ -219,87 +220,6 @@ def fear_greed():
     return out
 
 
-TV_KOPF = {**UA, "Origin": "https://www.tradingview.com", "Referer": "https://www.tradingview.com/",
-           "Content-Type": "application/json", "Accept": "application/json"}
-
-
-def tradingview_wert(symbol):
-    """Schlusskurs und Veränderung eines TradingView-Symbols (öffentlicher Scanner, ohne Anmeldung)."""
-    gruende = []
-    # 1. Einzelabfrage
-    try:
-        rq = requests.get("https://scanner.tradingview.com/symbol", headers=TV_KOPF, timeout=30,
-                          params={"symbol": symbol, "fields": "close,change,change_abs", "no_404": "true"})
-        j = rq.json() if rq.ok else {}
-        if j.get("close") is not None:
-            return j
-        gruende.append(f"symbol {rq.status_code} {rq.text[:120]}")
-    except Exception as e:
-        gruende.append(f"symbol {e}")
-    # 2. Scanner-Liste
-    body = {"symbols": {"tickers": [symbol], "query": {"types": []}}, "columns": ["close", "change", "change_abs"]}
-    for markt in ("global", "america"):
-        try:
-            rq = requests.post(f"https://scanner.tradingview.com/{markt}/scan", json=body, headers=TV_KOPF, timeout=30)
-            for x in (rq.json() if rq.ok else {}).get("data", []):
-                if x.get("s") == symbol and x["d"][0] is not None:
-                    return dict(zip(["close", "change", "change_abs"], x["d"]))
-            gruende.append(f"{markt} {rq.status_code} {rq.text[:120]}")
-        except Exception as e:
-            gruende.append(f"{markt} {e}")
-    raise ValueError("; ".join(gruende))
-
-
-def barchart_wert(symbol):
-    """Letzter Wert und Vortag von Barchart (dort stammt der MMFI ursprünglich her)."""
-    se = requests.Session()
-    se.headers.update(UA)
-    se.get(f"https://www.barchart.com/stocks/quotes/{symbol}/overview", timeout=30)
-    token = requests.utils.unquote(se.cookies.get("XSRF-TOKEN", ""))
-    rq = se.get("https://www.barchart.com/proxies/core-api/v1/quotes/get", timeout=30,
-                params={"symbols": symbol, "fields": "symbol,lastPrice,previousPrice,tradeTime", "raw": "1"},
-                headers={"X-XSRF-TOKEN": token, "Accept": "application/json",
-                         "Referer": f"https://www.barchart.com/stocks/quotes/{symbol}/overview"})
-    if not rq.ok:
-        raise ValueError(f"Barchart {rq.status_code} {rq.text[:120]}")
-    d = rq.json()["data"][0]
-    raw = d.get("raw") or d
-    return float(raw["lastPrice"]), float(raw["previousPrice"]), raw.get("tradeTime")
-
-
-def mmfi():
-    """MMFI = Percent of Stocks Above 50-Day Average (TradingView INDEX:MMFI)."""
-    try:
-        wert, vortag, zeit = barchart_wert("$MMFI")
-        return {"wert": r(wert, 2), "vortag": r(vortag, 2), "quelle": "Barchart ($MMFI = MMFI in TradingView)"}
-    except Exception as e:
-        fehler.append(f"MMFI von Barchart: {e}")
-    try:
-        tv = tradingview_wert("INDEX:MMFI")
-        wert = float(tv["close"])
-        if tv.get("change_abs") is not None:
-            vortag = wert - float(tv["change_abs"])
-        elif tv.get("change") is not None:
-            vortag = wert / (1 + float(tv["change"]) / 100)
-        else:
-            vortag = None
-        return {"wert": r(wert, 2), "vortag": r(vortag, 2), "quelle": "TradingView (MMFI)"}
-    except Exception as e:
-        fehler.append(f"MMFI von TradingView: {e}")
-    # Ersatz, falls TradingView nicht antwortet: Anteil der S&P-500-Aktien über ihrem 50-Tage-Durchschnitt
-    st = load("data/stocks.json", {})
-    tickers = [x["y"] for x in st.get("indices", {}).get("spx", {}).get("items", [])]
-    if len(tickers) < 400:
-        raise ValueError("MMFI nicht erreichbar und S&P-500-Liste fehlt")
-    df = yf.download(tickers, period="9mo", interval="1d", auto_adjust=False, progress=False, threads=True)["Close"]
-    df = df.dropna(how="all")
-    ma = df.rolling(50).mean()
-    ok = ma.notna() & df.notna()
-    anteil = (((df > ma) & ok).sum(axis=1) / ok.sum(axis=1) * 100).dropna()
-    return {"wert": r(anteil.iloc[-1], 1), "vortag": r(anteil.iloc[-2], 1),
-            "quelle": "Ersatz: eigene Berechnung S&P 500 (MMFI nicht erreichbar)"}
-
-
 def kalender():
     j = requests.get("https://nfs.faireconomy.media/ff_calendar_thisweek.json", headers=UA, timeout=30).json()
     heute = dt.datetime.now(BERLIN).date()
@@ -410,7 +330,6 @@ def main():
     schritt("vola", vola)
     schritt("spy", spy_extra)
     schritt("fg", fear_greed)
-    schritt("mmfi", mmfi)
     schritt("kalender", kalender)
     schritt("earnings", earnings)
 
@@ -465,7 +384,7 @@ def main():
     verlauf = load(VERLAUF, [])
     tag = dt.datetime.now(BERLIN).strftime("%Y-%m-%d")
     eintrag = {"tag": tag, "vix": v.get("vix"), "vvix": v.get("vvix"), "fg": fg.get("wert"),
-               "mmfi": (res.get("mmfi") or {}).get("wert"), "pcr": fg.get("pcr"), "kurve": v.get("kurve"),
+               "pcr": fg.get("pcr"), "kurve": v.get("kurve"),
                "spx": spx.get("trend"), "spy_hoch": spy.get("vom_hoch"),
                "panik": sum(x["ja"] for x in panik), "hedging": sum(x["ja"] for x in hedging)}
     verlauf = [e for e in verlauf if e.get("tag") != tag] + [eintrag]

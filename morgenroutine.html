@@ -188,8 +188,8 @@ footer{font-size:.75rem;color:var(--muted);line-height:1.5}
 </section>
 
 <footer>
-  Daten: Yahoo Finance (Kurse, VIX, VVIX, VIX3M), TradingView (MMFI), CNN (Fear &amp; Greed, Put/Call als 5-Tage-Schnitt), Forex Factory (Termine).
-  „Percent of Stocks“ ist der MMFI direkt von TradingView (Percent of Stocks Above 50-Day Average). Der 21er wird als EMA auf geschlossene Kerzen gerechnet.
+  Daten: Yahoo Finance (Kurse, VIX, VVIX, VIX3M), CNN (Fear &amp; Greed, Put/Call als 5-Tage-Schnitt), Forex Factory (Termine).
+  Den MMFI (Percent of Stocks Above 50-Day Average) gibt es nicht kostenlos zum Abrufen – er wird von Hand aus TradingView eingetragen. Der 21er wird als EMA auf geschlossene Kerzen gerechnet.
   Kurse sind Schlusskurse bzw. verzögert. Keine Anlageberatung.
 </footer>
 </div>
@@ -302,9 +302,7 @@ function zeigen(d, verlauf) {
     kachel("VVIX", fmt(vo.vvix), vergleich(vo.vvix, vo.vvix_vortag, 2, true) + "<br>ab 130 Boden möglich, über 200 selten"),
     kachel("Fear &amp; Greed", fg.wert == null ? "–" : `${fmt(fg.wert, 0)} <span style="font-size:.8rem">${esc(fg.stimmung)}</span>`,
       vergleich(fg.wert, fg.vortag, 0) + `<br>Vorwoche ${fmt(fg.woche, 0)} · Vormonat ${fmt(fg.monat, 0)}`, fgMeter),
-    kachel("Percent of Stocks (MMFI)", mm.wert == null ? "–" : fmt(mm.wert, 2),
-      vergleich(mm.wert, mm.vortag, 2) + `<br>unter 30 überverkauft, über 70 überkauft<br>Quelle: ${esc(mm.quelle || "–")}`,
-      spark(verlauf.slice(-30).map(x => x.mmfi))),
+    `<div class="tile" id="mmfi-kachel"></div>`,
     kachel("Put/Call (CNN)", fmt(fg.pcr), vergleich(fg.pcr, fg.pcr_vortag, 2, true) + "<br>5-Tage-Schnitt · über 1 = mehr Absicherung"),
     kachel("VIX-Kurve", esc(vo.kurve || "–"), `VIX ${fmt(vo.vix)} / VIX3M ${fmt(vo.vix3m)} · VIX9D ${fmt(vo.vix9d)}<br>VIX unter VIX3M = Contango`),
     kachel("SPY vom Hoch", pct(sp.vom_hoch), `52-Wochen-Hoch ${fmt(sp.hoch52)} $<br>ab −10 % ETF nachkaufen (nur im Abwärtstrend)`),
@@ -332,21 +330,34 @@ function zeigen(d, verlauf) {
   $("dist").innerHTML = dli("S&amp;P 500", ds) + dli("Nasdaq", dq);
   $("earn").innerHTML = (d.earnings || []).length ? d.earnings.map(e => `<li><span>${tvLink(e.y, e.y)}</span><span class="${e.tage >= 0 && e.tage <= 7 ? "ja" : "nein"}">${datum(e.datum)} · ${e.tage < 0 ? "gestern" : e.tage === 0 ? "heute" : e.tage === 1 ? "morgen" : "in " + e.tage + " Tagen"}</span></li>`).join("") : '<li class="sub">Keine Termine bekannt.</li>';
 
-  // Verlauf
-  const vr = [...verlauf].reverse().slice(0, 15);
-  tabelle($("tv"), [
-    {k: "tag", t: "Tag", f: r => new Date(r.tag + "T12:00").toLocaleDateString("de-DE", {weekday: "short", day: "2-digit", month: "2-digit"})},
-    {k: "vix", t: "VIX", num: 1, f: r => fmt(r.vix)},
-    {k: "vvix", t: "VVIX", num: 1, f: r => fmt(r.vvix)},
-    {k: "fg", t: "F&amp;G", num: 1, f: r => fmt(r.fg, 0)},
-    {k: "mmfi", t: "Percent", num: 1, f: r => fmt(r.mmfi, 1)},
-    {k: "pcr", t: "Put/Call", num: 1, f: r => fmt(r.pcr)},
-    {k: "kurve", t: "VIX-Kurve"},
-    {k: "spx", t: "S&amp;P Trend", f: r => r.spx ? `<span class="pill ${esc(r.spx)}">${esc(r.spx)}</span>` : "–"},
-    {k: "panik", t: "Panik", num: 1, f: r => (r.panik ?? "–") + "/3"},
-    {k: "hedging", t: "Hedging", num: 1, f: r => (r.hedging ?? "–") + "/3"},
-  ], vr);
+  mmfiZeigen();
+  verlaufZeigen(verlauf);
   cushionZeigen(); positionenZeigen();
+}
+
+// ---- MMFI von Hand (gibt es nicht kostenlos zum Abrufen)
+const MMFI_SPEICHER = "morgenroutine_mmfi";
+function mmfiLesen() { try { return JSON.parse(localStorage.getItem(MMFI_SPEICHER)) || {}; } catch (e) { return {}; } }
+const heuteTag = () => new Date().toLocaleDateString("sv-SE");
+function mmfiZeigen() {
+  const el = $("mmfi-kachel"); if (!el) return;
+  const m = mmfiLesen(), tage = Object.keys(m).sort();
+  const heute = heuteTag(), wert = m[heute];
+  const vor = tage.filter(t => t < heute).pop();
+  const vortag = vor != null ? m[vor] : null;
+  const vgl = wert != null && vortag != null ? vergleich(wert, vortag, 2) + (vor ? ` vom ${datum(vor)}` : "") : (wert != null ? "Noch kein Wert vom Vortag eingetragen." : "");
+  el.innerHTML = `<div class="k">Percent of Stocks (MMFI)</div>
+    <input id="mmfi-ein" type="text" inputmode="decimal" placeholder="Wert aus TradingView, z. B. 42,02" aria-label="MMFI heute"
+      value="${wert != null ? fmt(wert, 2) : ""}" style="font:600 1.1rem var(--f-num);padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-width:0">
+    ${spark(tage.slice(-30).map(t => m[t]))}
+    <div class="s">${vgl}${vgl ? "<br>" : ""}unter 30 überverkauft, über 70 überkauft<br><a href="https://www.tradingview.com/chart/?symbol=INDEX:MMFI" target="_blank" rel="noopener" style="color:inherit">MMFI in TradingView öffnen</a> · nur auf diesem Gerät gespeichert</div>`;
+  $("mmfi-ein").addEventListener("change", e => {
+    const x = parseFloat(e.target.value.replace("%", "").replace(",", ".").trim());
+    const neu = mmfiLesen();
+    if (isNaN(x)) delete neu[heute]; else neu[heute] = Math.round(x * 100) / 100;
+    try { localStorage.setItem(MMFI_SPEICHER, JSON.stringify(neu)); } catch (err) {}
+    mmfiZeigen(); if (LETZTER_VERLAUF) verlaufZeigen(LETZTER_VERLAUF);
+  });
 }
 
 // ---- Mein Depot (nur in diesem Browser gespeichert)
@@ -403,6 +414,25 @@ $("pos-form").addEventListener("submit", e => {
 });
 if (depot.cushion != null) $("cushion").value = fmt(depot.cushion, 2);
 cushionZeigen(); positionenZeigen();
+
+let LETZTER_VERLAUF = null;
+function verlaufZeigen(verlauf) {
+  LETZTER_VERLAUF = verlauf;
+  const mm = mmfiLesen();
+  const vr = [...verlauf].reverse().slice(0, 15).map(r => ({...r, mmfi: mm[r.tag] ?? null}));
+  tabelle($("tv"), [
+    {k: "tag", t: "Tag", f: r => new Date(r.tag + "T12:00").toLocaleDateString("de-DE", {weekday: "short", day: "2-digit", month: "2-digit"})},
+    {k: "vix", t: "VIX", num: 1, f: r => fmt(r.vix)},
+    {k: "vvix", t: "VVIX", num: 1, f: r => fmt(r.vvix)},
+    {k: "fg", t: "F&amp;G", num: 1, f: r => fmt(r.fg, 0)},
+    {k: "mmfi", t: "MMFI", num: 1, f: r => fmt(r.mmfi, 2)},
+    {k: "pcr", t: "Put/Call", num: 1, f: r => fmt(r.pcr)},
+    {k: "kurve", t: "VIX-Kurve"},
+    {k: "spx", t: "S&amp;P Trend", f: r => r.spx ? `<span class="pill ${esc(r.spx)}">${esc(r.spx)}</span>` : "–"},
+    {k: "panik", t: "Panik", num: 1, f: r => (r.panik ?? "–") + "/3"},
+    {k: "hedging", t: "Hedging", num: 1, f: r => (r.hedging ?? "–") + "/3"},
+  ], vr);
+}
 
 $("neu").onclick = () => laden().catch(fehler);
 function fehler(e) { $("hinweis").hidden = false; $("hinweis").textContent = "Daten konnten nicht geladen werden. Bitte später erneut versuchen."; console.error(e); }
