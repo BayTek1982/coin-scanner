@@ -250,8 +250,30 @@ def tradingview_wert(symbol):
     raise ValueError("; ".join(gruende))
 
 
+def barchart_wert(symbol):
+    """Letzter Wert und Vortag von Barchart (dort stammt der MMFI ursprünglich her)."""
+    se = requests.Session()
+    se.headers.update(UA)
+    se.get(f"https://www.barchart.com/stocks/quotes/{symbol}/overview", timeout=30)
+    token = requests.utils.unquote(se.cookies.get("XSRF-TOKEN", ""))
+    rq = se.get("https://www.barchart.com/proxies/core-api/v1/quotes/get", timeout=30,
+                params={"symbols": symbol, "fields": "symbol,lastPrice,previousPrice,tradeTime", "raw": "1"},
+                headers={"X-XSRF-TOKEN": token, "Accept": "application/json",
+                         "Referer": f"https://www.barchart.com/stocks/quotes/{symbol}/overview"})
+    if not rq.ok:
+        raise ValueError(f"Barchart {rq.status_code} {rq.text[:120]}")
+    d = rq.json()["data"][0]
+    raw = d.get("raw") or d
+    return float(raw["lastPrice"]), float(raw["previousPrice"]), raw.get("tradeTime")
+
+
 def mmfi():
     """MMFI = Percent of Stocks Above 50-Day Average (TradingView INDEX:MMFI)."""
+    try:
+        wert, vortag, zeit = barchart_wert("$MMFI")
+        return {"wert": r(wert, 2), "vortag": r(vortag, 2), "quelle": "Barchart ($MMFI = MMFI in TradingView)"}
+    except Exception as e:
+        fehler.append(f"MMFI von Barchart: {e}")
     try:
         tv = tradingview_wert("INDEX:MMFI")
         wert = float(tv["close"])
