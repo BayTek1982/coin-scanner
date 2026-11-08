@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="de" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e131b">
+<meta name="description" content="Golden Zone und SK-System für die Top 100 Kryptowährungen – 1H, 4H, 1D, 1W.">
+<title>Golden Zone · Bayazit Coin-Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;
+  --accent:#c77a12;--accent-ink:#fff;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;--warn:#9a6a00;--star:#d39b00;
+  --gold:#d9951c;--goldbg:rgba(217,149,28,.16);--blue:#2f6fd6;--grey:#8d99ab;
+  --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;
+  --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;--star:#f5c542;
+  --gold:#f0a33a;--goldbg:rgba(240,163,58,.18);--blue:#5b9bff;--grey:#6f7b8d;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1800px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;justify-content:space-between}
+h1{font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+h1 .dot{width:30px;height:30px;border-radius:50%;background:var(--gold);display:inline-grid;place-items:center;color:var(--accent-ink);font-size:1rem}
+.label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sub{font-size:.82rem;color:var(--muted)}
+.status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stand{font-size:.8rem;color:var(--muted)}.stand b{font-family:var(--f-num);color:var(--fg);font-weight:600}
+.btn{font:600 .88rem var(--f-body);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--chip);color:var(--fg)}.btn.line{background:none;border:1px solid var(--gold);color:var(--gold)}.btn:disabled{opacity:.6;cursor:wait}
+.seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{font:700 .9rem var(--f-body);border:0;background:none;color:var(--muted);padding:8px 14px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.seg.dirseg button[data-dir="1"][aria-pressed="true"]{color:var(--up);box-shadow:inset 0 0 0 1px var(--up)}
+.seg.dirseg button[data-dir="-1"][aria-pressed="true"]{color:var(--down);box-shadow:inset 0 0 0 1px var(--down)}
+.tfseg button[aria-pressed="true"]{color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.topbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.search{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.search input{flex:1;font:500 .95rem var(--f-body);background:none;border:0;color:var(--fg);outline:none;min-width:0}
+.prog{height:4px;background:var(--chip);border-radius:2px;overflow:hidden}.prog i{display:block;height:100%;background:var(--gold);width:0;transition:width .2s}
+.notice{font-size:.82rem;color:var(--warn);margin:0}
+.layout{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px;position:sticky;top:10px}
+@media (max-width:900px){.side{position:static}}
+.flist{display:grid;gap:6px}
+.fbtn{display:flex;align-items:center;gap:10px;justify-content:space-between;font:600 .9rem var(--f-body);background:none;border:1px solid transparent;color:var(--fg);padding:9px 10px;border-radius:9px;cursor:pointer;text-align:left}
+.fbtn:hover{background:var(--chip)}
+.fbtn[aria-pressed="true"]{border-color:var(--gold);background:var(--goldbg)}
+.fbtn i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px;flex:none}
+.fbtn span{display:flex;align-items:center}.fbtn b{font-family:var(--f-num)}
+.chk{display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--fg);cursor:pointer}
+input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px}
+.hint{font-size:.76rem;color:var(--muted);margin:0}
+.main{display:grid;gap:16px;min-width:0}
+.toprow{display:grid;grid-template-columns:minmax(260px,1fr) 2fr;gap:16px}
+@media (max-width:1100px){.toprow{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0;align-content:start}
+.bias{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bias div{border-radius:10px;padding:10px 12px;display:grid;gap:2px}
+.bias .bu{background:rgba(60,207,138,.10);border:1px solid rgba(60,207,138,.35)}
+.bias .be{text-align:right}
+.bias .n{font:800 2.6rem/1 var(--f-body)}.bias .bu .n{color:var(--up)}.bias .be .n{color:var(--down)}
+.bias small{color:var(--muted);font-size:.74rem}
+.biasbar{height:8px;border-radius:4px;background:var(--down);overflow:hidden}.biasbar i{display:block;height:100%;background:var(--up)}
+.allc{display:flex;flex-wrap:wrap;gap:6px;max-height:210px;overflow-y:auto}
+.cc{font:600 .72rem var(--f-num);border:1px solid var(--line);background:var(--chip);color:var(--muted);padding:5px 7px;border-radius:7px;cursor:pointer;position:relative;opacity:.65}
+.cc.gz{border:2px solid var(--gold);color:var(--fg);opacity:1}
+.cc.near{border:2px dashed var(--gold);color:var(--fg);opacity:.9}
+.cc.fr::after{content:"";position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:9px;cursor:pointer;position:relative;min-width:0}
+.card:hover{border-color:var(--muted)}
+.card.hl{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.card .rk{position:absolute;top:-9px;left:14px;font:600 .7rem var(--f-num);color:var(--muted);background:var(--bg);padding:0 6px;border-radius:5px}
+.ctop{display:flex;gap:10px;align-items:center}
+.ctop img{width:30px;height:30px;border-radius:50%;flex:none;background:var(--chip)}
+.ctop .nm{flex:1;min-width:0}.ctop .nm b{display:block;font-size:1.1rem;font-weight:800}.ctop .nm small{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.ctop .pr{text-align:right}.ctop .pr b{display:block;font:600 1rem var(--f-num)}.ctop .pr small{font:600 .78rem var(--f-num)}
+.star{background:none;border:0;cursor:pointer;font-size:1.15rem;color:var(--muted);padding:0 2px;line-height:1}
+.star.on{color:var(--star)}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.bd{font:700 .76rem var(--f-body);padding:4px 10px;border-radius:999px;background:var(--chip);color:var(--fg)}
+.bd.long{background:rgba(60,207,138,.14);color:var(--up)}.bd.short{background:rgba(255,107,94,.14);color:var(--down)}
+.bd.gold{background:var(--gold);color:var(--accent-ink)}.bd.near{background:var(--goldbg);color:var(--gold)}
+.bd.blue{background:rgba(91,155,255,.16);color:var(--blue)}.bd.grey{color:var(--muted)}.bd.fresh{background:var(--accent);color:var(--accent-ink)}
+.tfs{display:flex;gap:6px;flex-wrap:wrap}
+.tfs span{font:600 .72rem var(--f-num);border:1px solid var(--line);border-radius:7px;padding:4px 7px;color:var(--muted)}
+.tfs span.cur{border-color:var(--gold)}
+.tfs b{font-weight:600;margin-left:4px}
+.last{display:flex;justify-content:space-between;gap:8px;font-size:.78rem;color:var(--muted);background:var(--chip);border-radius:8px;padding:6px 10px}
+.last b{color:var(--gold)}
+.card svg{width:100%;height:auto;display:block}
+.dist{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.dist div{border:1px solid var(--line);border-radius:8px;padding:5px 7px;display:grid;gap:1px;min-width:0}
+.dist div.g{border-color:var(--gold);background:var(--goldbg)}
+.dist small{font-size:.66rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dist b{font:600 .8rem var(--f-num);white-space:nowrap}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+dialog{width:min(1100px,96vw);max-width:none;max-height:92vh;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);padding:16px;box-sizing:border-box}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+.dhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.dhead>div{flex:1;min-width:180px}
+.x{font-size:1.2rem;background:var(--chip);border:0;color:var(--fg);width:38px;height:38px;border-radius:9px;cursor:pointer}
+.ltab{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:8px}
+.ltab td{padding:5px 8px;border-bottom:1px solid var(--line);font-family:var(--f-num)}.ltab td:first-child{font-family:var(--f-body)}.ltab td:nth-child(n+2){text-align:right}
+.ltab tr.now td{font-weight:800;color:var(--gold)}
+.how ol{padding-left:20px;display:grid;gap:10px;margin:8px 0}.how li b{display:block}.how p{margin:6px 0;color:var(--muted);font-size:.88rem}
+.how h3{margin:14px 0 4px;font-size:1rem}
+.pill{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (min-width:1400px){body{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="label"><a href="index.html" style="color:var(--muted)">← Bayazit Coin-Scanner</a></div>
+      <h1><span class="dot">◎</span><span id="title">Golden Zone</span></h1>
+      <div class="sub" id="subtitle">Top 100 Kryptowährungen · Marktstruktur + Fibonacci</div>
+    </div>
+    <div class="status">
+      <button class="btn line" id="howBtn">ⓘ Wie es funktioniert</button>
+      <span class="stand">Stand <b id="stand">–</b></span>
+      <button class="btn" id="refresh">Aktualisieren</button>
+    </div>
+  </header>
+
+  <div class="topbar">
+    <div class="seg" id="modeSeg" role="group" aria-label="Ansicht"><button data-m="std">◎ Golden Zone</button><button data-m="sk">SK-System</button></div>
+    <div class="seg tfseg" id="tfSeg" role="group" aria-label="Zeitrahmen"><button data-tf="1h">1H</button><button data-tf="4h">4H</button><button data-tf="1d">1D</button><button data-tf="1w">1W</button></div>
+  </div>
+  <div class="prog" id="prog" hidden><i id="progI"></i></div>
+  <p class="notice" id="notice" hidden></p>
+
+  <label class="search"><span class="label" style="color:var(--gold)">Coin suchen</span><input id="q" type="search" placeholder="Name oder Kürzel, z. B. Bitcoin oder BTC" autocomplete="off"></label>
+
+  <div class="layout">
+    <aside class="side">
+      <div class="label">Richtung</div>
+      <div class="seg dirseg" id="dirSeg" role="group" aria-label="Richtung"><button data-dir="0">Beide</button><button data-dir="1">Long</button><button data-dir="-1">Short</button></div>
+      <div class="label">Filter</div>
+      <div class="flist" id="flist"></div>
+      <div class="label">Dein Fokus</div>
+      <button class="fbtn" id="watchBtn" aria-pressed="false"><span>★ Nur meine Watchlist</span><b id="watchN">0</b></button>
+      <p class="hint">Gleiche Watchlist wie im Coin-Scanner (in diesem Browser gespeichert).</p>
+      <label class="chk"><input type="checkbox" id="align"> 4H und 1D in gleicher Richtung</label>
+      <p class="hint" id="loadedHint">1H · 4H · 1D werden geladen. Laufende Kerzen sind enthalten.</p>
+    </aside>
+
+    <div class="main">
+      <div class="toprow">
+        <section class="panel">
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="label" id="biasLab">Indikator-Bias</span><span class="sub" id="biasSub"></span></div>
+          <div class="bias">
+            <div class="bu"><span class="n" id="bU">–</span><b style="color:var(--up)">Bullisch</b><small id="bUs"></small></div>
+            <div class="be"><span class="n" id="bD">–</span><b style="color:var(--down)">Bärisch</b><small id="bDs"></small></div>
+          </div>
+          <div class="biasbar"><i id="biasI" style="width:50%"></i></div>
+          <small class="hint" id="biasNote">Richtung der Marktstruktur je Coin · keine Positionierung der Trader.</small>
+        </section>
+        <section class="panel">
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="label">Alle 100 Coins</span>
+            <span class="legend" id="allLeg"></span></div>
+          <div class="allc" id="allc"></div>
+        </section>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="label">Charts</span><span class="sub" id="count"></span></div>
+      <div class="grid" id="grid"><div class="empty">Daten werden geladen …</div></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Daten: CoinGecko (Rangliste), Binance und OKX (Kerzen). Alle Werte sind Orientierung, keine Anlageberatung.</span>
+    <span>Pivot-Längen wie im BFT: 1H 7 · 4H 14 · 1D 12 · 1W 15.</span>
+  </footer>
+</div>
+
+<dialog id="dlg"><div class="dhead"><div id="dTitle"></div><a class="btn ghost" id="dTv" target="_blank" rel="noopener">TradingView</a><button class="x" data-close>✕</button></div><div id="dBody"></div></dialog>
+
+<dialog id="how" class="how"><div class="dhead"><div><div class="label" style="color:var(--gold)">Dein Chart. Kurz erklärt.</div><h2 style="margin:4px 0 0">Wie es funktioniert</h2></div><button class="x" data-close>✕</button></div>
+<h3>◎ Golden Zone (Smart-Money-Ansatz)</h3>
+<ol>
+<li><b>Marktstruktur (Bias)</b>Schließt eine Kerze über dem letzten bestätigten Hoch, ist die Struktur bullisch (Long). Schließt sie unter dem letzten bestätigten Tief, ist sie bärisch (Short). „Frisch geflippt“ heißt: Die Richtung hat in den letzten 3 Kerzen gewechselt.</li>
+<li><b>Die Bewegung (Swing)</b>Bei Long wird Fibonacci vom Tief (1,0) zum höchsten bestätigten Hoch (0) gezogen. Bei Short ist es umgekehrt.</li>
+<li><b>Golden Zone 0,618 – 0,786</b>Der goldene Bereich ist die typische Korrektur-Zone, in der nach Einstiegen gesucht wird. Eine Berührung allein ist kein Signal.</li>
+<li><b>Das 0,5er-Level</b>Eine zusätzliche Orientierungslinie. Zwischen 0,5 und 0,618 gilt der Coin als „nah an der Golden Zone“.</li>
+<li><b>TP1 und TP2</b>Zwei Zielmarken in Trendrichtung: Extension 1,272 (TP1) und 1,618 (TP2). Bei Long liegen sie über dem Hoch, bei Short unter dem Tief.</li>
+<li><b>1,0 = Ungültig-Linie</b>Fällt der Kurs bei Long unter das Tief (bei Short über das Hoch), ist die Bewegung kaputt.</li>
+</ol>
+<h3>SK-System (Stefan Kassing, deine Regeln)</h3>
+<ol>
+<li><b>Struktur 0 – A – B</b>Short: 0 = höheres Hoch, A = Korrektur nach unten, B = gescheiterter Versuch, 0 zu überschreiten. B muss mindestens 50 % von 0→A erreichen. Long ist gespiegelt.</li>
+<li><b>Phase 1: Warten</b>Solange A nicht gebrochen ist, wird nicht gehandelt. Steigt der Kurs über B (aber nicht über 0), wird das die neue B. A bleibt.</li>
+<li><b>Phase 2: A gebrochen</b>Schlusskurs unter A (Short) bzw. über A (Long). Jetzt wird Fibonacci von B nach C gezogen. C ist das neue Extrem seit dem Bruch. Einstiege E1–E4 liegen bei 50 / 55,9 / 61,8 / 66,7 %, SL bei 78,6 %.</li>
+<li><b>Ziel</b>161,8 % und 200 % der Strecke 0→A, gemessen ab 0. Ist das Ziel erreicht, gilt die Gesamtkorrektur 0→C.</li>
+<li><b>Ungültig</b>Geht der Kurs über 0 (Short) bzw. unter 0 (Long), ist die Struktur erledigt und wird nicht mehr angezeigt. Wird nach dem Bruch von A die B gebrochen, wird C zur neuen A und das neue Extrem zur neuen B.</li>
+</ol>
+<p>Pro Coin wird die jüngste gültige SK-Struktur gezeigt (Long oder Short).</p>
+</dialog>
+
+<script>
+"use strict";
+const CG="https://api.coingecko.com/api/v3";
+const TFS={"1h":{b:"1h",o:"1H",L:7,ms:36e5,lab:"1H"},"4h":{b:"4h",o:"4H",L:14,ms:144e5,lab:"4H"},"1d":{b:"1d",o:"1Dutc",L:12,ms:864e5,lab:"1D"},"1w":{b:"1w",o:"1Wutc",L:15,ms:6048e5,lab:"1W"}};
+const SKIP=new Set("USDT USDC DAI FDUSD TUSD USDE USDS PYUSD USD1 RLUSD USDD BUSD USDP GUSD FRAX LUSD EURC EURT XAUT PAXG KAU USDG USDF USD0 USDTB BFUSD GHO USYC USDY OUSG USTB BUIDL USDX USDB SUSDE SUSDS SDAI WBTC WETH STETH WSTETH WEETH EETH CBBTC CBETH RETH BETH LBTC SOLVBTC JITOSOL MSOL BNSOL JUPSOL EZETH RSETH METH OSETH SFRXETH TBTC BTCB CLBTC WBETH BSC-USD WBNB WSOL WTRX WHYPE JLP".split(" "));
+
+// ===== ANALYSE-START =====
+const SK_LV=[0.5,0.559,0.618,0.667,0.786,0.886];
+function pivots(k,L){const ph=[],pl=[],n=k.length;
+  for(let i=L;i<n-L;i++){let H=true,Lo=true;
+    for(let j=i-L;j<=i+L&&(H||Lo);j++){if(j===i)continue;
+      if(j<i){if(k[j].h>=k[i].h)H=false;if(k[j].l<=k[i].l)Lo=false}
+      else{if(k[j].h>k[i].h)H=false;if(k[j].l<k[i].l)Lo=false}}
+    if(H)ph.push({i,p:k[i].h});if(Lo)pl.push({i,p:k[i].l})}
+  return{ph,pl}}
+function structure(k,pv,L){const n=k.length,conf={};let lastH=null,lastL=null,trend=0,flip=-1;const ev=[];
+  pv.ph.forEach(p=>(conf[p.i+L]=conf[p.i+L]||[]).push({i:p.i,p:p.p,t:1}));
+  pv.pl.forEach(p=>(conf[p.i+L]=conf[p.i+L]||[]).push({i:p.i,p:p.p,t:-1}));
+  for(let j=0;j<n;j++){(conf[j]||[]).forEach(p=>{if(p.t===1)lastH={i:p.i,p:p.p,br:false};else lastL={i:p.i,p:p.p,br:false}});
+    const c=k[j].c;
+    if(lastH&&!lastH.br&&c>lastH.p){lastH.br=true;ev.push({d:1,bar:j,piv:lastH});if(trend!==1){trend=1;flip=j}}
+    if(lastL&&!lastL.br&&c<lastL.p){lastL.br=true;ev.push({d:-1,bar:j,piv:lastL});if(trend!==-1){trend=-1;flip=j}}}
+  return{trend,flip,ev}}
+const mir=k=>k.map(x=>({t:x.t,o:-x.o,h:-x.l,l:-x.h,c:-x.c}));
+// Bewegung im Aufwärtstrend (gespiegelte Kerzen für Short)
+function legUp(k,pv,st){const n=k.length;const fe=st.ev.filter(e=>e.d===1&&e.bar>=st.flip);if(!fe.length)return null;
+  const first=fe[0];let H=null;
+  for(const p of pv.ph)if(p.i>first.piv.i&&p.p>first.piv.p&&(!H||p.p>H.p))H=p;
+  let ref=first,Hi,Hp,run=false;
+  if(H){for(const e of fe)if(e.bar<=H.i)ref=e;Hi=H.i;Hp=H.p}
+  else{run=true;Hp=-Infinity;Hi=first.bar;for(let j=first.piv.i;j<n-1;j++)if(k[j].h>Hp){Hp=k[j].h;Hi=j}}
+  let Lp=Infinity,Li=ref.piv.i;for(let j=ref.piv.i;j<=Math.min(ref.bar,Hi);j++)if(k[j].l<Lp){Lp=k[j].l;Li=j}
+  if(!(Hp>Lp))return null;return{Hi,Hp,Li,Lp,run}}
+function analyzeStd(k,L){const n=k.length;if(!k||n<2*L+10)return null;
+  const pv=pivots(k,L),st=structure(k,pv,L);if(!st.trend)return{dir:0};
+  const dir=st.trend,kk=dir===1?k:mir(k);let pv2=pv,st2=st;if(dir===-1){pv2=pivots(kk,L);st2=structure(kk,pv2,L)}
+  const lg=legUp(kk,pv2,st2);const flipAgo=n-1-st.flip;if(!lg)return{dir,flipAgo,fresh:flipAgo<=3};
+  const R=lg.Hp-lg.Lp,P=x=>dir*(lg.Hp-x*R),price=k[n-1].c,r=(lg.Hp-kk[n-1].c)/R;
+  const z1=lg.Hp-0.618*R,z2=lg.Hp-0.786*R;let touch=-1;
+  for(let j=Math.max(lg.Hi,lg.Li)+1;j<n;j++)if(kk[j].l<=z1&&kk[j].h>=z2)touch=j;
+  const cat=r>1?"inv":r>0.786?"deep":r>=0.618?"gz":r>=0.5?"near":r>-0.272?"trend":r>-0.618?"tp1":"tp2";
+  return{dir,flipAgo,fresh:flipAgo<=3,r,cat,price,Hi:lg.Hi,Li:lg.Li,run:lg.run,
+    lv:{h:P(0),l:P(1),f5:P(0.5),g1:P(0.618),g2:P(0.786),tp1:P(-0.272),tp2:P(-0.618)},
+    touchAgo:touch<0?null:n-1-touch,from:Math.min(lg.Hi,lg.Li)}}
+// SK-Struktur Short (0 Hoch, A Tief, B tieferes Hoch); Long = gespiegelt
+function skDown(k,pv){const n=k.length;let best=null;const highs=pv.ph.slice(-12);
+  for(let hI=0;hI<highs.length;hI++){const h0=highs[hI];
+    const prev=pv.ph.filter(p=>p.i<h0.i).pop();if(prev&&prev.p>=h0.p)continue; // 0 muss ein höheres Hoch sein
+    for(const p of pv.ph){if(p.i<=h0.i)continue;if(p.p>=h0.p)break;
+      let A={i:-1,p:Infinity};for(let j=h0.i+1;j<p.i;j++)if(k[j].l<A.p)A={i:j,p:k[j].l};
+      if(A.i<0)continue;
+      if(p.p>=A.p+0.5*(h0.p-A.p)){const s=simDown(k,h0,A,p);if(s&&(!best||s.key>best.key))best=s;break}}}
+  return best}
+function simDown(k,h0,A,B){const n=k.length;const z={i:h0.i,p:h0.p};let a={...A},b={i:B.i,p:B.p},phase=1,brk=-1,c=null,goal=false;
+  for(let j=B.i+1;j<n;j++){const x=k[j];if(x.h>z.p)return null;
+    if(phase===1){if(x.h>b.p)b={i:j,p:x.h};if(x.c<a.p){phase=2;brk=j;c={i:j,p:x.l}}}
+    else{if(x.h>b.p){a={...c};b={i:j,p:x.h};phase=1;goal=false;c=null;brk=-1;if(x.c<a.p){phase=2;brk=j;c={i:j,p:x.l}}continue}
+      if(x.l<c.p)c={i:j,p:x.l};if(!goal&&x.l<=z.p-1.618*(z.p-a.p))goal=true}}
+  return{z,a,b,c,phase,goal,brk,key:Math.max(b.i,brk,c?c.i:-1)}}
+function analyzeSK(k,L){const n=k.length;if(!k||n<2*L+10)return null;
+  const dn=skDown(k,pivots(k,L)),mk=mir(k),up=skDown(mk,pivots(mk,L));
+  let s=null,dir=0;if(dn&&(!up||dn.key>=up.key)){s=dn;dir=-1}else if(up){s=up;dir=1}
+  if(!s)return{dir:0};
+  const f=v=>-dir*v; // zurück in echte Preise (dn: dir=-1 -> v)
+  const P={z:f(s.z.p),a:f(s.a.p),b:f(s.b.p),c:s.c?f(s.c.p):null};
+  const price=k[n-1].c,zp=s.z.p,ap=s.a.p,R0=zp-ap;
+  const out={dir,phase:s.phase,goal:s.goal,P,idx:{z:s.z.i,a:s.a.i,b:s.b.i,c:s.c?s.c.i:null,brk:s.brk},price,
+    t161:f(zp-1.618*R0),t200:f(zp-2*R0),bPct:(s.b.p-ap)/R0};
+  const pr=-dir*price; // gespiegelter Raum (Short-Logik)
+  if(s.phase===1){out.cat="wait";out.lv={};[0.5,0.618,0.786].forEach(x=>out.lv[x]=f(ap+x*R0))}
+  else if(!s.goal){const R=s.b.p-s.c.p;out.r=(pr-s.c.p)/R;out.lv={};SK_LV.forEach(x=>out.lv[x]=f(s.c.p+x*R));
+    out.cat=out.r>0.786?"deep":out.r>=0.5?"entry":"pre"}
+  else{const R=zp-s.c.p;out.r=(pr-s.c.p)/R;out.lv={};SK_LV.forEach(x=>out.lv[x]=f(s.c.p+x*R));
+    out.cat=out.r>=0.5&&out.r<=0.786?"gzone":"goal"}
+  return out}
+// ===== ANALYSE-END =====
+
+const STD_CATS=[["gz","In der Golden Zone","var(--gold)"],["near","Nah an der Golden Zone","#e8b04a"],["deep","Hinter der Golden Zone (bis 1,0)","#e8853a"],["trend","Noch keine Korrektur (über 0,5)","var(--grey)"],["tp1","Über TP1","var(--blue)"],["tp2","Über TP2","var(--blue)"]];
+const SK_CATS=[["entry","Im Einstiegsbereich B→C (E1–E4)","var(--gold)"],["pre","A gebrochen · vor E1","#e8b04a"],["deep","Unter SL-Level 78,6 %","#e8853a"],["wait","Phase 1 · A noch nicht gebrochen","var(--grey)"],["gzone","Ziel erreicht · in Gesamtkorrektur 0→C","var(--blue)"],["goal","Ziel erreicht","var(--blue)"]];
+const CATLAB={std:Object.fromEntries(STD_CATS.map(c=>[c[0],c[1]])),sk:Object.fromEntries(SK_CATS.map(c=>[c[0],c[1]]))};
+CATLAB.std.inv="Unter 1,0";CATLAB.std.gz="In der Golden Zone";
+
+const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||"null");localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
+const S=Object.assign({mode:"std",tf:"1d",dir:0,cat:"gz",watch:false,align:false,q:""},LS("bgz1")||{});
+S.coins=[];S.loaded={};S.q="";
+const save=()=>LS("bgz1",{mode:S.mode,tf:S.tf,dir:S.dir,cat:S.cat,watch:S.watch,align:S.align});
+const stars=()=>new Set((LS("bcs2")||{}).stars||[]);
+function toggleStar(id){const s=LS("bcs2")||{};const st=new Set(s.stars||[]);st.has(id)?st.delete(id):st.add(id);s.stars=[...st];LS("bcs2",s)}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function getJSON(url,ms=15000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);
+  try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}finally{clearTimeout(t)}}
+const fP=p=>{if(p==null||!isFinite(p))return"–";const a=Math.abs(p);
+  if(a>=1)return"$"+p.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:a>=100?2:a>=10?3:4});
+  return"$"+p.toLocaleString("de-DE",{maximumSignificantDigits:4})};
+const fPct=(v,d=1)=>v==null||!isFinite(v)?"–":(v>0?"+":"")+v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d})+" %";
+const dist=(lv,p)=>{const v=(lv/p-1)*100;return(v>=0?"↑ ":"↓ ")+Math.abs(v).toLocaleString("de-DE",{minimumFractionDigits:1,maximumFractionDigits:1})+" %"};
+const ago=(bars,tf)=>{if(bars==null)return"noch nicht";if(bars===0)return"jetzt drin";const h=bars*TFS[tf].ms/36e5;
+  if(h<24)return`vor ${Math.round(h)} Std.`;const d=h/24;if(d<14)return`vor ${Math.round(d)} ${Math.round(d)===1?"Tag":"Tagen"}`;const w=d/7;return`vor ${Math.round(w)} Wochen`};
+const fT=()=>new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";
+
+// ---------- Daten ----------
+async function loadCoins(){
+  const [cg,bt,ok]=await Promise.allSettled([getJSON(`${CG}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=200&page=1&price_change_percentage=24h`),
+    getJSON("https://data-api.binance.vision/api/v3/ticker/24hr?type=MINI",20000),getJSON("https://www.okx.com/api/v5/market/tickers?instType=SPOT")]);
+  const B=new Map(),O=new Set();
+  if(bt.status==="fulfilled")bt.value.forEach(x=>{const m=String(x.symbol).match(/^([A-Z0-9]+)USDT$/);if(m&&+x.closeTime>Date.now()-2*864e5)B.set(m[1],+x.quoteVolume||0)});
+  if(ok.status==="fulfilled")(ok.value.data||[]).forEach(x=>{const m=String(x.instId).match(/^([A-Z0-9]+)-USDT$/);if(m)O.add(m[1])});
+  const stab=c=>SKIP.has(c.sym)||(c.p>0.97&&c.p<1.03&&/usd|dollar|euro|eur/i.test(c.sym+" "+c.name));
+  let list=[];
+  if(cg.status==="fulfilled"&&Array.isArray(cg.value)){
+    list=cg.value.map(c=>({id:c.id,sym:String(c.symbol).toUpperCase(),name:c.name,img:c.image,r:c.market_cap_rank,p:c.current_price,ch:c.price_change_percentage_24h}));
+  }else if(B.size){notice("CoinGecko nicht erreichbar – Rangliste nach Binance-Handelsvolumen.");
+    list=[...B.entries()].sort((a,b)=>b[1]-a[1]).map(([s],i)=>({id:s.toLowerCase(),sym:s,name:s,img:"",r:i+1,p:null,ch:null}))}
+  list=list.filter(c=>!stab(c)).map(c=>({...c,bin:B.has(c.sym),okx:O.has(c.sym)})).filter(c=>c.bin||c.okx);
+  const seen=new Set();list=list.filter(c=>seen.has(c.sym)?false:seen.add(c.sym));
+  return list.slice(0,100).map((c,i)=>({...c,pos:i+1,d:{}}))}
+async function candles(c,tf){const T=TFS[tf];
+  if(c.bin){try{const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${c.sym}USDT&interval=${T.b}&limit=300`);
+    if(Array.isArray(j)&&j.length>30)return{src:"BINANCE",k:j.map(r=>({t:+r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4]}))}}catch(e){}}
+  if(c.okx){try{const j=await getJSON(`https://www.okx.com/api/v5/market/candles?instId=${c.sym}-USDT&bar=${T.o}&limit=300`);
+    const d=(j.data||[]).map(r=>({t:+r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4]})).reverse();if(d.length>30)return{src:"OKX",k:d}}catch(e){}}
+  return null}
+async function pool(items,fn,conc,onStep){let i=0,done=0;const w=async()=>{while(i<items.length){const it=items[i++];try{await fn(it)}catch(e){}done++;onStep&&onStep(done,items.length)}};
+  await Promise.all(Array.from({length:conc},w))}
+async function loadTf(tf,force){if(S.loaded[tf]&&!force)return;S.loaded[tf]="busy";
+  const show=tf===S.tf;if(show)prog(0);
+  let last=0;
+  await pool(S.coins,async c=>{const r=await candles(c,tf);if(!r){c.d[tf]=null;return}
+    const L=TFS[tf].L;c.src=c.src||r.src;c.d[tf]={k:r.k,std:analyzeStd(r.k,L),sk:analyzeSK(r.k,L)}},8,(d,n)=>{if(tf===S.tf){prog(d/n);if(d-last>=10||d===n){last=d;render()}}});
+  S.loaded[tf]=true;if(tf===S.tf)prog(null);render()}
+function prog(v){const p=$("prog");if(v==null){p.hidden=true;return}p.hidden=false;$("progI").style.width=(v*100).toFixed(0)+"%"}
+function notice(t){const n=$("notice");if(!t){n.hidden=true;return}n.hidden=false;n.textContent=t}
+async function loadAll(force){$("refresh").disabled=true;notice("");
+  try{if(!S.coins.length||force){S.coins=await loadCoins();S.loaded={}}
+    if(!S.coins.length){notice("Keine Coins geladen – bitte später nochmal „Aktualisieren“ tippen.");return}
+    await loadTf(S.tf,force);
+    for(const tf of["1d","4h","1h"])if(tf!==S.tf)await loadTf(tf,force);
+    $("stand").textContent=fT()}
+  catch(e){notice("Fehler beim Laden: "+e.message)}
+  finally{$("refresh").disabled=false}}
+
+// ---------- Charts ----------
+function levelsFor(a,mode,dir){const L=[],B=[];if(!a||!a.lv)return{L,B};
+  const longC=dir===1?"var(--up)":"var(--down)",oppC=dir===1?"var(--down)":"var(--up)";
+  if(mode==="std"){const v=a.lv,fr=a.from;
+    B.push({y1:v.g1,y2:v.g2,fill:"var(--goldbg)",fr});
+    L.push({y:v.h,c:"var(--grey)",w:1,fr,lab:"0",inc:1},{y:v.f5,c:"var(--grey)",w:1,d:"4 3",fr,lab:"0,5",inc:1},
+      {y:v.g1,c:"var(--gold)",w:1.4,fr,lab:"0,618",inc:1},{y:v.g2,c:"var(--gold)",w:1.4,fr,lab:"0,786",inc:1},
+      {y:v.l,c:longC,w:1.6,fr,lab:"1,0",inc:1},{y:v.tp1,c:"var(--blue)",w:1.4,fr,lab:"TP1",inc:1},{y:v.tp2,c:"var(--blue)",w:1.2,d:"5 4",fr,lab:"TP2",inc:2})}
+  else{const P=a.P,ix=a.idx;
+    L.push({y:P.z,c:longC,w:1.4,fr:ix.z,lab:"0",inc:1},{y:P.a,c:"var(--grey)",w:1.2,fr:ix.a,lab:"A",inc:1},{y:P.b,c:"var(--down)",w:1.2,d:"2 3",fr:ix.b,lab:"B",inc:1});
+    if(a.phase===1){[0.5,0.618,0.786].forEach(x=>L.push({y:a.lv[x],c:"var(--grey)",w:1,d:"3 3",fr:ix.z,lab:String(x).replace(".",",")}))}
+    else{const fr=a.goal?ix.z:ix.b;L.push({y:P.c,c:longC,w:1.2,fr:ix.c,lab:"C",inc:1});
+      B.push({y1:a.lv[0.5],y2:a.lv[0.786],fill:"var(--goldbg)",fr});
+      [[0.5,"E1"],[0.559,"E2"],[0.618,"E3"],[0.667,"E4"]].forEach(([x,n])=>L.push({y:a.lv[x],c:"var(--gold)",w:1,fr,lab:n,inc:1}));
+      L.push({y:a.lv[0.786],c:"var(--down)",w:1.3,d:"5 3",fr,lab:"SL",inc:1},{y:a.lv[0.886],c:"var(--grey)",w:1,d:"2 3",fr,lab:"88,6"});
+      if(!a.goal)L.push({y:a.t161,c:"var(--blue)",w:1.4,fr:ix.brk,lab:"Ziel",inc:2},{y:a.t200,c:"var(--blue)",w:1.1,d:"5 4",fr:ix.brk,lab:"200%",inc:2})}}
+  return{L,B}}
+function svgChart(k,a,mode,big){if(!k||!k.length)return"";
+  const W=big?1000:320,H=big?440:118,padR=big?150:4,N=big?160:90,s=Math.max(0,k.length-N),ks=k.slice(s);
+  const {L,B}=levelsFor(a,mode,a&&a.dir);
+  let lo=Infinity,hi=-Infinity;ks.forEach(x=>{const l=big?x.l:x.c,h=big?x.h:x.c;if(l<lo)lo=l;if(h>hi)hi=h});
+  L.forEach(l=>{if(l.y==null||!isFinite(l.y))return;if(l.inc===1||(l.inc===2&&big)){if(l.y<lo)lo=l.y;if(l.y>hi)hi=l.y}});
+  const span=hi-lo||hi*0.01||1;lo-=span*0.05;hi+=span*0.05;
+  const cw=(W-padR)/ks.length,X=i=>(i-s)*cw+cw/2,Y=v=>H-(v-lo)/(hi-lo)*H;
+  const fx=fr=>fr==null||fr<s?0:X(fr),labs=[];
+  let o=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Chart">`;
+  B.forEach(b=>{const y1=Y(Math.max(b.y1,b.y2)),y2=Y(Math.min(b.y1,b.y2));o+=`<rect x="${fx(b.fr)}" y="${y1}" width="${W-padR-fx(b.fr)}" height="${Math.max(1,y2-y1)}" fill="${b.fill}"/>`});
+  L.forEach(l=>{if(l.y==null||!isFinite(l.y)||l.y<lo||l.y>hi)return;const y=Y(l.y);
+    o+=`<line x1="${fx(l.fr)}" x2="${W-padR}" y1="${y}" y2="${y}" stroke="${l.c}" stroke-width="${l.w*(big?1.3:1)}"${l.d?` stroke-dasharray="${l.d}"`:""} vector-effect="non-scaling-stroke"/>`;
+    if(big)labs.push({y,c:l.c,t:`${l.lab} ${fP(l.y)}`})});
+  if(big){labs.sort((p,q)=>p.y-q.y);let prev=-99;labs.forEach(t=>{const y=Math.max(t.y,prev+15);prev=y;o+=`<text x="${W-padR+6}" y="${y+4}" fill="${t.c}" font-size="13" font-family="JetBrains Mono,monospace">${esc(t.t)}</text>`})}
+  if(big){ks.forEach((x,i)=>{const cx=X(i+s),up=x.c>=x.o,col=up?"var(--up)":"var(--fg)",bw=Math.max(1,cw*0.62);
+      o+=`<line x1="${cx}" x2="${cx}" y1="${Y(x.h)}" y2="${Y(x.l)}" stroke="${col}" stroke-width="1"/><rect x="${cx-bw/2}" y="${Y(Math.max(x.o,x.c))}" width="${bw}" height="${Math.max(1,Math.abs(Y(x.o)-Y(x.c)))}" fill="${col}"/>`});
+    const p=ks[ks.length-1].c;o+=`<line x1="0" x2="${W-padR}" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--fg)" stroke-width="1" stroke-dasharray="1 3"/>`}
+  else{o+=`<polyline fill="none" stroke="var(--fg)" stroke-width="1.4" vector-effect="non-scaling-stroke" points="${ks.map((x,i)=>X(i+s).toFixed(1)+","+Y(x.c).toFixed(1)).join(" ")}"/>`;
+    const lx=X(k.length-1),ly=Y(ks[ks.length-1].c);o+=`<circle cx="${lx}" cy="${ly}" r="2.6" fill="var(--fg)"/>`}
+  return o+"</svg>"}
+
+// ---------- Darstellung ----------
+const cur=c=>{const d=c.d[S.tf];return d?(S.mode==="std"?d.std:d.sk):null};
+const stdDir=(c,tf)=>{const d=c.d[tf];return d&&d.std?d.std.dir:0};
+function passes(c,st,ignoreCat){const a=cur(c);if(!a||!a.dir||!a.cat)return false;
+  if(S.dir&&a.dir!==S.dir)return false;
+  if(S.watch&&!st.has(c.id))return false;
+  if(S.align){const d4=stdDir(c,"4h"),d1=stdDir(c,"1d");if(!d4||d4!==d1||d4!==a.dir)return false}
+  if(S.q){const q=S.q.toLowerCase();if(!c.sym.toLowerCase().includes(q)&&!String(c.name).toLowerCase().includes(q))return false}
+  if(!ignoreCat&&S.cat!=="all"&&a.cat!==S.cat)return false;
+  return true}
+function render(){const st=stars();
+  document.querySelectorAll("#modeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===S.mode));
+  document.querySelectorAll("#tfSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tf===S.tf));
+  document.querySelectorAll("#dirSeg button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.dir===S.dir));
+  $("watchBtn").setAttribute("aria-pressed",S.watch);$("align").checked=S.align;
+  $("watchN").textContent=S.coins.filter(c=>st.has(c.id)).length;
+  $("title").textContent=S.mode==="std"?"Smart Money Golden Zone":"SK-System Scanner";
+  $("subtitle").textContent=`Top 100 Kryptowährungen · ${S.mode==="std"?"Smart Money Concept":"Struktur 0 – A – B – C"} · ${TFS[S.tf].lab}`;
+  $("loadedHint").textContent=["1h","4h","1d","1w"].filter(t=>S.loaded[t]===true).map(t=>TFS[t].lab).join(" · ")+(Object.values(S.loaded).includes("busy")?" · lädt …":" geladen")+". Laufende Kerzen enthalten.";
+  // Filterliste
+  const cats=S.mode==="std"?STD_CATS:SK_CATS;if(S.cat!=="all"&&!cats.some(c=>c[0]===S.cat))S.cat=cats[0][0];
+  const base=S.coins.filter(c=>passes(c,st,true));
+  const cnt={};base.forEach(c=>{const k=cur(c).cat;cnt[k]=(cnt[k]||0)+1});
+  $("flist").innerHTML=cats.map(([k,lab,col])=>`<button class="fbtn" data-cat="${k}" aria-pressed="${S.cat===k}"><span><i style="background:${col}"></i>${lab}</span><b>${cnt[k]||0}</b></button>`).join("")+
+    `<button class="fbtn" data-cat="all" aria-pressed="${S.cat==="all"}" style="justify-content:center">Alle zeigen <b style="margin-left:8px">${base.length}</b></button>`;
+  // Bias
+  const all=S.coins.map(c=>({c,a:cur(c)})).filter(x=>x.a);const bu=all.filter(x=>x.a.dir===1),be=all.filter(x=>x.a.dir===-1);
+  const tot=bu.length+be.length;$("bU").textContent=tot?Math.round(bu.length/ tot*100):"–";$("bD").textContent=tot?Math.round(be.length/tot*100):"–";
+  $("biasI").style.width=(tot?bu.length/tot*100:50)+"%";
+  if(S.mode==="std"){const g=x=>x.filter(y=>y.a.cat==="gz").length,f=x=>x.filter(y=>y.a.fresh).length;
+    $("biasLab").textContent="Indikator-Bias";$("biasSub").textContent=`${TFS[S.tf].lab} · ${all.length} Coins`;
+    $("bUs").textContent=`${bu.length} Coins · ${f(bu)} frisch geflippt · ${g(bu)} in der Golden Zone`;$("bDs").textContent=`${be.length} Coins · ${f(be)} frisch geflippt · ${g(be)} in der Golden Zone`;
+    $("biasNote").textContent=`${all.length-tot} Coins ohne Richtung. Richtung der Marktstruktur je Coin · keine Positionierung der Trader.`}
+  else{const e=x=>x.filter(y=>y.a.cat==="entry").length,w=x=>x.filter(y=>y.a.phase===1).length;
+    $("biasLab").textContent="SK-Strukturen";$("biasSub").textContent=`${TFS[S.tf].lab} · ${tot} gültige Strukturen`;
+    $("bUs").textContent=`${bu.length} Long · ${w(bu)} warten auf A · ${e(bu)} im Einstieg`;$("bDs").textContent=`${be.length} Short · ${w(be)} warten auf A · ${e(be)} im Einstieg`;
+    $("biasNote").textContent=`${all.length-tot} Coins ohne gültige SK-Struktur. Prozent = Anteil Long- bzw. Short-Strukturen.`}
+  // Alle Coins
+  const hot=S.mode==="std"?"gz":"entry",warm=S.mode==="std"?"near":"pre";
+  $("allLeg").innerHTML=`<span><span class="pill" style="border:2px solid var(--gold)"></span>${S.mode==="std"?"Golden Zone":"Einstieg"}</span><span><span class="pill" style="border:2px dashed var(--gold)"></span>${S.mode==="std"?"Nah dran":"vor E1"}</span>`+(S.mode==="std"?`<span><span class="pill" style="background:var(--accent);border-radius:50%"></span>frisch geflippt</span>`:"");
+  $("allc").innerHTML=S.coins.map(c=>{const a=cur(c);const cl=a&&a.cat===hot?"gz":a&&a.cat===warm?"near":"";
+    return`<button class="cc ${cl}${S.mode==="std"&&a&&a.fresh?" fr":""}" data-open="${esc(c.id)}" title="${esc(c.name)}">${esc(c.sym)}</button>`}).join("");
+  // Karten
+  const list=S.coins.filter(c=>passes(c,st,false));
+  $("count").textContent=`${list.length} von ${S.coins.length} Coins`;
+  $("grid").innerHTML=list.length?list.map(c=>card(c,st)).join(""):`<div class="empty">${S.coins.length&&S.loaded[S.tf]===true?"Keine Coins für diese Auswahl.":"Daten werden geladen …"}</div>`}
+function tfBadges(c){return["1h","4h","1d"].map(tf=>{const d=c.d[tf];const a=d?(S.mode==="std"?d.std:d.sk):null;const dr=a?a.dir:0;
+  return`<span class="${tf===S.tf?"cur":""}">${TFS[tf].lab}<b class="${dr===1?"up":dr===-1?"down":""}" style="color:${dr===1?"var(--up)":dr===-1?"var(--down)":"var(--muted)"}">${dr===1?"Long":dr===-1?"Short":"–"}</b></span>`}).join("")}
+function card(c,st){const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length-1].c,on=st.has(c.id);
+  const dirB=`<span class="bd ${a.dir===1?"long":"short"}">${a.dir===1?"Long":"Short"}</span>`;
+  let catB,last="",boxes="";
+  if(S.mode==="std"){const cl={gz:"gold",near:"near",tp1:"blue",tp2:"blue",trend:"grey",deep:"near",inv:"grey"}[a.cat];
+    catB=`<span class="bd ${cl}">${CATLAB.std[a.cat]||"–"}</span>`+(a.fresh?`<span class="bd fresh">frisch geflippt</span>`:"");
+    last=`<div class="last"><span>Zuletzt in der Golden Zone</span><b>${ago(a.cat==="gz"?0:a.touchAgo,S.tf)}</b></div>`;
+    const v=a.lv;const zone=a.cat==="gz"?"drin":dist(Math.abs(p-v.g1)<Math.abs(p-v.g2)?v.g1:v.g2,p);
+    boxes=`<div class="g"><small>Golden Zone</small><b>${zone}</b></div><div><small>0,5er</small><b>${dist(v.f5,p)}</b></div><div><small>TP1</small><b>${dist(v.tp1,p)}</b></div><div><small>TP2</small><b>${dist(v.tp2,p)}</b></div>`}
+  else{const cl={entry:"gold",pre:"near",deep:"near",wait:"grey",gzone:"blue",goal:"blue"}[a.cat];
+    catB=`<span class="bd ${cl}">${CATLAB.sk[a.cat]}</span>`;
+    if(a.phase===1){last=`<div class="last"><span>B bei ${(a.bPct*100).toFixed(1).replace(".",",")} % von 0→A</span><b>warten auf Bruch von A</b></div>`;
+      boxes=`<div class="g"><small>A (Bruch)</small><b>${dist(a.P.a,p)}</b></div><div><small>B (ungültig)</small><b>${dist(a.P.b,p)}</b></div><div><small>0</small><b>${dist(a.P.z,p)}</b></div><div><small>Ziel 161,8</small><b>${dist(a.t161,p)}</b></div>`}
+    else if(!a.goal){last=`<div class="last"><span>Korrektur B→C</span><b>${(a.r*100).toFixed(1).replace(".",",")} %</b></div>`;
+      boxes=`<div class="${a.cat==="entry"?"g":""}"><small>E1 50 %</small><b>${a.cat==="entry"?"drin":dist(a.lv[0.5],p)}</b></div><div><small>E4 66,7 %</small><b>${dist(a.lv[0.667],p)}</b></div><div><small>SL 78,6 %</small><b>${dist(a.lv[0.786],p)}</b></div><div><small>Ziel 161,8</small><b>${dist(a.t161,p)}</b></div>`}
+    else{last=`<div class="last"><span>Ziel erreicht · Gesamtkorrektur 0→C</span><b>${(a.r*100).toFixed(1).replace(".",",")} %</b></div>`;
+      boxes=`<div class="${a.cat==="gzone"?"g":""}"><small>50 %</small><b>${dist(a.lv[0.5],p)}</b></div><div><small>61,8 %</small><b>${dist(a.lv[0.618],p)}</b></div><div><small>78,6 %</small><b>${dist(a.lv[0.786],p)}</b></div><div><small>0</small><b>${dist(a.P.z,p)}</b></div>`}}
+  const hl=(S.mode==="std"&&a.cat==="gz")||(S.mode==="sk"&&a.cat==="entry");
+  return`<article class="card${hl?" hl":""}" data-open="${esc(c.id)}"><span class="rk">#${c.r||c.pos}</span>
+    <div class="ctop">${c.img?`<img src="${esc(c.img)}" alt="" loading="lazy">`:""}<div class="nm"><b>${esc(c.sym)}</b><small>${esc(c.name)}</small></div>
+      <div class="pr"><b>${fP(p)}</b><small style="color:${(c.ch??0)>=0?"var(--up)":"var(--down)"}">${fPct(c.ch)}</small></div>
+      <button class="star${on?" on":""}" data-star="${esc(c.id)}" aria-label="${esc(c.sym)} zur Watchlist">${on?"★":"☆"}</button></div>
+    <div class="badges">${dirB}${catB}</div><div class="tfs">${tfBadges(c)}</div>${last}
+    ${svgChart(k,a,S.mode,false)}<div class="dist">${boxes}</div></article>`}
+
+function openCoin(id){const c=S.coins.find(x=>x.id===id);if(!c)return;const d=c.d[S.tf];
+  const tv=(c.src==="OKX"||!c.bin?"OKX:":"BINANCE:")+c.sym+"USDT";
+  $("dTv").href=`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tv)}&interval=${{"1h":"60","4h":"240","1d":"D","1w":"W"}[S.tf]}`;
+  if(!d){$("dTitle").innerHTML=`<b>${esc(c.sym)}</b>`;$("dBody").innerHTML=`<p class="empty">Für ${TFS[S.tf].lab} noch keine Daten.</p>`;$("dlg").showModal();return}
+  const a=cur(c),p=d.k[d.k.length-1].c;
+  $("dTitle").innerHTML=`<div class="label">${S.mode==="std"?"Golden Zone":"SK-System"} · ${TFS[S.tf].lab}</div><b style="font-size:1.25rem">${esc(c.sym)}</b> <span class="sub">${esc(c.name)} · ${fP(p)}</span>`;
+  let rows=[],info="";
+  if(!a||!a.dir){info=`<p class="empty">${S.mode==="std"?"Keine klare Marktstruktur.":"Keine gültige SK-Struktur."}</p>`}
+  else if(S.mode==="std"){const v=a.lv;rows=[["TP2 (1,618)",v.tp2],["TP1 (1,272)",v.tp1],[a.dir===1?"Hoch (0)":"Tief (0)",v.h],["0,5",v.f5],["0,618 Golden Zone",v.g1],["0,786 Golden Zone",v.g2],[a.dir===1?"Tief (1,0) – ungültig darunter":"Hoch (1,0) – ungültig darüber",v.l]];
+    info=`<div class="badges" style="margin:8px 0"><span class="bd ${a.dir===1?"long":"short"}">${a.dir===1?"Long":"Short"}</span><span class="bd gold">${CATLAB.std[a.cat]}</span>${a.fresh?'<span class="bd fresh">frisch geflippt</span>':""}<span class="bd grey">Korrektur ${(a.r*100).toFixed(1).replace(".",",")} %</span>${a.run?'<span class="bd grey">Hoch noch nicht bestätigt</span>':""}</div>`}
+  else{const P=a.P;rows=[["0",P.z],["B (ungültig bei Bruch)",P.b],["A",P.a]];if(P.c!=null)rows.push(["C",P.c]);
+    if(a.phase===1)rows.push(["0→A 50 %",a.lv[0.5]],["0→A 61,8 %",a.lv[0.618]],["0→A 78,6 %",a.lv[0.786]]);
+    else{const pre=a.goal?"0→C":"B→C";[[0.5,"E1 50 %"],[0.559,"E2 55,9 %"],[0.618,"E3 61,8 %"],[0.667,"E4 66,7 %"],[0.786,"SL 78,6 %"],[0.886,"88,6 %"]].forEach(([x,n])=>rows.push([`${pre} ${n}`,a.lv[x]]))}
+    rows.push(["Ziel 161,8 %",a.t161],["Ziel 200 %",a.t200]);
+    info=`<div class="badges" style="margin:8px 0"><span class="bd ${a.dir===1?"long":"short"}">${a.dir===1?"Long":"Short"}-Struktur</span><span class="bd gold">${CATLAB.sk[a.cat]}</span><span class="bd grey">B bei ${(a.bPct*100).toFixed(1).replace(".",",")} % von 0→A</span></div>`}
+  rows.sort((x,y)=>y[1]-x[1]);let put=false;const tr=[];
+  rows.forEach(([n,v])=>{if(!put&&p>=v){tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);put=true}tr.push(`<tr><td>${n}</td><td>${fP(v)}</td><td>${dist(v,p)}</td></tr>`)});
+  if(!put)tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);
+  $("dBody").innerHTML=info+(a&&a.dir?svgChart(d.k,a,S.mode,true):svgChart(d.k,null,S.mode,true))+(rows.length?`<table class="ltab"><tbody>${tr.join("")}</tbody></table>`:"");
+  $("dlg").showModal()}
+
+// ---------- Ereignisse ----------
+$("modeSeg").onclick=e=>{const b=e.target.closest("[data-m]");if(!b)return;S.mode=b.dataset.m;S.cat=S.mode==="std"?"gz":"entry";save();render()};
+$("tfSeg").onclick=e=>{const b=e.target.closest("[data-tf]");if(!b)return;S.tf=b.dataset.tf;save();render();if(S.coins.length&&!S.loaded[S.tf])loadTf(S.tf)};
+$("dirSeg").onclick=e=>{const b=e.target.closest("[data-dir]");if(!b)return;S.dir=+b.dataset.dir;save();render()};
+$("flist").onclick=e=>{const b=e.target.closest("[data-cat]");if(!b)return;S.cat=b.dataset.cat;save();render()};
+$("watchBtn").onclick=()=>{S.watch=!S.watch;save();render()};
+$("align").onchange=e=>{S.align=e.target.checked;save();render()};
+$("q").oninput=e=>{S.q=e.target.value.trim();render()};
+$("refresh").onclick=()=>loadAll(true);
+$("howBtn").onclick=()=>$("how").showModal();
+document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-close]"))d.close()}));
+document.addEventListener("click",e=>{const s=e.target.closest("[data-star]");if(s){e.stopPropagation();toggleStar(s.dataset.star);render();return}
+  const o=e.target.closest("[data-open]");if(o&&!e.target.closest("dialog"))openCoin(o.dataset.open)});
+render();loadAll(false);
+</script>
+</body>
+</html>
