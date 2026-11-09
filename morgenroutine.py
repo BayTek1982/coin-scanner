@@ -199,6 +199,11 @@ def distribution(d, fenster=25):
     letzte = dday.iloc[-fenster:]
     tage = [i.strftime("%Y-%m-%d") for i, x in letzte.items() if x]
     jetzt_erlaubt = bool(erlaubt.iloc[-1])
+    # Wie TradingView: Ab Montag beginnt eine neue Woche, auch wenn die erste Tageskerze noch läuft.
+    # Dann entscheidet die zuletzt geschlossene Wochenkerze (Freitag) über dem 21er EMA.
+    heute = dt.datetime.now(BERLIN).date()
+    if heute.weekday() < 5 and heute > w.index[-1].date():
+        jetzt_erlaubt = bool(w.iloc[-1] > wema.iloc[-1])
     return {"anzahl": len(tage) if jetzt_erlaubt else 0, "tage": tage if jetzt_erlaubt else [],
             "erlaubt": jetzt_erlaubt}
 
