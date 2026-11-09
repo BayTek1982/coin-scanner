@@ -425,7 +425,8 @@ def main():
                 "dist_spx": distribution(kurse["^GSPC"]) if "^GSPC" in kurse else None,
                 "dist_ndq": distribution(kurse["^IXIC"]) if "^IXIC" in kurse else None,
                 "dist_spy": distribution(kurse["SPY"]),
-                "dist_qqq": distribution(kurse["QQQ"]) if "QQQ" in kurse else None}
+                "dist_qqq": distribution(kurse["QQQ"]) if "QQQ" in kurse else None,
+                "dist_dax": distribution(kurse["^GDAXI"], gruppe="Europa", ticker="^GDAXI") if "^GDAXI" in kurse else None}
 
     schritt("maerkte", maerkte)
     schritt("sektoren", sektoren)
