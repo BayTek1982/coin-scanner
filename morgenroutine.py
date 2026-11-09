@@ -3,7 +3,7 @@ und speichert sie in data/morgenroutine.json (plus Verlauf in data/morgenroutine
 Läuft automatisch über GitHub Actions (.github/workflows/morgenroutine.yml).
 
 Quellen (alle kostenlos): Yahoo Finance (yfinance), CNN Fear & Greed, Forex-Factory-Wirtschaftskalender.
-Den MMFI gibt es nicht kostenlos zum Abrufen – er wird auf der Seite von Hand eingetragen.
+Den MMFI holt das Skript direkt aus dem TradingView-Chart (wie die TradingView-Webseite selbst, ohne Anmeldung).
 Hinweis: Die O4W-Signale gibt es nur in TradingView – hier steht eine eigene Berechnung über den 21er Durchschnitt."""
 import datetime as dt
 import json
@@ -92,7 +92,7 @@ def load(path, default):
         return default
 
 
-def laden(tickers, period="2y"):
+def laden(tickers, period="5y"):
     """Tageskurse als dict Kürzel -> DataFrame (Open, High, Low, Close, Volume)."""
     df = yf.download(tickers, period=period, interval="1d", group_by="ticker", auto_adjust=False,
                      progress=False, threads=True)
@@ -184,19 +184,23 @@ def ma21(d, gruppe="USA"):
 
 
 def distribution(d, fenster=25):
-    """Distribution Day (Regel nach IBD/O'Neil): Index schließt mind. 0,2 % im Minus bei höherem Volumen
-    als am Vortag. Er zählt 25 Sitzungen lang – außer der Index steigt vorher um 5 % über den Schluss dieses Tages."""
+    """D-Days genau wie im Indikator „Jens Rabe Academy – Indicator 1“:
+    1. Schluss mind. 0,2 % unter dem Vortag, 2. Volumen höher als am Vortag, 3. Tageskerzen,
+    4. die letzte geschlossene Wochenkerze liegt über dem 21er EMA (Woche) – sonst zählt nichts und die Anzeige ist 0.
+    Gezählt werden die D-Days der letzten 25 Tageskerzen."""
     d = geschlossen(d, "USA")
     c, v = d["Close"], d["Volume"]
-    pct = c.pct_change() * 100
-    tage = []
-    for i in d.index[-fenster:]:
-        if pct.loc[i] <= -0.2 and v.loc[i] > v.shift().loc[i] and v.loc[i] > 0:
-            spaeter = c.loc[i:].iloc[1:]
-            if len(spaeter) and float(spaeter.max()) >= float(c.loc[i]) * 1.05:
-                continue  # durch 5 % Anstieg erledigt
-            tage.append(i.strftime("%Y-%m-%d"))
-    return {"anzahl": len(tage), "tage": tage}
+    w = c.resample("W-FRI").last().dropna()
+    wema = w.ewm(span=21, adjust=False).mean()
+    # wie im Indikator: Schluss der Vorwoche gegen den 21er EMA der laufenden Woche
+    erlaubt_w = w.shift(1) > wema
+    erlaubt = erlaubt_w.reindex(c.index, method="bfill").fillna(False).astype(bool)
+    dday = (c < c.shift(1) * 0.998) & (v > v.shift(1)) & (v > 0) & erlaubt
+    letzte = dday.iloc[-fenster:]
+    tage = [i.strftime("%Y-%m-%d") for i, x in letzte.items() if x]
+    jetzt_erlaubt = bool(erlaubt.iloc[-1])
+    return {"anzahl": len(tage) if jetzt_erlaubt else 0, "tage": tage if jetzt_erlaubt else [],
+            "erlaubt": jetzt_erlaubt}
 
 
 def fear_greed():
@@ -218,6 +222,69 @@ def fear_greed():
     except Exception:
         pass
     return out
+
+
+def tv_chart(symbol, balken=5):
+    """Letzte Tageskerzen eines Symbols direkt aus dem TradingView-Chart (Websocket, ohne Anmeldung)."""
+    import random
+    import string
+    import websocket  # Paket websocket-client
+
+    def rnd(prefix):
+        return prefix + "".join(random.choice(string.ascii_lowercase) for _ in range(12))
+
+    def paket(m, p):
+        t = json.dumps({"m": m, "p": p}, separators=(",", ":"))
+        return f"~m~{len(t)}~m~{t}"
+
+    ws = websocket.create_connection(
+        "wss://data.tradingview.com/socket.io/websocket?from=chart%2F&type=chart",
+        header=[f"User-Agent: {UA['User-Agent']}"], origin="https://www.tradingview.com", timeout=20)
+    cs = rnd("cs_")
+    for m, p in [("set_auth_token", ["unauthorized_user_token"]),
+                 ("chart_create_session", [cs, ""]),
+                 ("resolve_symbol", [cs, "sds_sym_1", "=" + json.dumps({"symbol": symbol, "adjustment": "splits"})]),
+                 ("create_series", [cs, "sds_1", "s1", "sds_sym_1", "1D", balken, ""])]:
+        ws.send(paket(m, p))
+    kerzen, ende = [], dt.datetime.now() + dt.timedelta(seconds=25)
+    try:
+        while dt.datetime.now() < ende:
+            roh = ws.recv()
+            for teil in roh.split("~m~"):
+                if teil.startswith("~h~"):  # Herzschlag zurückschicken
+                    ws.send(f"~m~{len(teil)}~m~{teil}")
+                    continue
+                if not teil.startswith("{"):
+                    continue
+                msg = json.loads(teil)
+                if msg.get("m") in ("timescale_update", "du"):
+                    pp = msg.get("p") or []
+                    s1 = (pp[1] if len(pp) > 1 and isinstance(pp[1], dict) else {}).get("sds_1", {}).get("s", [])
+                    for k in s1:
+                        kerzen.append(k["v"])  # [Zeit, Open, High, Low, Close, Volumen]
+                if msg.get("m") == "series_completed" and kerzen:
+                    ende = dt.datetime.now()
+                if msg.get("m") in ("symbol_error", "critical_error", "series_error"):
+                    raise ValueError(f"TradingView: {msg.get('p')}")
+    finally:
+        ws.close()
+    if not kerzen:
+        raise ValueError("TradingView lieferte keine Kerzen")
+    kerzen = sorted({k[0]: k for k in kerzen}.values())
+    return kerzen
+
+
+def mmfi():
+    """MMFI = Percent of Stocks Above 50-Day Average (TradingView INDEX:MMFI), letzte geschlossene Tageskerze."""
+    k = tv_chart("INDEX:MMFI", 6)
+    heute_utc = dt.datetime.now(dt.timezone.utc).date()
+    jetzt = dt.datetime.now(BERLIN)
+    # laufende Tageskerze erst nach US-Schluss werten
+    if len(k) > 1 and dt.datetime.fromtimestamp(k[-1][0], dt.timezone.utc).date() >= heute_utc and (jetzt.hour, jetzt.minute) < (22, 15):
+        k = k[:-1]
+    t = dt.datetime.fromtimestamp(k[-1][0], dt.timezone.utc).strftime("%Y-%m-%d")
+    return {"wert": r(k[-1][4], 2), "vortag": r(k[-2][4], 2) if len(k) > 1 else None, "t": t,
+            "verlauf": [r(x[4], 2) for x in k], "quelle": "TradingView (INDEX:MMFI)"}
 
 
 def kalender():
@@ -323,13 +390,16 @@ def main():
         p = float(d["Close"].iloc[-1])
         return {"vom_hoch": r((p / hoch - 1) * 100), "hoch52": r(hoch),
                 "dist_spx": distribution(kurse["^GSPC"]) if "^GSPC" in kurse else None,
-                "dist_ndq": distribution(kurse["^IXIC"]) if "^IXIC" in kurse else None}
+                "dist_ndq": distribution(kurse["^IXIC"]) if "^IXIC" in kurse else None,
+                "dist_spy": distribution(kurse["SPY"]),
+                "dist_qqq": distribution(kurse["QQQ"]) if "QQQ" in kurse else None}
 
     schritt("maerkte", maerkte)
     schritt("sektoren", sektoren)
     schritt("vola", vola)
     schritt("spy", spy_extra)
     schritt("fg", fear_greed)
+    schritt("mmfi", mmfi)
     schritt("kalender", kalender)
     schritt("earnings", earnings)
 
@@ -384,7 +454,7 @@ def main():
     verlauf = load(VERLAUF, [])
     tag = dt.datetime.now(BERLIN).strftime("%Y-%m-%d")
     eintrag = {"tag": tag, "vix": v.get("vix"), "vvix": v.get("vvix"), "fg": fg.get("wert"),
-               "pcr": fg.get("pcr"), "kurve": v.get("kurve"),
+               "mmfi": (res.get("mmfi") or {}).get("wert"), "pcr": fg.get("pcr"), "kurve": v.get("kurve"),
                "spx": spx.get("trend"), "spy_hoch": spy.get("vom_hoch"),
                "panik": sum(x["ja"] for x in panik), "hedging": sum(x["ja"] for x in hedging)}
     verlauf = [e for e in verlauf if e.get("tag") != tag] + [eintrag]
