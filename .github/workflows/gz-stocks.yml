@@ -1,0 +1,35 @@
+name: Golden Zone Aktien
+on:
+  schedule:
+    - cron: "7 6-21 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: gz-stocks
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: pip install yfinance pandas
+      - run: python gz_fetch.py
+      - run: node gz_stocks.js gz_tmp gz_out
+      # Daten in einen eigenen Branch ohne Verlauf, damit das Repo nicht immer größer wird
+      - run: |
+          cd gz_out
+          git init -q
+          git config user.name "kurs-bot"
+          git config user.email "kurs-bot@users.noreply.github.com"
+          git checkout -q -b gz-data
+          git add .
+          git commit -q -m "Golden Zone Aktien $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gz-data

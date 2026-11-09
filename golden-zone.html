@@ -99,6 +99,8 @@ input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px}
 .dist div{border:1px solid var(--line);border-radius:8px;padding:5px 7px;display:grid;gap:1px;min-width:0}
 .dist div.g{border-color:var(--gold);background:var(--goldbg)}
 .dist small{font-size:.66rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dist b{font:600 .8rem var(--f-num);white-space:nowrap}
+select{font:600 .9rem var(--f-body);background:var(--chip);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
+.ini{width:30px;height:30px;border-radius:50%;flex:none;background:var(--chip);display:grid;place-items:center;font:700 .7rem var(--f-num);color:var(--muted)}
 .empty{padding:30px;text-align:center;color:var(--muted)}
 dialog{width:min(1100px,96vw);max-width:none;max-height:92vh;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);padding:16px;box-sizing:border-box}
 dialog::backdrop{background:rgba(0,0,0,.65)}
@@ -131,16 +133,18 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
   </header>
 
   <div class="topbar">
+    <div class="seg" id="mktSeg" role="group" aria-label="Markt"><button data-k="krypto">₿ Krypto</button><button data-k="aktien">📈 Aktien</button></div>
     <div class="seg" id="modeSeg" role="group" aria-label="Ansicht"><button data-m="std">◎ Golden Zone</button><button data-m="sk">SK-System</button></div>
     <div class="seg tfseg" id="tfSeg" role="group" aria-label="Zeitrahmen"><button data-tf="1h">1H</button><button data-tf="4h">4H</button><button data-tf="1d">1D</button><button data-tf="1w">1W</button></div>
   </div>
   <div class="prog" id="prog" hidden><i id="progI"></i></div>
   <p class="notice" id="notice" hidden></p>
 
-  <label class="search"><span class="label" style="color:var(--gold)">Coin suchen</span><input id="q" type="search" placeholder="Name oder Kürzel, z. B. Bitcoin oder BTC" autocomplete="off"></label>
+  <label class="search"><span class="label" style="color:var(--gold)" id="qLab">Coin suchen</span><input id="q" type="search" placeholder="Name oder Kürzel, z. B. Bitcoin oder BTC" autocomplete="off"></label>
 
   <div class="layout">
     <aside class="side">
+      <label id="grpBox" hidden style="display:grid;gap:6px"><span class="label">Index</span><select id="grp"></select></label>
       <div class="label">Richtung</div>
       <div class="seg dirseg" id="dirSeg" role="group" aria-label="Richtung"><button data-dir="0">Beide</button><button data-dir="1">Long</button><button data-dir="-1">Short</button></div>
       <div class="label">Filter</div>
@@ -164,7 +168,7 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
           <small class="hint" id="biasNote">Richtung der Marktstruktur je Coin · keine Positionierung der Trader.</small>
         </section>
         <section class="panel">
-          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="label">Alle 100 Coins</span>
+          <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="label" id="allLab">Alle 100 Coins</span>
             <span class="legend" id="allLeg"></span></div>
           <div class="allc" id="allc"></div>
         </section>
@@ -175,7 +179,7 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
   </div>
 
   <footer>
-    <span>Daten: CoinGecko (Rangliste), Binance und OKX (Kerzen). Alle Werte sind Orientierung, keine Anlageberatung.</span>
+    <span id="srcNote">Daten: CoinGecko (Rangliste), Binance und OKX (Kerzen). Alle Werte sind Orientierung, keine Anlageberatung.</span>
     <span>Pivot-Längen wie im BFT: 1H 7 · 4H 14 · 1D 12 · 1W 15.</span>
   </footer>
 </div>
@@ -200,85 +204,18 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
 <li><b>Ziel</b>161,8 % und 200 % der Strecke 0→A, gemessen ab 0. Ist das Ziel erreicht, gilt die Gesamtkorrektur 0→C.</li>
 <li><b>Ungültig</b>Geht der Kurs über 0 (Short) bzw. unter 0 (Long), ist die Struktur erledigt und wird nicht mehr angezeigt. Wird nach dem Bruch von A die B gebrochen, wird C zur neuen A und das neue Extrem zur neuen B.</li>
 </ol>
-<p>Pro Coin wird die jüngste gültige SK-Struktur gezeigt (Long oder Short).</p>
+<p>Pro Coin bzw. Aktie wird die jüngste gültige SK-Struktur gezeigt (Long oder Short).</p>
+<h3>📈 Aktien</h3><p>Die Aktien werden stündlich an Handelstagen auf GitHub mit genau derselben Berechnung ausgewertet (Aktien aus deinem Aktien-Bereich plus Indizes und Rohstoffe). 4H-Kerzen werden aus 1H-Kerzen ab Handelsbeginn gebildet. Die Kerzen sind nicht live, sondern vom Stand oben rechts.</p>
 </dialog>
 
+<script src="gz-core.js"></script>
 <script>
 "use strict";
 const CG="https://api.coingecko.com/api/v3";
 const TFS={"1h":{b:"1h",o:"1H",L:7,ms:36e5,lab:"1H"},"4h":{b:"4h",o:"4H",L:14,ms:144e5,lab:"4H"},"1d":{b:"1d",o:"1Dutc",L:12,ms:864e5,lab:"1D"},"1w":{b:"1w",o:"1Wutc",L:15,ms:6048e5,lab:"1W"}};
 const SKIP=new Set("USDT USDC DAI FDUSD TUSD USDE USDS PYUSD USD1 RLUSD USDD BUSD USDP GUSD FRAX LUSD EURC EURT XAUT PAXG KAU USDG USDF USD0 USDTB BFUSD GHO USYC USDY OUSG USTB BUIDL USDX USDB SUSDE SUSDS SDAI WBTC WETH STETH WSTETH WEETH EETH CBBTC CBETH RETH BETH LBTC SOLVBTC JITOSOL MSOL BNSOL JUPSOL EZETH RSETH METH OSETH SFRXETH TBTC BTCB CLBTC WBETH BSC-USD WBNB WSOL WTRX WHYPE JLP".split(" "));
 
-// ===== ANALYSE-START =====
-const SK_LV=[0.5,0.559,0.618,0.667,0.786,0.886];
-function pivots(k,L){const ph=[],pl=[],n=k.length;
-  for(let i=L;i<n-L;i++){let H=true,Lo=true;
-    for(let j=i-L;j<=i+L&&(H||Lo);j++){if(j===i)continue;
-      if(j<i){if(k[j].h>=k[i].h)H=false;if(k[j].l<=k[i].l)Lo=false}
-      else{if(k[j].h>k[i].h)H=false;if(k[j].l<k[i].l)Lo=false}}
-    if(H)ph.push({i,p:k[i].h});if(Lo)pl.push({i,p:k[i].l})}
-  return{ph,pl}}
-function structure(k,pv,L){const n=k.length,conf={};let lastH=null,lastL=null,trend=0,flip=-1;const ev=[];
-  pv.ph.forEach(p=>(conf[p.i+L]=conf[p.i+L]||[]).push({i:p.i,p:p.p,t:1}));
-  pv.pl.forEach(p=>(conf[p.i+L]=conf[p.i+L]||[]).push({i:p.i,p:p.p,t:-1}));
-  for(let j=0;j<n;j++){(conf[j]||[]).forEach(p=>{if(p.t===1)lastH={i:p.i,p:p.p,br:false};else lastL={i:p.i,p:p.p,br:false}});
-    const c=k[j].c;
-    if(lastH&&!lastH.br&&c>lastH.p){lastH.br=true;ev.push({d:1,bar:j,piv:lastH});if(trend!==1){trend=1;flip=j}}
-    if(lastL&&!lastL.br&&c<lastL.p){lastL.br=true;ev.push({d:-1,bar:j,piv:lastL});if(trend!==-1){trend=-1;flip=j}}}
-  return{trend,flip,ev}}
-const mir=k=>k.map(x=>({t:x.t,o:-x.o,h:-x.l,l:-x.h,c:-x.c}));
-// Bewegung im Aufwärtstrend (gespiegelte Kerzen für Short)
-function legUp(k,pv,st){const n=k.length;const fe=st.ev.filter(e=>e.d===1&&e.bar>=st.flip);if(!fe.length)return null;
-  const first=fe[0];let H=null;
-  for(const p of pv.ph)if(p.i>first.piv.i&&p.p>first.piv.p&&(!H||p.p>H.p))H=p;
-  let ref=first,Hi,Hp,run=false;
-  if(H){for(const e of fe)if(e.bar<=H.i)ref=e;Hi=H.i;Hp=H.p}
-  else{run=true;Hp=-Infinity;Hi=first.bar;for(let j=first.piv.i;j<n-1;j++)if(k[j].h>Hp){Hp=k[j].h;Hi=j}}
-  let Lp=Infinity,Li=ref.piv.i;for(let j=ref.piv.i;j<=Math.min(ref.bar,Hi);j++)if(k[j].l<Lp){Lp=k[j].l;Li=j}
-  if(!(Hp>Lp))return null;return{Hi,Hp,Li,Lp,run}}
-function analyzeStd(k,L){const n=k.length;if(!k||n<2*L+10)return null;
-  const pv=pivots(k,L),st=structure(k,pv,L);if(!st.trend)return{dir:0};
-  const dir=st.trend,kk=dir===1?k:mir(k);let pv2=pv,st2=st;if(dir===-1){pv2=pivots(kk,L);st2=structure(kk,pv2,L)}
-  const lg=legUp(kk,pv2,st2);const flipAgo=n-1-st.flip;if(!lg)return{dir,flipAgo,fresh:flipAgo<=3};
-  const R=lg.Hp-lg.Lp,P=x=>dir*(lg.Hp-x*R),price=k[n-1].c,r=(lg.Hp-kk[n-1].c)/R;
-  const z1=lg.Hp-0.618*R,z2=lg.Hp-0.786*R;let touch=-1;
-  for(let j=Math.max(lg.Hi,lg.Li)+1;j<n;j++)if(kk[j].l<=z1&&kk[j].h>=z2)touch=j;
-  const cat=r>1?"inv":r>0.786?"deep":r>=0.618?"gz":r>=0.5?"near":r>-0.272?"trend":r>-0.618?"tp1":"tp2";
-  return{dir,flipAgo,fresh:flipAgo<=3,r,cat,price,Hi:lg.Hi,Li:lg.Li,run:lg.run,
-    lv:{h:P(0),l:P(1),f5:P(0.5),g1:P(0.618),g2:P(0.786),tp1:P(-0.272),tp2:P(-0.618)},
-    touchAgo:touch<0?null:n-1-touch,from:Math.min(lg.Hi,lg.Li)}}
-// SK-Struktur Short (0 Hoch, A Tief, B tieferes Hoch); Long = gespiegelt
-function skDown(k,pv){const n=k.length;let best=null;const highs=pv.ph.slice(-12);
-  for(let hI=0;hI<highs.length;hI++){const h0=highs[hI];
-    const prev=pv.ph.filter(p=>p.i<h0.i).pop();if(prev&&prev.p>=h0.p)continue; // 0 muss ein höheres Hoch sein
-    for(const p of pv.ph){if(p.i<=h0.i)continue;if(p.p>=h0.p)break;
-      let A={i:-1,p:Infinity};for(let j=h0.i+1;j<p.i;j++)if(k[j].l<A.p)A={i:j,p:k[j].l};
-      if(A.i<0)continue;
-      if(p.p>=A.p+0.5*(h0.p-A.p)){const s=simDown(k,h0,A,p);if(s&&(!best||s.key>best.key))best=s;break}}}
-  return best}
-function simDown(k,h0,A,B){const n=k.length;const z={i:h0.i,p:h0.p};let a={...A},b={i:B.i,p:B.p},phase=1,brk=-1,c=null,goal=false;
-  for(let j=B.i+1;j<n;j++){const x=k[j];if(x.h>z.p)return null;
-    if(phase===1){if(x.h>b.p)b={i:j,p:x.h};if(x.c<a.p){phase=2;brk=j;c={i:j,p:x.l}}}
-    else{if(x.h>b.p){a={...c};b={i:j,p:x.h};phase=1;goal=false;c=null;brk=-1;if(x.c<a.p){phase=2;brk=j;c={i:j,p:x.l}}continue}
-      if(x.l<c.p)c={i:j,p:x.l};if(!goal&&x.l<=z.p-1.618*(z.p-a.p))goal=true}}
-  return{z,a,b,c,phase,goal,brk,key:Math.max(b.i,brk,c?c.i:-1)}}
-function analyzeSK(k,L){const n=k.length;if(!k||n<2*L+10)return null;
-  const dn=skDown(k,pivots(k,L)),mk=mir(k),up=skDown(mk,pivots(mk,L));
-  let s=null,dir=0;if(dn&&(!up||dn.key>=up.key)){s=dn;dir=-1}else if(up){s=up;dir=1}
-  if(!s)return{dir:0};
-  const f=v=>-dir*v; // zurück in echte Preise (dn: dir=-1 -> v)
-  const P={z:f(s.z.p),a:f(s.a.p),b:f(s.b.p),c:s.c?f(s.c.p):null};
-  const price=k[n-1].c,zp=s.z.p,ap=s.a.p,R0=zp-ap;
-  const out={dir,phase:s.phase,goal:s.goal,P,idx:{z:s.z.i,a:s.a.i,b:s.b.i,c:s.c?s.c.i:null,brk:s.brk},price,
-    t161:f(zp-1.618*R0),t200:f(zp-2*R0),bPct:(s.b.p-ap)/R0};
-  const pr=-dir*price; // gespiegelter Raum (Short-Logik)
-  if(s.phase===1){out.cat="wait";out.lv={};[0.5,0.618,0.786].forEach(x=>out.lv[x]=f(ap+x*R0))}
-  else if(!s.goal){const R=s.b.p-s.c.p;out.r=(pr-s.c.p)/R;out.lv={};SK_LV.forEach(x=>out.lv[x]=f(s.c.p+x*R));
-    out.cat=out.r>0.786?"deep":out.r>=0.5?"entry":"pre"}
-  else{const R=zp-s.c.p;out.r=(pr-s.c.p)/R;out.lv={};SK_LV.forEach(x=>out.lv[x]=f(s.c.p+x*R));
-    out.cat=out.r>=0.5&&out.r<=0.786?"gzone":"goal"}
-  return out}
-// ===== ANALYSE-END =====
+// Berechnung: siehe gz-core.js
 
 const STD_CATS=[["gz","In der Golden Zone","var(--gold)"],["near","Nah an der Golden Zone","#e8b04a"],["deep","Hinter der Golden Zone (bis 1,0)","#e8853a"],["trend","Noch keine Korrektur (über 0,5)","var(--grey)"],["tp1","Über TP1","var(--blue)"],["tp2","Über TP2","var(--blue)"]];
 const SK_CATS=[["entry","Im Einstiegsbereich B→C (E1–E4)","var(--gold)"],["pre","A gebrochen · vor E1","#e8b04a"],["deep","Unter SL-Level 78,6 %","#e8853a"],["wait","Phase 1 · A noch nicht gebrochen","var(--grey)"],["gzone","Ziel erreicht · in Gesamtkorrektur 0→C","var(--blue)"],["goal","Ziel erreicht","var(--blue)"]];
@@ -286,22 +223,35 @@ const CATLAB={std:Object.fromEntries(STD_CATS.map(c=>[c[0],c[1]])),sk:Object.fro
 CATLAB.std.inv="Unter 1,0";CATLAB.std.gz="In der Golden Zone";
 
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||"null");localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
-const S=Object.assign({mode:"std",tf:"1d",dir:0,cat:"gz",watch:false,align:false,q:""},LS("bgz1")||{});
-S.coins=[];S.loaded={};S.q="";
-const save=()=>LS("bgz1",{mode:S.mode,tf:S.tf,dir:S.dir,cat:S.cat,watch:S.watch,align:S.align});
-const stars=()=>new Set((LS("bcs2")||{}).stars||[]);
-function toggleStar(id){const s=LS("bcs2")||{};const st=new Set(s.stars||[]);st.has(id)?st.delete(id):st.add(id);s.stars=[...st];LS("bcs2",s)}
+const S=Object.assign({mkt:"krypto",grp:"all",mode:"std",tf:"1d",dir:0,cat:"gz",watch:false,align:false,q:""},LS("bgz1")||{});
+S.coins=[];S.loaded={};S.q="";S.stk={};S.groups={};S.stkUpd=null;
+const save=()=>LS("bgz1",{mkt:S.mkt,grp:S.grp,mode:S.mode,tf:S.tf,dir:S.dir,cat:S.cat,watch:S.watch,align:S.align});
+const isStk=()=>S.mkt==="aktien";
+const SKEY=()=>isStk()?"bcsStk":"bcs2";
+const stars=()=>new Set((LS(SKEY())||{}).stars||[]);
+function toggleStar(id){const k=SKEY(),s=LS(k)||{};const st=new Set(s.stars||[]);st.has(id)?st.delete(id):st.add(id);s.stars=[...st];if(k==="bcsStk"&&!s.sel)s.sel=[];LS(k,s)}
+const LIST=()=>isStk()?(S.stk[S.tf]||[]):S.coins;
+const UNIT=()=>isStk()?"Werte":"Coins";
+const TFI={"1h":0,"4h":1,"1d":2,"1w":3};
+function dirOf(c,tf,mode){if(c.bd)return(c.bd[mode]||[])[TFI[tf]]||0;const d=c.d[tf];const a=d?(mode==="std"?d.std:d.sk):null;return a?a.dir||0:0}
+const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
+const safeY=y=>y.replace(/[^A-Za-z0-9.\-]/g,"_");
+const shortSym=y=>/^\^|=F$|\.NYB$/.test(y)?y:y.replace(/\.[A-Z]{1,2}$/,"");
+const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
+const TVIDX={"^GSPC":"SP:SPX","^NDX":"NASDAQ:NDX","^DJI":"DJ:DJI","^RUT":"TVC:RUT","^GDAXI":"XETR:DAX","^MDAXI":"XETR:MDAX","^TECDAX":"XETR:TDXP","^STOXX50E":"TVC:SX5E","^HSI":"TVC:HSI","^N225":"TVC:NI225","^KS11":"TVC:KOSPI","GC=F":"COMEX:GC1!","SI=F":"COMEX:SI1!","CL=F":"NYMEX:CL1!","DX-Y.NYB":"TVC:DXY"};
+function ySym(y){if(TVIDX[y])return TVIDX[y];const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+(m[2]==="HK"?m[1].replace(/^0+/,""):m[1].replace(/-/g,"_"));return y.replace(/-/g,".")}
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 async function getJSON(url,ms=15000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);
   try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}finally{clearTimeout(t)}}
+let CUR="$";
 const fP=p=>{if(p==null||!isFinite(p))return"–";const a=Math.abs(p);
-  if(a>=1)return"$"+p.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:a>=100?2:a>=10?3:4});
-  return"$"+p.toLocaleString("de-DE",{maximumSignificantDigits:4})};
+  const t=a>=1?p.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:a>=100?2:a>=10?3:4}):p.toLocaleString("de-DE",{maximumSignificantDigits:4});
+  return CUR==="$"?"$"+t:CUR?t+" "+CUR:t};
 const fPct=(v,d=1)=>v==null||!isFinite(v)?"–":(v>0?"+":"")+v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d})+" %";
 const dist=(lv,p)=>{const v=(lv/p-1)*100;return(v>=0?"↑ ":"↓ ")+Math.abs(v).toLocaleString("de-DE",{minimumFractionDigits:1,maximumFractionDigits:1})+" %"};
-const ago=(bars,tf)=>{if(bars==null)return"noch nicht";if(bars===0)return"jetzt drin";const h=bars*TFS[tf].ms/36e5;
+const ago=(bars,tf)=>{if(bars==null)return"noch nicht";if(bars===0)return"jetzt drin";if(isStk()&&tf!=="1w")return`vor ${bars} ${bars===1?"Kerze":"Kerzen"}`;const h=bars*TFS[tf].ms/36e5;
   if(h<24)return`vor ${Math.round(h)} Std.`;const d=h/24;if(d<14)return`vor ${Math.round(d)} ${Math.round(d)===1?"Tag":"Tagen"}`;const w=d/7;return`vor ${Math.round(w)} Wochen`};
 const fT=()=>new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";
 
@@ -335,9 +285,20 @@ async function loadTf(tf,force){if(S.loaded[tf]&&!force)return;S.loaded[tf]="bus
   await pool(S.coins,async c=>{const r=await candles(c,tf);if(!r){c.d[tf]=null;return}
     const L=TFS[tf].L;c.src=c.src||r.src;c.d[tf]={k:r.k,std:analyzeStd(r.k,L),sk:analyzeSK(r.k,L)}},8,(d,n)=>{if(tf===S.tf){prog(d/n);if(d-last>=10||d===n){last=d;render()}}});
   S.loaded[tf]=true;if(tf===S.tf)prog(null);render()}
+async function loadStocks(tf,force){if(S.stk[tf]&&!force)return;prog(0.3);
+  try{const j=await getJSON(RAW+`gz_${tf}.json?t=${Math.floor(Date.now()/3e5)}`,40000);S.groups=j.groups||{};S.stkUpd=j.updated;
+    S.stk[tf]=(j.items||[]).map((x,i)=>{const n=x.len||0,m=x.m||[];const k=new Array(n);for(let q=0;q<m.length;q++)k[n-m.length+q]={c:m[q]};
+      return{id:x.y,y:x.y,sym:shortSym(x.y),name:x.n,g:x.g||[],cur:x.c,ch:x.ch,r:i+1,bd:x.bd,d:{[tf]:n?{k,std:x.a,sk:x.s}:null}}});
+    notice("")}
+  catch(e){S.stk[tf]=S.stk[tf]||null;notice("Aktien-Daten noch nicht verfügbar. Sie werden stündlich an Handelstagen auf GitHub berechnet – nach dem ersten Lauf (ca. 10–20 Minuten) bitte „Aktualisieren“ tippen.")}
+  finally{prog(null);fillGroups();if(S.stkUpd)$("stand").textContent=new Date(S.stkUpd).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+" Uhr";render()}}
+function fillGroups(){const g=S.groups||{},sel=$("grp");const ks=Object.keys(g);
+  sel.innerHTML=`<option value="all">Alle Werte</option>`+ks.map(k=>`<option value="${esc(k)}">${esc(g[k])}</option>`).join("");
+  if(S.grp!=="all"&&!g[S.grp])S.grp="all";sel.value=S.grp}
 function prog(v){const p=$("prog");if(v==null){p.hidden=true;return}p.hidden=false;$("progI").style.width=(v*100).toFixed(0)+"%"}
 function notice(t){const n=$("notice");if(!t){n.hidden=true;return}n.hidden=false;n.textContent=t}
 async function loadAll(force){$("refresh").disabled=true;notice("");
+  if(isStk()){try{await loadStocks(S.tf,force)}finally{$("refresh").disabled=false}return}
   try{if(!S.coins.length||force){S.coins=await loadCoins();S.loaded={}}
     if(!S.coins.length){notice("Keine Coins geladen – bitte später nochmal „Aktualisieren“ tippen.");return}
     await loadTf(S.tf,force);
@@ -390,49 +351,56 @@ const stdDir=(c,tf)=>{const d=c.d[tf];return d&&d.std?d.std.dir:0};
 function passes(c,st,ignoreCat){const a=cur(c);if(!a||!a.dir||!a.cat)return false;
   if(S.dir&&a.dir!==S.dir)return false;
   if(S.watch&&!st.has(c.id))return false;
-  if(S.align){const d4=stdDir(c,"4h"),d1=stdDir(c,"1d");if(!d4||d4!==d1||d4!==a.dir)return false}
+  if(S.align){const d4=dirOf(c,"4h","std"),d1=dirOf(c,"1d","std");if(!d4||d4!==d1||d4!==a.dir)return false}
+  if(isStk()&&S.grp!=="all"&&!(c.g||[]).includes(S.grp))return false;
   if(S.q){const q=S.q.toLowerCase();if(!c.sym.toLowerCase().includes(q)&&!String(c.name).toLowerCase().includes(q))return false}
   if(!ignoreCat&&S.cat!=="all"&&a.cat!==S.cat)return false;
   return true}
 function render(){const st=stars();
+  document.querySelectorAll("#mktSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===S.mkt));
+  $("grpBox").hidden=!isStk();const LL=LIST();
+  $("qLab").textContent=isStk()?"Suchen":"Coin suchen";$("q").placeholder=isStk()?"Name oder Kürzel, z. B. BMW oder NVDA":"Name oder Kürzel, z. B. Bitcoin oder BTC";
   document.querySelectorAll("#modeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===S.mode));
   document.querySelectorAll("#tfSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tf===S.tf));
   document.querySelectorAll("#dirSeg button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.dir===S.dir));
   $("watchBtn").setAttribute("aria-pressed",S.watch);$("align").checked=S.align;
-  $("watchN").textContent=S.coins.filter(c=>st.has(c.id)).length;
+  $("watchN").textContent=LL.filter(c=>st.has(c.id)).length;
   $("title").textContent=S.mode==="std"?"Smart Money Golden Zone":"SK-System Scanner";
-  $("subtitle").textContent=`Top 100 Kryptowährungen · ${S.mode==="std"?"Smart Money Concept":"Struktur 0 – A – B – C"} · ${TFS[S.tf].lab}`;
-  $("loadedHint").textContent=["1h","4h","1d","1w"].filter(t=>S.loaded[t]===true).map(t=>TFS[t].lab).join(" · ")+(Object.values(S.loaded).includes("busy")?" · lädt …":" geladen")+". Laufende Kerzen enthalten.";
+  $("subtitle").textContent=`${isStk()?(S.grp!=="all"&&S.groups[S.grp]?S.groups[S.grp]:"Aktien, Indizes & Rohstoffe"):"Top 100 Kryptowährungen"} · ${S.mode==="std"?"Smart Money Concept":"Struktur 0 – A – B – C"} · ${TFS[S.tf].lab}`;
+  $("srcNote").textContent=isStk()?"Daten: Yahoo Finance über GitHub Actions, stündlich an Handelstagen. Alle Werte sind Orientierung, keine Anlageberatung.":"Daten: CoinGecko (Rangliste), Binance und OKX (Kerzen). Alle Werte sind Orientierung, keine Anlageberatung.";
+  $("allLab").textContent=isStk()?`Alle Werte (${LL.filter(c=>S.grp==="all"||(c.g||[]).includes(S.grp)).length})`:"Alle 100 Coins";
+  if(isStk())$("loadedHint").textContent=S.stkUpd?"Stand der Aktien-Daten oben rechts · stündliche Aktualisierung an Handelstagen.":"Aktien-Daten werden geladen …";else $("loadedHint").textContent=["1h","4h","1d","1w"].filter(t=>S.loaded[t]===true).map(t=>TFS[t].lab).join(" · ")+(Object.values(S.loaded).includes("busy")?" · lädt …":" geladen")+". Laufende Kerzen enthalten.";
   // Filterliste
   const cats=S.mode==="std"?STD_CATS:SK_CATS;if(S.cat!=="all"&&!cats.some(c=>c[0]===S.cat))S.cat=cats[0][0];
-  const base=S.coins.filter(c=>passes(c,st,true));
+  const base=LL.filter(c=>passes(c,st,true));
   const cnt={};base.forEach(c=>{const k=cur(c).cat;cnt[k]=(cnt[k]||0)+1});
   $("flist").innerHTML=cats.map(([k,lab,col])=>`<button class="fbtn" data-cat="${k}" aria-pressed="${S.cat===k}"><span><i style="background:${col}"></i>${lab}</span><b>${cnt[k]||0}</b></button>`).join("")+
     `<button class="fbtn" data-cat="all" aria-pressed="${S.cat==="all"}" style="justify-content:center">Alle zeigen <b style="margin-left:8px">${base.length}</b></button>`;
   // Bias
-  const all=S.coins.map(c=>({c,a:cur(c)})).filter(x=>x.a);const bu=all.filter(x=>x.a.dir===1),be=all.filter(x=>x.a.dir===-1);
+  const all=LL.filter(c=>!isStk()||S.grp==="all"||(c.g||[]).includes(S.grp)).map(c=>({c,a:cur(c)})).filter(x=>x.a);const bu=all.filter(x=>x.a.dir===1),be=all.filter(x=>x.a.dir===-1);
   const tot=bu.length+be.length;$("bU").textContent=tot?Math.round(bu.length/ tot*100):"–";$("bD").textContent=tot?Math.round(be.length/tot*100):"–";
   $("biasI").style.width=(tot?bu.length/tot*100:50)+"%";
   if(S.mode==="std"){const g=x=>x.filter(y=>y.a.cat==="gz").length,f=x=>x.filter(y=>y.a.fresh).length;
-    $("biasLab").textContent="Indikator-Bias";$("biasSub").textContent=`${TFS[S.tf].lab} · ${all.length} Coins`;
-    $("bUs").textContent=`${bu.length} Coins · ${f(bu)} frisch geflippt · ${g(bu)} in der Golden Zone`;$("bDs").textContent=`${be.length} Coins · ${f(be)} frisch geflippt · ${g(be)} in der Golden Zone`;
-    $("biasNote").textContent=`${all.length-tot} Coins ohne Richtung. Richtung der Marktstruktur je Coin · keine Positionierung der Trader.`}
+    $("biasLab").textContent="Indikator-Bias";$("biasSub").textContent=`${TFS[S.tf].lab} · ${all.length} ${UNIT()}`;
+    $("bUs").textContent=`${bu.length} ${UNIT()} · ${f(bu)} frisch geflippt · ${g(bu)} in der Golden Zone`;$("bDs").textContent=`${be.length} ${UNIT()} · ${f(be)} frisch geflippt · ${g(be)} in der Golden Zone`;
+    $("biasNote").textContent=`${all.length-tot} ${UNIT()} ohne Richtung. Richtung der Marktstruktur je Coin · keine Positionierung der Trader.`}
   else{const e=x=>x.filter(y=>y.a.cat==="entry").length,w=x=>x.filter(y=>y.a.phase===1).length;
     $("biasLab").textContent="SK-Strukturen";$("biasSub").textContent=`${TFS[S.tf].lab} · ${tot} gültige Strukturen`;
     $("bUs").textContent=`${bu.length} Long · ${w(bu)} warten auf A · ${e(bu)} im Einstieg`;$("bDs").textContent=`${be.length} Short · ${w(be)} warten auf A · ${e(be)} im Einstieg`;
-    $("biasNote").textContent=`${all.length-tot} Coins ohne gültige SK-Struktur. Prozent = Anteil Long- bzw. Short-Strukturen.`}
+    $("biasNote").textContent=`${all.length-tot} ${UNIT()} ohne gültige SK-Struktur. Prozent = Anteil Long- bzw. Short-Strukturen.`}
   // Alle Coins
   const hot=S.mode==="std"?"gz":"entry",warm=S.mode==="std"?"near":"pre";
   $("allLeg").innerHTML=`<span><span class="pill" style="border:2px solid var(--gold)"></span>${S.mode==="std"?"Golden Zone":"Einstieg"}</span><span><span class="pill" style="border:2px dashed var(--gold)"></span>${S.mode==="std"?"Nah dran":"vor E1"}</span>`+(S.mode==="std"?`<span><span class="pill" style="background:var(--accent);border-radius:50%"></span>frisch geflippt</span>`:"");
-  $("allc").innerHTML=S.coins.map(c=>{const a=cur(c);const cl=a&&a.cat===hot?"gz":a&&a.cat===warm?"near":"";
+  $("allc").innerHTML=LL.filter(c=>!isStk()||S.grp==="all"||(c.g||[]).includes(S.grp)).map(c=>{const a=cur(c);const cl=a&&a.cat===hot?"gz":a&&a.cat===warm?"near":"";
     return`<button class="cc ${cl}${S.mode==="std"&&a&&a.fresh?" fr":""}" data-open="${esc(c.id)}" title="${esc(c.name)}">${esc(c.sym)}</button>`}).join("");
   // Karten
-  const list=S.coins.filter(c=>passes(c,st,false));
-  $("count").textContent=`${list.length} von ${S.coins.length} Coins`;
-  $("grid").innerHTML=list.length?list.map(c=>card(c,st)).join(""):`<div class="empty">${S.coins.length&&S.loaded[S.tf]===true?"Keine Coins für diese Auswahl.":"Daten werden geladen …"}</div>`}
-function tfBadges(c){return["1h","4h","1d"].map(tf=>{const d=c.d[tf];const a=d?(S.mode==="std"?d.std:d.sk):null;const dr=a?a.dir:0;
+  const list=LL.filter(c=>passes(c,st,false));const shown=list.slice(0,isStk()?150:999);
+  $("count").textContent=`${list.length} von ${LL.length} ${UNIT()}`+(shown.length<list.length?` · die ersten ${shown.length} gezeigt (Filter oder Suche nutzen)`:"");
+  const ready=isStk()?!!S.stk[S.tf]:S.loaded[S.tf]===true;
+  $("grid").innerHTML=shown.length?shown.map(c=>card(c,st)).join(""):`<div class="empty">${LL.length&&ready?"Keine Werte für diese Auswahl.":isStk()&&S.stk[S.tf]===null?"Aktien-Daten noch nicht verfügbar.":"Daten werden geladen …"}</div>`}
+function tfBadges(c){return["1h","4h","1d"].map(tf=>{const dr=dirOf(c,tf,S.mode);
   return`<span class="${tf===S.tf?"cur":""}">${TFS[tf].lab}<b class="${dr===1?"up":dr===-1?"down":""}" style="color:${dr===1?"var(--up)":dr===-1?"var(--down)":"var(--muted)"}">${dr===1?"Long":dr===-1?"Short":"–"}</b></span>`}).join("")}
-function card(c,st){const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length-1].c,on=st.has(c.id);
+function card(c,st){CUR=c.cur??"$";const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length-1].c,on=st.has(c.id);
   const dirB=`<span class="bd ${a.dir===1?"long":"short"}">${a.dir===1?"Long":"Short"}</span>`;
   let catB,last="",boxes="";
   if(S.mode==="std"){const cl={gz:"gold",near:"near",tp1:"blue",tp2:"blue",trend:"grey",deep:"near",inv:"grey"}[a.cat];
@@ -449,15 +417,17 @@ function card(c,st){const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length-1].c,on=st.has
     else{last=`<div class="last"><span>Ziel erreicht · Gesamtkorrektur 0→C</span><b>${(a.r*100).toFixed(1).replace(".",",")} %</b></div>`;
       boxes=`<div class="${a.cat==="gzone"?"g":""}"><small>50 %</small><b>${dist(a.lv[0.5],p)}</b></div><div><small>61,8 %</small><b>${dist(a.lv[0.618],p)}</b></div><div><small>78,6 %</small><b>${dist(a.lv[0.786],p)}</b></div><div><small>0</small><b>${dist(a.P.z,p)}</b></div>`}}
   const hl=(S.mode==="std"&&a.cat==="gz")||(S.mode==="sk"&&a.cat==="entry");
-  return`<article class="card${hl?" hl":""}" data-open="${esc(c.id)}"><span class="rk">#${c.r||c.pos}</span>
-    <div class="ctop">${c.img?`<img src="${esc(c.img)}" alt="" loading="lazy">`:""}<div class="nm"><b>${esc(c.sym)}</b><small>${esc(c.name)}</small></div>
+  return`<article class="card${hl?" hl":""}" data-open="${esc(c.id)}"><span class="rk">${isStk()?esc((S.groups[(c.g||[])[0]]||"").replace(/ · .*/,"")):"#"+(c.r||c.pos)}</span>
+    <div class="ctop">${c.img?`<img src="${esc(c.img)}" alt="" loading="lazy">`:`<span class="ini">${esc(c.sym.replace(/^\^/,"").slice(0,3))}</span>`}<div class="nm"><b>${esc(c.sym)}</b><small>${esc(c.name)}</small></div>
       <div class="pr"><b>${fP(p)}</b><small style="color:${(c.ch??0)>=0?"var(--up)":"var(--down)"}">${fPct(c.ch)}</small></div>
       <button class="star${on?" on":""}" data-star="${esc(c.id)}" aria-label="${esc(c.sym)} zur Watchlist">${on?"★":"☆"}</button></div>
     <div class="badges">${dirB}${catB}</div><div class="tfs">${tfBadges(c)}</div>${last}
     ${svgChart(k,a,S.mode,false)}<div class="dist">${boxes}</div></article>`}
 
-function openCoin(id){const c=S.coins.find(x=>x.id===id);if(!c)return;const d=c.d[S.tf];
-  const tv=(c.src==="OKX"||!c.bin?"OKX:":"BINANCE:")+c.sym+"USDT";
+async function openCoin(id){const c=LIST().find(x=>x.id===id);if(!c)return;CUR=c.cur??"$";let d=c.d[S.tf];
+  const tv=isStk()?ySym(c.y):(c.src==="OKX"||!c.bin?"OKX:":"BINANCE:")+c.sym+"USDT";
+  if(isStk()&&d){try{const j=await getJSON(RAW+"c/"+safeY(c.y)+".json?t="+Math.floor(Date.now()/3e5),20000);const raw=j[S.tf]||[];const n=d.k.length;const k=new Array(n);
+      raw.forEach((r,q)=>{k[n-raw.length+q]={t:r[0],o:r[1],h:r[2],l:r[3],c:r[4]}});if(raw.length)d={...d,k,full:1}}catch(e){}}
   $("dTv").href=`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tv)}&interval=${{"1h":"60","4h":"240","1d":"D","1w":"W"}[S.tf]}`;
   if(!d){$("dTitle").innerHTML=`<b>${esc(c.sym)}</b>`;$("dBody").innerHTML=`<p class="empty">Für ${TFS[S.tf].lab} noch keine Daten.</p>`;$("dlg").showModal();return}
   const a=cur(c),p=d.k[d.k.length-1].c;
@@ -474,12 +444,15 @@ function openCoin(id){const c=S.coins.find(x=>x.id===id);if(!c)return;const d=c.
   rows.sort((x,y)=>y[1]-x[1]);let put=false;const tr=[];
   rows.forEach(([n,v])=>{if(!put&&p>=v){tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);put=true}tr.push(`<tr><td>${n}</td><td>${fP(v)}</td><td>${dist(v,p)}</td></tr>`)});
   if(!put)tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);
-  $("dBody").innerHTML=info+(a&&a.dir?svgChart(d.k,a,S.mode,true):svgChart(d.k,null,S.mode,true))+(rows.length?`<table class="ltab"><tbody>${tr.join("")}</tbody></table>`:"");
+  const big=!isStk()||!!d.full;$("dBody").innerHTML=info+(a&&a.dir?svgChart(d.k,a,S.mode,big):svgChart(d.k,null,S.mode,big))+(rows.length?`<table class="ltab"><tbody>${tr.join("")}</tbody></table>`:"");
   $("dlg").showModal()}
 
 // ---------- Ereignisse ----------
 $("modeSeg").onclick=e=>{const b=e.target.closest("[data-m]");if(!b)return;S.mode=b.dataset.m;S.cat=S.mode==="std"?"gz":"entry";save();render()};
-$("tfSeg").onclick=e=>{const b=e.target.closest("[data-tf]");if(!b)return;S.tf=b.dataset.tf;save();render();if(S.coins.length&&!S.loaded[S.tf])loadTf(S.tf)};
+$("tfSeg").onclick=e=>{const b=e.target.closest("[data-tf]");if(!b)return;S.tf=b.dataset.tf;save();render();if(isStk())loadStocks(S.tf);else if(S.coins.length&&!S.loaded[S.tf])loadTf(S.tf)};
+$("mktSeg").onclick=e=>{const b=e.target.closest("[data-k]");if(!b||b.dataset.k===S.mkt)return;S.mkt=b.dataset.k;S.watch=false;save();render();
+  if(isStk())loadStocks(S.tf);else{if(!S.coins.length)loadAll(false);else if(!S.loaded[S.tf])loadTf(S.tf)}};
+$("grp").onchange=e=>{S.grp=e.target.value;save();render()};
 $("dirSeg").onclick=e=>{const b=e.target.closest("[data-dir]");if(!b)return;S.dir=+b.dataset.dir;save();render()};
 $("flist").onclick=e=>{const b=e.target.closest("[data-cat]");if(!b)return;S.cat=b.dataset.cat;save();render()};
 $("watchBtn").onclick=()=>{S.watch=!S.watch;save();render()};
