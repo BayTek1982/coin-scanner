@@ -17,6 +17,8 @@ const DEF={
   sr:{on:false},
   vp:{on:false,range:"vis",rows:60,va:70,hist:true},
   liq:{on:false,n:5},
+  ob:{on:false,n:3},
+  lsob:{on:false,n:3},
   fvg:{on:false,n:4},
   ma1:{on:true,type:"EMA",len:21,col:"#ffeb3b"},
   ma2:{on:true,type:"EMA",len:50,col:"#ff9800"},
@@ -25,7 +27,9 @@ const DEF={
   bb:{on:false,len:20,mult:2},
   vol:{on:true},
   rsi:{on:true,len:14,hi:80,lo:20,div:true},
-  macd:{on:false,f:12,s:26,sig:9}
+  macd:{on:false,f:12,s:26,sig:9},
+  risk:{on:false,table:true},
+  heat:{on:false}
 };
 const clone=o=>JSON.parse(JSON.stringify(o));
 function withDefaults(cfg){const out=clone(DEF);if(cfg)for(const k in cfg)if(out[k]&&typeof cfg[k]==="object")Object.assign(out[k],cfg[k]);return out}
@@ -85,7 +89,19 @@ function fvgs(k,n,at){const out=[];
     else if(k[i].h<k[i-2].l&&k[i-2].l-k[i].h>at*0.1)out.push({t:-1,i:i-1,top:k[i-2].l,bot:k[i].h})}
   return out.filter(f=>{for(let j=f.i+2;j<k.length;j++)if(f.t===1?k[j].l<=f.bot:k[j].h>=f.top)return false;return true}).slice(-n)}
 
-function compute(k,cfg,tf){const L=cfg.pivot.auto?(PIV[tf]||10):Math.max(2,+cfg.pivot.len||10),c=k.map(x=>x.c),I={L,n:k.length};
+function orderBlocks(k,ev,n){const out=[];
+  ev.forEach(e=>{const a=e.piv.i,b=e.bar;if(b-a<2)return;let m=a;
+    for(let j=a;j<=b;j++)if(e.d===1?k[j].l<k[m].l:k[j].h>k[m].h)m=j;
+    let ob=-1;for(let j=m;j>=Math.max(a,m-6);j--){if(e.d===1?k[j].c<k[j].o:k[j].c>k[j].o){ob=j;break}}if(ob<0)ob=m;
+    out.push({t:e.d,i:ob,top:k[ob].h,bot:k[ob].l,conf:b})});
+  return out.filter(o=>{for(let j=o.conf+1;j<k.length;j++)if(o.t===1?k[j].c<o.bot:k[j].c>o.top)return false;return true}).slice(-n)}
+function lsobs(k,sw,n){const out=[];
+  sw.forEach(s=>{let ob=-1;for(let j=s.i;j>=Math.max(0,s.i-2);j--){if(s.t===1?k[j].c<k[j].o:k[j].c>k[j].o){ob=j;break}}if(ob<0)ob=s.i;
+    const top=s.t===1?Math.max(k[ob].h,k[s.i].h):Math.max(k[ob].h,k[s.i].h),bot=Math.min(k[ob].l,k[s.i].l);
+    let conf=-1;for(let j=s.i+1;j<=Math.min(k.length-1,s.i+10);j++){if(s.t===1?k[j].c>top:k[j].c<bot){conf=j;break}}
+    if(conf>0)out.push({t:s.t,i:ob,top,bot,conf})});
+  return out.filter(o=>{for(let j=o.conf+1;j<k.length;j++)if(o.t===1?k[j].c<o.bot:k[j].c>o.top)return false;return true}).slice(-n)}
+function compute(k,cfg,tf,ext){const L=cfg.pivot.auto?(PIV[tf]||10):Math.max(2,+cfg.pivot.len||10),c=k.map(x=>x.c),I={L,n:k.length};
   if(k.length<2*L+10)return I;
   const pv=G.pivots(k,L);I.pv=pv;I.atr=atr(k);
   I.ma=[1,2,3].map(q=>{const m=cfg["ma"+q];if(!m.on)return null;const len=Math.max(1,+m.len||20);return{v:(m.type==="EMA"?ema:sma)(c,len),col:m.col,lab:m.type+" "+len}});
@@ -100,6 +116,9 @@ function compute(k,cfg,tf){const L=cfg.pivot.auto?(PIV[tf]||10):Math.max(2,+cfg.
   if(cfg.sr.on)I.sr=srzones(k,pv,I.atr);
   if(cfg.liq.on)I.liq=sweeps(k,pv,Math.max(1,+cfg.liq.n||5));
   if(cfg.fvg.on)I.fvg=fvgs(k,Math.max(1,+cfg.fvg.n||4),I.atr);
+  if(cfg.ob.on)I.ob=orderBlocks(k,I.ms.ev,Math.max(1,+cfg.ob.n||3));
+  if(cfg.lsob.on)I.lsob=lsobs(k,sweeps(k,pv,999),Math.max(1,+cfg.lsob.n||3));
+  if(ext){if(cfg.risk.on&&ext.risk)Object.assign(I,{risk:ext.risk,riskTab:ext.riskTab,riskNow:ext.riskNow});if(cfg.heat.on&&ext.heat)Object.assign(I,{heat:ext.heat,heatTh:ext.heatTh,heatAvg:ext.heatAvg,heatNow:ext.heatNow})}
   if(cfg.vp.on&&cfg.vp.range!=="vis"){const n=+cfg.vp.range||200;I.vpFix=vprofile(k,k.length-n,k.length-1,+cfg.vp.rows||60,+cfg.vp.va||70)}
   return I}
 
@@ -115,19 +134,25 @@ function tlab(t,tf,full){const d=new Date(t),p=n=>String(n).padStart(2,"0");
 // ---------- Zeichnen ----------
 const THEME={dark:{bg:"#0e131b",grid:"rgba(255,255,255,.06)",txt:"#8d99ab",fg:"#e7ecf3",up:"#3ccf8a",dn:"#e7ecf3",axis:"#151c27",gold:"#f0a33a",goldbg:"rgba(240,163,58,.16)",blue:"#5b9bff",red:"#ff6b5e",green:"#3ccf8a",grey:"#6f7b8d",cross:"rgba(231,236,243,.45)"},
   light:{bg:"#ffffff",grid:"rgba(0,0,0,.06)",txt:"#5d6878",fg:"#141a24",up:"#0f8a4f",dn:"#3b4250",axis:"#f3f5f8",gold:"#c77a12",goldbg:"rgba(217,149,28,.16)",blue:"#2f6fd6",red:"#c8372d",green:"#0f8a4f",grey:"#8d99ab",cross:"rgba(20,26,36,.4)"}};
+const rkCol=r=>`hsl(${Math.round((1-Math.max(0,Math.min(1,r)))*120)},75%,${r>.4&&r<.65?42:48}%)`;
+const BUB=[[.5,"#1d2bd6"],[.75,"#2f6bff"],[1,"#18c7e6"],[1.25,"#22c55e"],[1.5,"#e6d200"],[1.75,"#f59e0b"],[2,"#f2591a"],[Infinity,"#e11d2e"]];
+const heatIdx=(v,th)=>{if(th){const k=th.findIndex(t=>v<t);return k<0?7:k}return BUB.findIndex(b=>v<b[0])};
+const heatCol=(v,th)=>BUB[heatIdx(v,th)][1];
+const heatTxt=(v,th)=>["Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Normal","Warm","Heiß","Sehr heiß","Überhitzt"][heatIdx(v,th)];
 function niceStep(range,n){const raw=range/n,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;return(f<1.5?1:f<3?2:f<7?5:10)*p}
 
 function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=S.tf;
   const AX=74,TA=22,pw=W-AX;
   ctx.fillStyle=th.bg;ctx.fillRect(0,0,W,H);ctx.textBaseline="middle";
   if(!k||!k.length){ctx.fillStyle=th.txt;ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillText("Keine Daten",W/2,H/2);return null}
-  const subs=[];if(cfg.rsi.on&&I.rsi)subs.push("rsi");if(cfg.macd.on&&I.macd)subs.push("macd");
-  const subH=subs.length?Math.round((H-TA)*(subs.length>1?0.17:0.2)):0,mainH=H-TA-subH*subs.length;
+  const subs=[];if(cfg.rsi.on&&I.rsi)subs.push("rsi");if(cfg.macd.on&&I.macd)subs.push("macd");if(cfg.risk.on&&I.risk)subs.push("risk");if(cfg.heat.on&&I.heat)subs.push("heat");
+  const subH=subs.length?Math.round((H-TA)*[0,0.2,0.17,0.15,0.13][subs.length]):0,mainH=H-TA-subH*subs.length;
   const from=S.view.from,to=S.view.to,cw=pw/(to-from),X=i=>(i-from+0.5)*cw;
   const i0=Math.max(0,Math.floor(from)),i1=Math.min(k.length-1,Math.ceil(to));
   let lo=Infinity,hi=-Infinity;for(let i=i0;i<=i1;i++){if(k[i].l<lo)lo=k[i].l;if(k[i].h>hi)hi=k[i].h}
   if(!isFinite(lo)){lo=k[k.length-1].l;hi=k[k.length-1].h}
   const pad=(hi-lo)*0.08||hi*0.01;lo-=pad;hi+=pad;
+  if(S.view.man&&S.view.hi>S.view.lo){lo=S.view.lo;hi=S.view.hi}
   const mT=6,mB=mainH-6,Y=p=>mT+(hi-p)/(hi-lo)*(mB-mT),P=y=>hi-(y-mT)/(mB-mT)*(hi-lo);
   const tags=[],names=[];
   const font=(s,b)=>ctx.font=`${b?"600 ":""}${s}px "JetBrains Mono",ui-monospace,monospace`;
@@ -150,6 +175,10 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
   const last=k.length-1,price=k[last].c;
   if(cfg.sr.on&&I.sr){const above=I.sr.filter(z=>z.lo>price).sort((a,b)=>a.lo-b.lo).slice(0,2),below=I.sr.filter(z=>z.hi<price).sort((a,b)=>b.hi-a.hi).slice(0,2),inside=I.sr.filter(z=>z.lo<=price&&z.hi>=price);
     [...above,...below,...inside].forEach(z=>{band(z.lo,z.hi,null,"rgba(141,153,171,.14)");names.push({y:Y((z.lo+z.hi)/2),col:th.grey,t:`S/R ×${z.n}`})})}
+  const box=(o,fill,stroke,lab)=>{const x1=Math.max(0,X(o.i)),y1=Y(o.top),y2=Y(o.bot);ctx.fillStyle=fill;ctx.fillRect(x1,y1,pw-x1,Math.max(1,y2-y1));
+    ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.setLineDash([]);ctx.strokeRect(x1+0.5,y1+0.5,pw-x1-1,Math.max(1,y2-y1));font(9,1);ctx.textAlign="left";ctx.fillStyle=stroke;ctx.fillText(lab,x1+3,(y1+y2)/2)};
+  if(cfg.ob.on&&I.ob)I.ob.forEach(o=>box(o,o.t===1?"rgba(60,207,138,.13)":"rgba(255,107,94,.13)",o.t===1?"rgba(60,207,138,.75)":"rgba(255,107,94,.75)",o.t===1?"OB ▲":"OB ▼"));
+  if(cfg.lsob.on&&I.lsob)I.lsob.forEach(o=>box(o,o.t===1?"rgba(41,121,255,.15)":"rgba(233,30,99,.15)",o.t===1?"#2979ff":"#e91e63",o.t===1?"LSOB ▲":"LSOB ▼"));
   if(cfg.fvg.on&&I.fvg)I.fvg.forEach(f=>{const x1=Math.max(0,X(f.i));const y1=Y(f.top),y2=Y(f.bot);ctx.fillStyle=f.t===1?"rgba(60,207,138,.14)":"rgba(255,107,94,.14)";ctx.fillRect(x1,y1,pw-x1,Math.max(1,y2-y1));
     font(9);ctx.textAlign="left";ctx.fillStyle=f.t===1?th.green:th.red;ctx.fillText("FVG",x1+3,(y1+y2)/2)});
 
@@ -215,37 +244,60 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
   ctx.restore();
 
   // Unterfenster
-  const panes=[];let top=mainH;
-  subs.forEach(s=>{const pT=top+4,pB=top+subH-4;panes.push({s,top,h:subH});line(0,top,W,top,th.grid,1);
+  const panes=[],axQ=[],subTags=[];let top=mainH;
+  subs.forEach(s=>{const pT=top+6,pB=top+subH-6;panes.push({s,top,h:subH});line(0,top,W,top,th.grid,1);
     ctx.save();ctx.beginPath();ctx.rect(0,top,pw,subH);ctx.clip();
     if(s==="rsi"){const Yr=v=>pT+(100-v)/100*(pB-pT);const hiL=+cfg.rsi.hi||70,loL=+cfg.rsi.lo||30;
       ctx.fillStyle="rgba(179,136,255,.06)";ctx.fillRect(0,Yr(hiL),pw,Yr(loL)-Yr(hiL));
       line(0,Yr(hiL),pw,Yr(hiL),th.grey,1,[4,3]);line(0,Yr(loL),pw,Yr(loL),th.grey,1,[4,3]);line(0,Yr(50),pw,Yr(50),th.grid,1,[2,3]);
       series(I.rsi,"#b388ff",1.4,null,Yr);
       if(cfg.rsi.div&&I.div)I.div.forEach(d=>line(X(d.a),Yr(d.ra),X(d.b),Yr(d.rb),d.t===1?"#00e5ff":"#ff4081",1.5,[2,3]));
-      font(10,1);ctx.textAlign="left";ctx.fillStyle="#b388ff";const rv=I.rsi[last];ctx.fillText(`RSI ${cfg.rsi.len}  ${rv!=null?nf(rv,1):"–"}`,6,pT+8);
-      ctx.restore();font(10);ctx.textAlign="left";ctx.fillStyle=th.txt;ctx.fillText(String(hiL),pw+6,Yr(hiL));ctx.fillText(String(loL),pw+6,Yr(loL));
-      if(rv!=null)tagDraw(ctx,pw,Yr(rv),"#b388ff",nf(rv,1),AX,th)}
-    else{const m=I.macd;let mx=0;for(let i=i0;i<=i1;i++)[m.m[i],m.sig[i],m.h[i]].forEach(v=>{if(v!=null)mx=Math.max(mx,Math.abs(v))});mx=mx||1;
+      const rv=I.rsi[last];font(10,1);ctx.textAlign="left";ctx.fillStyle="#b388ff";ctx.fillText(`RSI ${cfg.rsi.len}  ${rv!=null?nf(rv,1):"–"}`,6,pT+8);
+      axQ.push({y:Yr(hiL),t:String(hiL)},{y:Yr(50),t:"50"},{y:Yr(loL),t:String(loL)});if(rv!=null)subTags.push({y:Yr(rv),col:"#b388ff",t:nf(rv,1)})}
+    else if(s==="macd"){const m=I.macd;let mx=0;for(let i=i0;i<=i1;i++)[m.m[i],m.sig[i],m.h[i]].forEach(v=>{if(v!=null)mx=Math.max(mx,Math.abs(v))});mx=mx||1;
       const Ym=v=>pT+(mx-v)/(2*mx)*(pB-pT);line(0,Ym(0),pw,Ym(0),th.grid,1);
       for(let i=i0;i<=i1;i++){const v=m.h[i];if(v==null)continue;ctx.fillStyle=v>=0?"rgba(60,207,138,.5)":"rgba(255,107,94,.5)";const y=Ym(v),y0=Ym(0);ctx.fillRect(X(i)-cw*0.35,Math.min(y,y0),Math.max(1,cw*0.7),Math.abs(y-y0))}
       series(m.m,"#5b9bff",1.3,null,Ym);series(m.sig,"#ff9800",1.3,null,Ym);
-      font(10,1);ctx.textAlign="left";ctx.fillStyle=th.txt;ctx.fillText(`MACD ${cfg.macd.f}/${cfg.macd.s}/${cfg.macd.sig}`,6,pT+8);ctx.restore()}
-    top+=subH});
+      font(10,1);ctx.textAlign="left";ctx.fillStyle=th.txt;ctx.fillText(`MACD ${cfg.macd.f}/${cfg.macd.s}/${cfg.macd.sig}`,6,pT+8);
+      axQ.push({y:Ym(0),t:"0"});const mv=m.m[last],sv=m.sig[last];if(mv!=null)subTags.push({y:Ym(mv),col:"#5b9bff",t:fmt(mv)});if(sv!=null)subTags.push({y:Ym(sv),col:"#ff9800",t:fmt(sv)})}
+    else if(s==="risk"){const Yk=v=>pT+(1-v)*(pB-pT),r=I.risk;
+      [[1,th.red,[4,3]],[0.8,"rgba(255,107,94,.45)",[2,3]],[0.5,th.grey,[4,3]],[0.2,"rgba(60,207,138,.45)",[2,3]],[0,th.green,[4,3]]].forEach(([v,c,d])=>line(0,Yk(v),pw,Yk(v),c,1,d));
+      ctx.lineWidth=1.8;ctx.setLineDash([]);let pv=null;
+      for(let i=i0;i<=i1;i++){const v=r[i];if(v==null){pv=null;continue}if(pv!=null){ctx.beginPath();ctx.strokeStyle=rkCol(v);ctx.moveTo(X(i-1),Yk(pv));ctx.lineTo(X(i),Yk(v));ctx.stroke()}pv=v}
+      const rn=I.riskNow!=null?I.riskNow:r[last];
+      let tx=6;if(cfg.risk.table!==false&&I.riskTab&&I.riskTab.length){const rows=I.riskTab,rh=Math.max(9,Math.min(13,(pB-pT-2)/(rows.length+1))),cw2=[56,78,48],tw=cw2.reduce((a,b)=>a+b,0);
+        ctx.fillStyle=th.bg===THEME.light.bg?"rgba(255,255,255,.92)":"rgba(14,19,27,.88)";ctx.fillRect(4,pT,tw+4,rh*(rows.length+1)+2);font(Math.min(10,rh-2),1);
+        const head=["Risiko","Preis","Zeit %"];let x=6;ctx.fillStyle=th.txt;ctx.textAlign="left";head.forEach((h,q)=>{ctx.fillText(h,x,pT+rh/2+1);x+=cw2[q]});
+        rows.forEach((w,q)=>{const y=pT+rh*(q+1)+rh/2+1;if(w.cur){ctx.fillStyle="rgba(240,163,58,.35)";ctx.fillRect(4,y-rh/2,tw+4,rh)}
+          let x=6;ctx.fillStyle=w.cur?th.fg:rkCol(w.r);ctx.fillText((w.cur?"▶ ":"")+nf(w.r,w.cur?3:1),x,y);x+=cw2[0];ctx.fillStyle=th.fg;ctx.fillText(fmt(w.p),x,y);x+=cw2[1];ctx.fillStyle=w.cur?th.gold:th.txt;ctx.fillText(w.cur?"aktuell":nf(w.z,1),x,y)});tx=tw+16}
+      font(10,1);ctx.textAlign="left";ctx.fillStyle=th.fg;ctx.fillText(`Risiko ${rn!=null?nf(rn,3):"–"}`,tx,pT+8);
+      axQ.push({y:Yk(1),t:"1,0"},{y:Yk(0.5),t:"0,5"},{y:Yk(0),t:"0,0"});if(rn!=null)subTags.push({y:Yk(rn),col:rkCol(rn),t:nf(rn,3)})}
+    else if(s==="heat"){const h=I.heat;let lo2=0.8,hi2=1.25;for(let i=i0;i<=i1;i++){const v=h[i];if(v!=null){if(v<lo2)lo2=v;if(v>hi2)hi2=v}}lo2=Math.min(lo2,0.95);const sp=hi2-lo2;lo2-=sp*0.04;hi2+=sp*0.06;
+      const Yh=v=>pT+(hi2-v)/(hi2-lo2)*(pB-pT),y1=Yh(1);
+      const lv=I.heatTh?[I.heatTh[4],I.heatTh[6]]:[1.5,2];lv.forEach(v=>{if(v<hi2)line(0,Yh(v),pw,Yh(v),"rgba(255,107,94,.5)",1,[4,3])});
+      for(let i=i0;i<=i1;i++){const v=h[i];if(v==null)continue;const y=Yh(v);ctx.fillStyle=heatCol(v,I.heatTh);ctx.fillRect(X(i)-cw*0.38,Math.min(y,y1),Math.max(1,cw*0.76),Math.max(1,Math.abs(y-y1)))}
+      line(0,y1,pw,y1,th.fg,1);const hn=I.heatNow!=null?I.heatNow:h[last];
+      font(10,1);ctx.textAlign="left";ctx.fillStyle=th.fg;
+      ctx.fillText(`Hitze ${hn!=null?nf(hn,2):"–"}${I.heatAvg?` · 20-Wochen-Schnitt ${fmt(I.heatAvg)}`:""}${hn!=null?" · "+heatTxt(hn,I.heatTh):""}`,6,pT+8);
+      axQ.push({y:y1,t:"1,00"});lv.forEach(v=>{if(v<hi2)axQ.push({y:Yh(v),t:nf(v,2)})});if(hn!=null)subTags.push({y:Yh(hn),col:heatCol(hn,I.heatTh),t:nf(hn,2)})}
+    ctx.restore();top+=subH});
 
   // Achsen
   ctx.fillStyle=th.axis;ctx.fillRect(pw,0,AX,H);ctx.fillRect(0,H-TA,pw,TA);line(pw,0,pw,H,th.grid,1);line(0,H-TA,W,H-TA,th.grid,1);
+  panes.forEach(p=>line(pw,p.top,W,p.top,th.grid,1));
   font(10);ctx.fillStyle=th.txt;ctx.textAlign="left";for(let v=Math.ceil(lo/st)*st;v<=hi;v+=st){const y=Y(v);if(y>8&&y<mainH-8)ctx.fillText(fmt(v),pw+6,y)}
+  axQ.forEach(a=>{ctx.fillStyle=th.txt;ctx.fillText(a.t,pw+6,a.y)});
   ctx.textAlign="center";let lastDay=null;
   for(let i=Math.ceil(from/step)*step;i<=to;i+=step){if(i<0||i>last)continue;const d=new Date(k[i].t),day=d.toDateString();
     const txt=(tf!=="1d"&&tf!=="1w"&&day!==lastDay)?tlab(k[i].t,"1d"):tlab(k[i].t,tf);lastDay=day;ctx.fillText(txt,X(i),H-TA/2)}
   // Preis-Schilder
   tags.push({y:Y(price),col:price>=k[last].o?th.up:th.red,t:fmt(price),main:1});
   tags.filter(t=>!t.off||t.main).sort((a,b)=>a.y-b.y).reduce((prev,t)=>{const y=Math.max(t.y,prev+15);tagDraw(ctx,pw,y,t.col,t.t,AX,th,t.main);return y},-99);
+  subTags.forEach(t=>tagDraw(ctx,pw,t.y,t.col,t.t,AX,th,true));
   if(Y(price)>=mT&&Y(price)<=mB)line(0,Y(price),pw,Y(price),price>=k[last].o?th.up:th.red,1,[1,3]);
 
   // Fadenkreuz
-  const L={pw,mainH,panes,X,Y,P,cw,from,to,i0,i1,TA,H,W};
+  const L={pw,mainH,panes,X,Y,P,cw,from,to,i0,i1,TA,H,W,lo,hi,mT,mB,AX};
   if(S.cross){const {x,y}=S.cross;const i=Math.round(from+x/cw-0.5);if(i>=0&&i<=last&&x<pw){const cx=X(i);line(cx,0,cx,H-TA,th.cross,1,[3,3]);
       if(y<mainH){line(0,y,pw,y,th.cross,1,[3,3]);tagDraw(ctx,pw,y,th.grey,fmt(P(y)),AX,th,true)}
       font(10,1);const tl=tlab(k[i].t,tf,true),tw=ctx.measureText(tl).width+12;ctx.fillStyle=th.grey;ctx.fillRect(cx-tw/2,H-TA+2,tw,TA-4);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.fillText(tl,cx,H-TA/2);L.ci=i}}
@@ -269,9 +321,14 @@ function summary(k,I,cfg,tf){const out=[],last=k.length-1,p=k[last].c;if(!I.pv)r
   if(I.tl&&I.tl.length){out.push({t:"Trendlinien",v:I.tl.map(t=>{const v=t.a.p+t.sl*(last-t.a.i);return`${t.sup?"Unterstützung":"Widerstand"} ${fmt(v)} (${pct((v/p-1)*100)})`}).join(" · ")})}
   if(I.sr){const a=I.sr.filter(z=>z.lo>p).sort((x,y)=>x.lo-y.lo)[0],b=I.sr.filter(z=>z.hi<p).sort((x,y)=>y.hi-x.hi)[0];
     out.push({t:"S/R-Zonen",v:`${b?`Unterstützung ${fmt(b.lo)}–${fmt(b.hi)}`:"keine Unterstützung"} · ${a?`Widerstand ${fmt(a.lo)}–${fmt(a.hi)}`:"kein Widerstand"}`})}
+  const near=(arr,name)=>{if(!arr||!arr.length)return;const b=arr.filter(o=>o.t===1).sort((x,y)=>y.top-x.top)[0],s2=arr.filter(o=>o.t===-1).sort((x,y)=>x.bot-y.bot)[0];
+    out.push({t:name,v:`${b?`bullisch ${fmt(b.bot)}–${fmt(b.top)}`:"kein bullischer"} · ${s2?`bärisch ${fmt(s2.bot)}–${fmt(s2.top)}`:"kein bärischer"}`})};
+  near(I.ob,"Orderblöcke");near(I.lsob,"LSOB");
+  if(I.risk){const r=I.riskNow!=null?I.riskNow:I.risk[last];if(r!=null)out.push({t:"Risiko",v:`${nf(r,3)} · ${r<.2?"sehr niedrig – historisch günstig":r<.4?"niedrig":r<.6?"mittel":r<.8?"hoch":"sehr hoch – historisch teuer"}`,c:r<.4?"up":r>=.6?"down":""})}
+  if(I.heat){const h=I.heatNow!=null?I.heatNow:I.heat[last];if(h!=null)out.push({t:"Hitze",v:`${nf(h,2)} · ${heatTxt(h,I.heatTh)}`,s:I.heatAvg?`20-Wochen-Schnitt ${fmt(I.heatAvg)}`:""})}
   if(I.liq&&I.liq.length){const s=I.liq[I.liq.length-1];out.push({t:"Liquidität",v:`${s.t===1?"Tief":"Hoch"} bei ${fmt(s.lvl)} abgeholt vor ${last-s.i} Kerzen`,c:s.t===1?"up":"down"})}
   return out}
 
-return{DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile};
+return{DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile,rkCol,heatCol,heatTxt};
 })();
 if(typeof module!=="undefined")module.exports=CC;
