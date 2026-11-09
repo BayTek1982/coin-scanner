@@ -29,8 +29,8 @@ const FUT=(()=>{
   function lage(pc,oiD){if(oiD>1&&pc>0.5)return{k:"nl",t:"Neue Longs"};if(oiD>1&&pc<-0.5)return{k:"ns",t:"Neue Shorts"};
     if(oiD<-1&&pc>0.5)return{k:"sa",t:"Short-Abbau"};if(oiD<-1&&pc<-0.5)return{k:"la",t:"Long-Abbau"};return{k:"sw",t:"Ruhig"}}
   function einordnung(x){const {crowd,div,fundAPR:f,oiD}=x;
-    if(crowd>=75&&(f>=12||oiD>=5))return{k:"longcrowd",t:"Long überfüllt"};
-    if(crowd<=45&&(f<=-3||oiD>=5))return{k:"shortcrowd",t:"Short überfüllt"};
+    if(crowd>=75&&(f>=12||(oiD>=5&&f>=0)))return{k:"longcrowd",t:"Long überfüllt"};
+    if(crowd<=45&&(f<=-3||(oiD>=5&&f<=5)))return{k:"shortcrowd",t:"Short überfüllt"};
     if(div<=-8)return{k:"topdef",t:"Top-Trader defensiv"};
     if(div>=8)return{k:"topoff",t:"Top-Trader offensiv"};
     if(oiD<=-8)return{k:"delev",t:"Deleveraging"};

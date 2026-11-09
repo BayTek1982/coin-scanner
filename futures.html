@@ -153,7 +153,7 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
 <li><b>Leverage-Stress (0–100)</b> – Aus Funding, OI-Anstieg und einseitiger Crowd. Hoch heißt: viel Hebel, und es kann heftig in die Gegenrichtung ausschlagen (Liquidationen).</li>
 <li><b>Einordnung</b> – „Long überfüllt“: Crowd ≥ 75 % und dazu hohes Funding oder stark steigendes OI. „Short überfüllt“: Crowd ≤ 45 % und dazu negatives Funding oder stark steigendes OI. Danach folgen Divergenz (±8 Punkte) und Deleveraging (OI −8 %).</li>
 </ol>
-<p><b>Lagebild:</b> Aus Durchschnitt aller Coins (Crowd, Divergenz, Funding, OI), Stablecoin-Angebot (7 Tage) und Angst &amp; Gier. „Vorsichtig“ unter 45 Punkten, „Konstruktiv“ über 55.</p>
+<p><b>Lagebild:</b> Aus dem nach Open Interest gewichteten Durchschnitt aller Coins (große Märkte wie BTC und ETH zählen mehr) (Crowd, Divergenz, Funding, OI), Stablecoin-Angebot (7 Tage) und Angst &amp; Gier. „Vorsichtig“ unter 45 Punkten, „Konstruktiv“ über 55.</p>
 </dialog>
 
 <script src="futures-core.js"></script>
@@ -201,9 +201,10 @@ async function loadAll(force){$("refresh").disabled=true;notice("");
 const CATS=[["all","Alle"],["longcrowd","Long überfüllt"],["shortcrowd","Short überfüllt"],["topdef","Top-Trader defensiv"],["topoff","Top-Trader offensiv"],["delev","Deleveraging"],["neutral","Neutral"]];
 const COLS=[["rank","Coin"],["pc","24h"],["crowd","Crowd long"],["topAcc","Top Konten"],["topPos","Top Position"],["div","Divergenz"],["oi","Open Interest"],["oiD","OI Δ 24h"],["fundAPR","Funding p. a."],["taker","Taker-Kauf"],["lage","OI-Lage"],["druck","Druck"],["stress","Stress"],["einord","Einordnung"]];
 function rows(){return S.coins.map(c=>({c,x:S.d[c.sym]})).filter(r=>r.x)}
-function avg(a){const b=a.filter(v=>v!=null&&isFinite(v));return b.length?b.reduce((s,v)=>s+v,0)/b.length:null}
+// Durchschnitt gewichtet nach Open Interest (große Märkte zählen mehr)
+function wavg(X,f){let s=0,w=0;X.forEach(x=>{const v=f(x),g=x.oi||0;if(v!=null&&isFinite(v)&&g>0){s+=v*g;w+=g}});return w?s/w:null}
 function lagebild(rs){const X=rs.map(r=>r.x);if(!X.length)return null;
-  const A={crowd:avg(X.map(x=>x.crowd)),top:avg(X.map(x=>x.topPos)),div:avg(X.map(x=>x.div)),oiD:avg(X.map(x=>x.oiD)),fund:avg(X.map(x=>x.fundAPR)),taker:avg(X.map(x=>x.taker))};
+  const A={crowd:wavg(X,x=>x.crowd),top:wavg(X,x=>x.topPos),div:wavg(X,x=>x.div),oiD:wavg(X,x=>x.oiD),fund:wavg(X,x=>x.fundAPR),taker:wavg(X,x=>x.taker)};
   let sc=50;const B=[];
   if(A.crowd>=72){sc-=8;B.push(["v",`Die Masse ist im Schnitt klar long (${nf(A.crowd)} %).`,"Überfüllte Long-Seite kann bei Rücksetzern Liquidationen auslösen."])}
   else if(A.crowd<=55){sc+=6;B.push(["c",`Die Masse ist ungewöhnlich wenig long (${nf(A.crowd)} %).`,"Viele Shorts – Gefahr eines Short-Squeeze nach oben."])}
@@ -227,8 +228,8 @@ function render(){const st=stars(),rs=rows();
   document.querySelectorAll("#perSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===S.per));
   // Lagebild
   const L=lagebild(rs);
-  if(L){$("lage").textContent=L.t[1];$("lage").className="big "+L.t[0];$("lageSub").textContent=`${L.sc}/100 · ${rs.length} Coins · Periode ${FUT.PER[S.per].lab}`;
-    const tl=[["Crowd long Ø",nf(L.A.crowd)+" %","alle Konten"],["Top-Position long Ø",nf(L.A.top)+" %","Kapital der Großen"],["Divergenz Ø",pc(L.A.div).replace(" %"," Pkt."),"Top minus Crowd"],
+  if(L){$("lage").textContent=L.t[1];$("lage").className="big "+L.t[0];$("lageSub").textContent=`${L.sc}/100 · ${rs.length} Coins · Periode ${FUT.PER[S.per].lab} · Ø gewichtet nach Open Interest`;
+    const tl=[["Crowd long Ø*",nf(L.A.crowd)+" %","alle Konten"],["Top-Position long Ø",nf(L.A.top)+" %","Kapital der Großen"],["Divergenz Ø",pc(L.A.div).replace(" %"," Pkt."),"Top minus Crowd"],
       ["OI Δ 24h Ø",pc(L.A.oiD),"Hebel auf-/abbau"],["Funding p. a. Ø",pc(L.A.fund),"Longs zahlen Shorts"],["Taker-Kauf Ø",nf(L.A.taker)+" %","aggressive Käufe"],
       ["Stablecoins",EXTRA.sc?usd(EXTRA.sc):"–",EXTRA.sc7!=null?pc(EXTRA.sc7,2)+" in 7 Tagen":"–"],["Angst & Gier",EXTRA.fg!=null?EXTRA.fg+" / 100":"–",EXTRA.fgT||"–"]];
     $("tiles").innerHTML=tl.map(([a,b,c])=>`<div class="tile"><small>${a}</small><b>${b}</b><span>${c}</span></div>`).join("");
