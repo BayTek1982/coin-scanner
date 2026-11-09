@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="de" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e131b">
+<meta name="description" content="Futures-Positionierung (Crowd vs. Top-Trader, Open Interest, Funding) und Lagebild für die Top-Kryptowährungen.">
+<title>Futures & Lagebild · Bayazit Coin-Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;
+  --accent:#c77a12;--accent-ink:#fff;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;--warn:#9a6a00;--star:#d39b00;
+  --gold:#d9951c;--goldbg:rgba(217,149,28,.16);--blue:#2f6fd6;--grey:#8d99ab;
+  --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;
+  --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;--star:#f5c542;
+  --gold:#f0a33a;--goldbg:rgba(240,163,58,.18);--blue:#5b9bff;--grey:#6f7b8d;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:1800px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;justify-content:space-between}
+h1{font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em}
+.label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sub{font-size:.82rem;color:var(--muted)}
+.status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stand{font-size:.8rem;color:var(--muted)}.stand b{font-family:var(--f-num);color:var(--fg);font-weight:600}
+.btn{font:600 .88rem var(--f-body);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--accent);color:var(--accent-ink);text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--chip);color:var(--fg)}.btn.line{background:none;border:1px solid var(--gold);color:var(--gold)}.btn:disabled{opacity:.6;cursor:wait}
+.seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:4px;gap:4px;flex-wrap:wrap}
+.seg button{font:700 .9rem var(--f-body);border:0;background:none;color:var(--muted);padding:8px 14px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.prog{height:4px;background:var(--chip);border-radius:2px;overflow:hidden}.prog i{display:block;height:100%;background:var(--gold);width:0;transition:width .2s}
+.notice{font-size:.82rem;color:var(--warn);margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:12px;min-width:0;align-content:start}
+.row2{display:grid;grid-template-columns:minmax(300px,1fr) 1.4fr;gap:16px}
+@media (max-width:1000px){.row2{grid-template-columns:1fr}}
+.pos{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.pos .big{font:800 2.2rem/1 var(--f-body)}
+.pos .big.c{color:var(--up)}.pos .big.v{color:var(--down)}.pos .big.n{color:var(--gold)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.tile small{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.tile b{font:600 1.2rem var(--f-num)}.tile span{font-size:.74rem;color:var(--muted)}
+.brief{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.brief li{border-left:3px solid var(--grey);padding:4px 10px;font-size:.9rem}
+.brief li.c{border-color:var(--up)}.brief li.v{border-color:var(--down)}.brief li.n{border-color:var(--gold)}
+.brief li small{display:block;color:var(--muted);font-size:.74rem;font-family:var(--f-num)}
+.sig{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.sig div{border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.sig div:hover{border-color:var(--muted)}
+.sig small{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;display:block}
+.sig b{font:800 1.15rem var(--f-body)}.sig b em{font:600 .95rem var(--f-num);font-style:normal;margin-left:6px}
+.sig p{margin:2px 0 0;font-size:.78rem;color:var(--muted)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font:600 .8rem var(--f-body);border:1px solid var(--line);background:var(--chip);color:var(--fg);padding:6px 10px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
+.chip b{font-family:var(--f-num);margin-left:4px}
+.search{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 12px;min-width:220px}
+.search input{flex:1;font:500 .92rem var(--f-body);background:none;border:0;color:var(--fg);outline:none;min-width:0}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.84rem;white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);text-align:right;font:600 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);padding:10px 8px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1}
+th.on{color:var(--gold)}
+td{padding:8px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--f-num)}
+tr.r{cursor:pointer}tr.r:hover td{background:var(--chip)}
+td.c b{font-family:var(--f-body);font-weight:800}td.c small{color:var(--muted);font-family:var(--f-body);margin-left:6px}
+.star{background:none;border:0;cursor:pointer;font-size:1rem;color:var(--muted);padding:0 6px 0 0}.star.on{color:var(--star)}
+.pill{font:700 .72rem var(--f-body);padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--fg);display:inline-block}
+.pill.longcrowd{background:rgba(255,107,94,.16);color:var(--down)}.pill.shortcrowd{background:rgba(60,207,138,.16);color:var(--up)}
+.pill.topdef,.pill.delev{background:var(--goldbg);color:var(--gold)}.pill.topoff{background:rgba(91,155,255,.16);color:var(--blue)}
+.pill.nl{color:var(--up)}.pill.ns{color:var(--down)}.pill.sa{color:#ff9800}.pill.la{color:#e91e63}
+.meter{display:inline-block;width:46px;height:6px;border-radius:3px;background:var(--chip);vertical-align:middle;margin-left:6px;overflow:hidden}.meter i{display:block;height:100%}
+.up{color:var(--up)}.down{color:var(--down)}.mut{color:var(--muted)}
+dialog{width:min(900px,96vw);max-width:none;max-height:92vh;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);padding:16px;box-sizing:border-box}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+.dhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.dhead>div{flex:1;min-width:180px}
+.x{font-size:1.2rem;background:var(--chip);border:0;color:var(--fg);width:38px;height:38px;border-radius:9px;cursor:pointer}
+.lsbar{display:flex;height:22px;border-radius:6px;overflow:hidden;font:600 .72rem var(--f-num)}
+.lsbar i{display:flex;align-items:center;padding:0 8px;font-style:normal;color:#fff}
+.lsbar .l{background:var(--up);justify-content:flex-start}.lsbar .s{background:var(--down);justify-content:flex-end;flex:1}
+.how ol{padding-left:20px;display:grid;gap:10px}.how p{color:var(--muted);font-size:.88rem}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:10px}
+svg{display:block;width:100%;height:auto}
+footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="label"><a href="index.html" style="color:var(--muted)">← Bayazit Coin-Scanner</a> · <a href="golden-zone.html" style="color:var(--muted)">◎ Golden Zone</a></div>
+      <h1>Futures-Positionierung &amp; Lagebild</h1>
+      <div class="sub">Binance Futures · Crowd gegen Top-Trader · Open Interest, Funding, Taker</div>
+    </div>
+    <div class="status">
+      <button class="btn line" id="howBtn">ⓘ So liest du es</button>
+      <span class="stand">Stand <b id="stand">–</b></span>
+      <div class="seg" id="perSeg"><button data-p="15m">15M</button><button data-p="1h">1H</button><button data-p="4h">4H</button></div>
+      <button class="btn" id="refresh">Aktualisieren</button>
+    </div>
+  </header>
+  <div class="prog" id="prog" hidden><i id="progI"></i></div>
+  <p class="notice" id="notice" hidden></p>
+
+  <div class="row2">
+    <section class="panel">
+      <span class="label">Lagebild</span>
+      <div class="pos"><span class="big n" id="lage">–</span><span class="sub" id="lageSub"></span></div>
+      <div class="tiles" id="tiles"></div>
+    </section>
+    <section class="panel">
+      <span class="label">Briefing · automatisch aus den Messwerten</span>
+      <ul class="brief" id="brief"><li>Wird geladen …</li></ul>
+    </section>
+  </div>
+
+  <section class="panel">
+    <span class="label">Signale</span>
+    <div class="sig" id="sig"></div>
+  </section>
+
+  <div class="bar">
+    <div class="chips" id="chips"></div>
+    <label class="search"><span class="label" style="color:var(--gold)">Suchen</span><input id="q" type="search" placeholder="z. B. BTC" autocomplete="off"></label>
+  </div>
+  <div class="tw"><table><thead id="thead"></thead><tbody id="tbody"><tr><td colspan="14" class="mut">Daten werden geladen …</td></tr></tbody></table></div>
+  <div class="sub" id="count"></div>
+
+  <footer>
+    <span>Daten: Binance Futures (Positionierung, Open Interest, Funding), CoinGecko (Top 100), DefiLlama (Stablecoins), Alternative.me (Angst &amp; Gier).</span>
+    <span>OI Δ und Kursänderung gelten für 24 Stunden. Alle Werte sind Orientierung, keine Anlageberatung.</span>
+  </footer>
+</div>
+
+<dialog id="dlg"><div class="dhead"><div id="dTitle"></div><a class="btn ghost" id="dGz" href="golden-zone.html">◎ Golden Zone</a><a class="btn ghost" id="dTv" target="_blank" rel="noopener">TradingView</a><button class="x" data-close>✕</button></div><div id="dBody"></div></dialog>
+
+<dialog id="how" class="how"><div class="dhead"><div><div class="label" style="color:var(--gold)">Von der Masse zum Druck</div><h2 style="margin:4px 0 0">So liest du es</h2></div><button class="x" data-close>✕</button></div>
+<ol>
+<li><b>Crowd (Konten)</b> – Wie viel Prozent aller Futures-Konten long sind. Bei Binance ist die Masse fast immer eher long. Interessant wird es ab etwa 75 % oder unter 45 %.</li>
+<li><b>Top-Trader (Konten / Position)</b> – Die größten Trader. „Position“ zählt die Größe ihrer Positionen, also das Kapital. Das ist der wichtigere Wert.</li>
+<li><b>Divergenz</b> – Top-Position minus Crowd. Negativ: Die Großen sind vorsichtiger als die Masse („Top-Trader defensiv“). Positiv: Die Großen sind stärker long („Top-Trader offensiv“).</li>
+<li><b>Open Interest (OI) und OI Δ 24h</b> – Wie viel Geld in offenen Futures steckt. Steigt OI mit dem Kurs: neue Longs. Steigt OI bei fallendem Kurs: neue Shorts. Fällt OI bei steigendem Kurs: Short-Abbau. Fällt OI bei fallendem Kurs: Long-Abbau.</li>
+<li><b>Funding p. a.</b> – Was Longs an Shorts zahlen, aufs Jahr gerechnet. Hoch positiv heißt, Longs sind teuer und zahlreich. Negativ heißt, Shorts zahlen.</li>
+<li><b>Taker-Kauf</b> – Anteil der aggressiven Marktkäufe am gehandelten Volumen. Über 50 % heißt Käuferdruck.</li>
+<li><b>Druck (0–100)</b> – Aus Taker-Kauf und OI-Lage: 50 = neutral, darüber Käuferdruck, darunter Verkäuferdruck.</li>
+<li><b>Leverage-Stress (0–100)</b> – Aus Funding, OI-Anstieg und einseitiger Crowd. Hoch heißt: viel Hebel, und es kann heftig in die Gegenrichtung ausschlagen (Liquidationen).</li>
+<li><b>Einordnung</b> – „Long überfüllt“: Crowd ≥ 75 % und dazu hohes Funding oder stark steigendes OI. „Short überfüllt“: Crowd ≤ 45 % und dazu negatives Funding oder stark steigendes OI. Danach folgen Divergenz (±8 Punkte) und Deleveraging (OI −8 %).</li>
+</ol>
+<p><b>Lagebild:</b> Aus Durchschnitt aller Coins (Crowd, Divergenz, Funding, OI), Stablecoin-Angebot (7 Tage) und Angst &amp; Gier. „Vorsichtig“ unter 45 Punkten, „Konstruktiv“ über 55.</p>
+</dialog>
+
+<script src="futures-core.js"></script>
+<script>
+"use strict";
+const CG="https://api.coingecko.com/api/v3";
+const SKIP=new Set("USDT USDC DAI FDUSD TUSD USDE USDS PYUSD USD1 RLUSD USDD BUSD USDP GUSD FRAX LUSD EURC XAUT PAXG USDG USD0 BFUSD WBTC WETH STETH WSTETH WEETH CBBTC WBETH BSC-USD WBNB".split(" "));
+const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||"null");localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
+const S=Object.assign({per:"1h",f:"all",sort:"rank",asc:true,watch:false},LS("bfut1")||{});S.q="";S.coins=[];S.d={};
+const save=()=>LS("bfut1",{per:S.per,f:S.f,sort:S.sort,asc:S.asc,watch:S.watch});
+const stars=()=>new Set((LS("bcs2")||{}).stars||[]);
+function toggleStar(id){const s=LS("bcs2")||{};const st=new Set(s.stars||[]);st.has(id)?st.delete(id):st.add(id);s.stars=[...st];LS("bcs2",s)}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf=(v,d=1)=>v==null||!isFinite(v)?"–":v.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d});
+const pc=(v,d=1)=>v==null||!isFinite(v)?"–":(v>0?"+":"")+nf(v,d)+" %";
+const usd=v=>v==null||!isFinite(v)?"–":v>=1e9?nf(v/1e9,2)+" Mrd. $":v>=1e6?nf(v/1e6,1)+" Mio. $":nf(v/1e3,0)+" Tsd. $";
+const cls=v=>v>0?"up":v<0?"down":"";
+async function getJSON(url,ms=20000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);
+  try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json()}finally{clearTimeout(t)}}
+function prog(v){const p=$("prog");if(v==null){p.hidden=true;return}p.hidden=false;$("progI").style.width=(v*100).toFixed(0)+"%"}
+function notice(t){const n=$("notice");n.hidden=!t;n.textContent=t||""}
+
+async function loadCoins(){const m=await FUT.market();let list=[];
+  try{const cg=await getJSON(`${CG}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=200&page=1`);
+    list=cg.map(c=>({id:c.id,sym:String(c.symbol).toUpperCase(),name:c.name,img:c.image,r:c.market_cap_rank}))}
+  catch(e){notice("CoinGecko nicht erreichbar – Auswahl nach Futures-Volumen.");
+    list=Object.entries(m).sort((a,b)=>b[1].vol-a[1].vol).map(([s],i)=>({id:s.toLowerCase(),sym:s,name:s,img:"",r:i+1}))}
+  const seen=new Set();
+  return list.filter(c=>!SKIP.has(c.sym)&&m[c.sym]&&!seen.has(c.sym)&&seen.add(c.sym)).slice(0,100)}
+let EXTRA={};
+async function loadExtra(){const [sc,fg]=await Promise.allSettled([getJSON("https://stablecoins.llama.fi/stablecoincharts/all",30000),getJSON("https://api.alternative.me/fng/?limit=2")]);
+  EXTRA={};
+  if(sc.status==="fulfilled"&&Array.isArray(sc.value)&&sc.value.length>8){const a=sc.value,v=x=>(x.totalCirculatingUSD||{}).peggedUSD||0;
+    const now=v(a[a.length-1]),w=v(a[a.length-8]);EXTRA.sc=now;EXTRA.sc7=w?(now/w-1)*100:null}
+  if(fg.status==="fulfilled"){const d=(fg.value.data||[])[0];if(d){EXTRA.fg=+d.value;EXTRA.fgT={"Extreme Fear":"Extreme Angst","Fear":"Angst","Neutral":"Neutral","Greed":"Gier","Extreme Greed":"Extreme Gier"}[d.value_classification]||d.value_classification}}}
+async function loadAll(force){$("refresh").disabled=true;notice("");
+  try{if(!S.coins.length||force)S.coins=await loadCoins();
+    const ex=loadExtra();prog(0);
+    S.d=await FUT.load(S.coins.map(c=>c.sym),S.per,(d,n)=>{prog(d/n);if(d%10===0)render()},force);
+    await ex;prog(null);$("stand").textContent=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";render()}
+  catch(e){prog(null);notice("Fehler beim Laden: "+e.message+" – bitte „Aktualisieren“ tippen.")}
+  finally{$("refresh").disabled=false}}
+
+const CATS=[["all","Alle"],["longcrowd","Long überfüllt"],["shortcrowd","Short überfüllt"],["topdef","Top-Trader defensiv"],["topoff","Top-Trader offensiv"],["delev","Deleveraging"],["neutral","Neutral"]];
+const COLS=[["rank","Coin"],["pc","24h"],["crowd","Crowd long"],["topAcc","Top Konten"],["topPos","Top Position"],["div","Divergenz"],["oi","Open Interest"],["oiD","OI Δ 24h"],["fundAPR","Funding p. a."],["taker","Taker-Kauf"],["lage","OI-Lage"],["druck","Druck"],["stress","Stress"],["einord","Einordnung"]];
+function rows(){return S.coins.map(c=>({c,x:S.d[c.sym]})).filter(r=>r.x)}
+function avg(a){const b=a.filter(v=>v!=null&&isFinite(v));return b.length?b.reduce((s,v)=>s+v,0)/b.length:null}
+function lagebild(rs){const X=rs.map(r=>r.x);if(!X.length)return null;
+  const A={crowd:avg(X.map(x=>x.crowd)),top:avg(X.map(x=>x.topPos)),div:avg(X.map(x=>x.div)),oiD:avg(X.map(x=>x.oiD)),fund:avg(X.map(x=>x.fundAPR)),taker:avg(X.map(x=>x.taker))};
+  let sc=50;const B=[];
+  if(A.crowd>=72){sc-=8;B.push(["v",`Die Masse ist im Schnitt klar long (${nf(A.crowd)} %).`,"Überfüllte Long-Seite kann bei Rücksetzern Liquidationen auslösen."])}
+  else if(A.crowd<=55){sc+=6;B.push(["c",`Die Masse ist ungewöhnlich wenig long (${nf(A.crowd)} %).`,"Viele Shorts – Gefahr eines Short-Squeeze nach oben."])}
+  else B.push(["n",`Crowd im Schnitt ${nf(A.crowd)} % long – normal für Binance.`,"Kein extremes Ungleichgewicht."]);
+  if(A.div<=-5){sc-=6;B.push(["v",`Top-Trader sind vorsichtiger als die Masse (Divergenz ${pc(A.div).replace(" %"," Pkt.")}).`,"Die Großen setzen weniger auf steigende Kurse."])}
+  else if(A.div>=5){sc+=6;B.push(["c",`Top-Trader sind stärker long als die Masse (Divergenz ${pc(A.div).replace(" %"," Pkt.")}).`,"Kapital der Großen stützt die Long-Seite."])}
+  if(A.fund>=15){sc-=6;B.push(["v",`Funding erhöht (Ø ${pc(A.fund)} p. a.).`,"Longs zahlen viel – Hebel ist teuer."])}
+  else if(A.fund<0){sc+=5;B.push(["c",`Funding negativ (Ø ${pc(A.fund)} p. a.).`,"Shorts zahlen – oft ein Zeichen von Pessimismus."])}
+  if(A.oiD>=5){sc-=4;B.push(["n",`Open Interest steigt deutlich (Ø ${pc(A.oiD)} in 24h).`,"Es wird Hebel aufgebaut – Bewegungen können sich verstärken."])}
+  else if(A.oiD<=-5){sc+=3;B.push(["n",`Open Interest fällt (Ø ${pc(A.oiD)} in 24h).`,"Hebel wird abgebaut (Deleveraging) – der Markt wird „sauberer“."])}
+  if(EXTRA.sc7!=null){if(EXTRA.sc7>=0.5){sc+=7;B.push(["c",`Stablecoin-Angebot wächst (${pc(EXTRA.sc7,2)} in 7 Tagen).`,"Frisches Geld steht für Käufe bereit."])}
+    else if(EXTRA.sc7<=-0.5){sc-=7;B.push(["v",`Stablecoin-Angebot schrumpft (${pc(EXTRA.sc7,2)} in 7 Tagen).`,"Geld fließt aus dem Kryptomarkt ab."])}
+    else B.push(["n",`Stablecoin-Angebot stabil (${pc(EXTRA.sc7,2)} in 7 Tagen).`,"Kein deutlicher Zu- oder Abfluss."])}
+  if(EXTRA.fg!=null){if(EXTRA.fg<=25)B.push(["c",`Angst & Gier bei ${EXTRA.fg} (${EXTRA.fgT}).`,"Extreme Angst war oft eher eine Kaufzone als ein Verkaufssignal."]);
+    else if(EXTRA.fg>=75){sc-=4;B.push(["v",`Angst & Gier bei ${EXTRA.fg} (${EXTRA.fgT}).`,"Viel Gier – Vorsicht vor zu späten Einstiegen."])}}
+  const top=[...rs].sort((a,b)=>b.x.stress-a.x.stress)[0];if(top&&top.x.stress>=70)B.push(["v",`${top.c.sym} hat den höchsten Leverage-Stress (${top.x.stress}/100).`,`${top.x.einord.t} · Funding ${pc(top.x.fundAPR)} p. a. · OI ${pc(top.x.oiD)}`]);
+  sc=Math.round(Math.max(0,Math.min(100,sc)));
+  return{A,sc,B,t:sc<45?["v","Vorsichtig"]:sc>55?["c","Konstruktiv"]:["n","Neutral"]}}
+function meter(v,col){return`<span class="meter"><i style="width:${Math.max(0,Math.min(100,v))}%;background:${col}"></i></span>`}
+function render(){const st=stars(),rs=rows();
+  document.querySelectorAll("#perSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===S.per));
+  // Lagebild
+  const L=lagebild(rs);
+  if(L){$("lage").textContent=L.t[1];$("lage").className="big "+L.t[0];$("lageSub").textContent=`${L.sc}/100 · ${rs.length} Coins · Periode ${FUT.PER[S.per].lab}`;
+    const tl=[["Crowd long Ø",nf(L.A.crowd)+" %","alle Konten"],["Top-Position long Ø",nf(L.A.top)+" %","Kapital der Großen"],["Divergenz Ø",pc(L.A.div).replace(" %"," Pkt."),"Top minus Crowd"],
+      ["OI Δ 24h Ø",pc(L.A.oiD),"Hebel auf-/abbau"],["Funding p. a. Ø",pc(L.A.fund),"Longs zahlen Shorts"],["Taker-Kauf Ø",nf(L.A.taker)+" %","aggressive Käufe"],
+      ["Stablecoins",EXTRA.sc?usd(EXTRA.sc):"–",EXTRA.sc7!=null?pc(EXTRA.sc7,2)+" in 7 Tagen":"–"],["Angst & Gier",EXTRA.fg!=null?EXTRA.fg+" / 100":"–",EXTRA.fgT||"–"]];
+    $("tiles").innerHTML=tl.map(([a,b,c])=>`<div class="tile"><small>${a}</small><b>${b}</b><span>${c}</span></div>`).join("");
+    $("brief").innerHTML=L.B.map(([k,t,s])=>`<li class="${k}">${esc(t)}<small>${esc(s)}</small></li>`).join("")}
+  // Signale
+  if(rs.length){const by=(f,dir=-1)=>[...rs].sort((a,b)=>dir*(f(a.x)-f(b.x)))[0];
+    const s1=by(x=>x.stress),s2=by(x=>Math.abs(x.div)),s3=by(x=>x.crowd),s4=by(x=>x.crowd,1),s5=by(x=>x.oiD),s6=by(x=>x.fundAPR);
+    const t=[["Höchster Leverage-Stress",s1,`${s1.x.stress}/100`,`${s1.x.einord.t} · Funding ${pc(s1.x.fundAPR)} p. a.`],
+      ["Stärkste Divergenz",s2,pc(s2.x.div).replace(" %"," Pkt."),s2.x.div<0?"Top-Trader deutlich vorsichtiger als die Crowd":"Top-Trader deutlich stärker long als die Crowd"],
+      ["Crowd am stärksten long",s3,nf(s3.x.crowd)+" %",`Top-Position ${nf(s3.x.topPos)} % long`],["Crowd am stärksten short",s4,nf(100-s4.x.crowd)+" % short",`Funding ${pc(s4.x.fundAPR)} p. a.`],
+      ["Stärkster OI-Anstieg",s5,pc(s5.x.oiD),`${s5.x.lage.t} · Kurs ${pc(s5.x.pc)}`],["Höchstes Funding",s6,pc(s6.x.fundAPR)+" p. a.",`Crowd ${nf(s6.x.crowd)} % long`]];
+    $("sig").innerHTML=t.map(([a,r,v,p])=>`<div data-open="${esc(r.c.sym)}"><small>${a}</small><b>${esc(r.c.sym)}<em>${v}</em></b><p>${esc(p)}</p></div>`).join("")}
+  // Filter
+  const base=rs.filter(r=>(!S.watch||st.has(r.c.id))&&(!S.q||r.c.sym.toLowerCase().includes(S.q)||String(r.c.name).toLowerCase().includes(S.q)));
+  const cnt={all:base.length};base.forEach(r=>cnt[r.x.einord.k]=(cnt[r.x.einord.k]||0)+1);
+  $("chips").innerHTML=CATS.map(([k,t])=>`<button class="chip" data-f="${k}" aria-pressed="${S.f===k}">${t}<b>${cnt[k]||0}</b></button>`).join("")+`<button class="chip" id="watchChip" aria-pressed="${S.watch}">★ Watchlist</button>`;
+  // Tabelle
+  $("thead").innerHTML="<tr>"+COLS.map(([k,t])=>`<th data-s="${k}" class="${S.sort===k?"on":""}">${t}${S.sort===k?(S.asc?" ▲":" ▼"):""}</th>`).join("")+"</tr>";
+  let list=base.filter(r=>S.f==="all"||r.x.einord.k===S.f);
+  const key={rank:r=>r.c.r||999,lage:r=>r.x.lage.t,einord:r=>r.x.einord.t}[S.sort]||(r=>r.x[S.sort]??-1e9);
+  list.sort((a,b)=>{const A=key(a),B=key(b);return(typeof A==="string"?A.localeCompare(B):A-B)*(S.asc?1:-1)});
+  $("tbody").innerHTML=list.length?list.map(({c,x})=>`<tr class="r" data-open="${esc(c.sym)}">
+    <td class="c"><button class="star${st.has(c.id)?" on":""}" data-star="${esc(c.id)}">${st.has(c.id)?"★":"☆"}</button><b>${esc(c.sym)}</b><small>#${c.r||"–"}</small></td>
+    <td class="${cls(x.pc)}">${pc(x.pc)}</td><td>${nf(x.crowd)} %${meter(x.crowd,"var(--up)")}</td><td>${nf(x.topAcc)} %</td><td>${nf(x.topPos)} %</td>
+    <td class="${x.div<=-8?"down":x.div>=8?"up":""}">${pc(x.div).replace(" %","")}</td><td>${usd(x.oi)}</td><td class="${cls(x.oiD)}">${pc(x.oiD)}</td>
+    <td class="${x.fundAPR>=15?"down":x.fundAPR<0?"up":""}">${pc(x.fundAPR)}</td><td class="${x.taker>=52?"up":x.taker<=48?"down":""}">${nf(x.taker)} %</td>
+    <td><span class="pill ${x.lage.k}">${x.lage.t}</span></td><td>${x.druck}${meter(x.druck,x.druck>=55?"var(--up)":x.druck<=45?"var(--down)":"var(--grey)")}</td>
+    <td class="${x.stress>=70?"down":""}">${x.stress}${meter(x.stress,x.stress>=70?"var(--down)":x.stress>=50?"var(--gold)":"var(--grey)")}</td>
+    <td><span class="pill ${x.einord.k}">${x.einord.t}</span></td></tr>`).join(""):`<tr><td colspan="14" class="mut">${S.coins.length?"Keine Coins für diese Auswahl.":"Daten werden geladen …"}</td></tr>`;
+  $("count").textContent=`${list.length} von ${rs.length} Coins mit Binance-Futures`}
+function spark(arrs,cols,lo,hi){const W=300,H=80,all=arrs.flat();if(!all.length)return"";lo=lo??Math.min(...all);hi=hi??Math.max(...all);const sp=hi-lo||1;
+  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${arrs.map((a,k)=>`<polyline fill="none" stroke="${cols[k]}" stroke-width="2" vector-effect="non-scaling-stroke" points="${a.map((v,i)=>(i/(a.length-1||1)*W).toFixed(1)+","+(H-(v-lo)/sp*H).toFixed(1)).join(" ")}"/>`).join("")}</svg>`}
+function openSym(sym){const c=S.coins.find(x=>x.sym===sym),x=S.d[sym];if(!c||!x)return;
+  $("dTv").href=`https://www.tradingview.com/chart/?symbol=${encodeURIComponent("BINANCE:"+x.fs+".P")}`;
+  $("dTitle").innerHTML=`<div class="label">Futures · ${FUT.PER[S.per].lab}</div><b style="font-size:1.25rem">${esc(c.sym)}</b> <span class="sub">${esc(c.name)} · Kurs ${pc(x.pc)} in 24h</span>`;
+  const bar=(t,l)=>`<div><div class="sub" style="margin-bottom:4px">${t}</div><div class="lsbar"><i class="l" style="width:${l}%">${nf(l)} % Long</i><i class="s">${nf(100-l)} % Short</i></div></div>`;
+  $("dBody").innerHTML=`<div style="margin:10px 0" class="pill ${x.einord.k}">${x.einord.t}</div>
+    <div style="display:grid;gap:10px">${bar("Crowd (alle Konten)",x.crowd)}${x.topAcc!=null?bar("Top-Trader Konten",x.topAcc):""}${x.topPos!=null?bar("Top-Trader Positionsgröße (Kapital)",x.topPos):""}</div>
+    <div class="tiles" style="margin-top:12px">
+      <div class="tile"><small>Divergenz</small><b class="${x.div<=-8?"down":x.div>=8?"up":""}">${pc(x.div).replace(" %"," Pkt.")}</b><span>${x.div<0?"Top-Trader vorsichtiger":"Top-Trader stärker long"}</span></div>
+      <div class="tile"><small>Open Interest</small><b>${usd(x.oi)}</b><span class="${cls(x.oiD)}">${pc(x.oiD)} in 24h · ${x.lage.t}</span></div>
+      <div class="tile"><small>Funding</small><b>${pc(x.fundAPR)}</b><span>p. a. · je 8h ${pc(x.fund*100,4)}</span></div>
+      <div class="tile"><small>Premium</small><b>${pc(x.prem,3)}</b><span>Mark zu Index</span></div>
+      <div class="tile"><small>Taker-Kauf</small><b>${nf(x.taker)} %</b><span>aggressive Käufe</span></div>
+      <div class="tile"><small>Druck / Stress</small><b>${x.druck} / ${x.stress}</b><span>0–100</span></div></div>
+    <div class="dgrid"><div><div class="sub">Crowd <span style="color:var(--up)">━</span> gegen Top-Position <span style="color:var(--gold)">━</span> (letzte 24 Perioden)</div>${spark([x.hc,x.hp.length?x.hp:x.hc],["var(--up)","var(--gold)"])}</div>
+      <div><div class="sub">Open Interest (letzte 30 Perioden)</div>${spark([x.ho],["var(--blue)"])}</div></div>`;
+  $("dlg").showModal()}
+$("perSeg").onclick=e=>{const b=e.target.closest("[data-p]");if(!b)return;S.per=b.dataset.p;save();S.d={};render();loadAll(false)};
+$("refresh").onclick=()=>loadAll(true);
+$("howBtn").onclick=()=>$("how").showModal();
+$("q").oninput=e=>{S.q=e.target.value.trim().toLowerCase();render()};
+document.querySelectorAll("dialog").forEach(d=>d.addEventListener("click",e=>{if(e.target===d||e.target.closest("[data-close]"))d.close()}));
+document.addEventListener("click",e=>{const s=e.target.closest("[data-star]");if(s){e.stopPropagation();toggleStar(s.dataset.star);render();return}
+  if(e.target.closest("#watchChip")){S.watch=!S.watch;save();render();return}
+  const f=e.target.closest("[data-f]");if(f){S.f=f.dataset.f;save();render();return}
+  const th=e.target.closest("th[data-s]");if(th){const k=th.dataset.s;if(S.sort===k)S.asc=!S.asc;else{S.sort=k;S.asc=k==="rank"||k==="lage"||k==="einord"}save();render();return}
+  const o=e.target.closest("[data-open]");if(o&&!e.target.closest("dialog"))openSym(o.dataset.open)});
+render();loadAll(false);
+</script>
+</body>
+</html>

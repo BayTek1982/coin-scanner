@@ -101,6 +101,11 @@ input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px}
 .dist small{font-size:.66rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dist b{font:600 .8rem var(--f-num);white-space:nowrap}
 select{font:600 .9rem var(--f-body);background:var(--chip);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px}
 .ini{width:30px;height:30px;border-radius:50%;flex:none;background:var(--chip);display:grid;place-items:center;font:700 .7rem var(--f-num);color:var(--muted)}
+.fut{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:.74rem;border:1px solid var(--line);border-radius:8px;padding:5px 9px;color:var(--muted)}
+.fut span{font-family:var(--f-num)}.fut b{font-weight:700;color:var(--fg);white-space:nowrap}
+.fut.warn{border-color:var(--down);background:rgba(255,107,94,.10)}.fut.warn b{color:var(--down)}
+.fut.good{border-color:var(--up);background:rgba(60,207,138,.10)}.fut.good b{color:var(--up)}
+.fut.mild b{color:var(--gold)}
 .empty{padding:30px;text-align:center;color:var(--muted)}
 dialog{width:min(1100px,96vw);max-width:none;max-height:92vh;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);padding:16px;box-sizing:border-box}
 dialog::backdrop{background:rgba(0,0,0,.65)}
@@ -153,6 +158,8 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
       <button class="fbtn" id="watchBtn" aria-pressed="false"><span>★ Nur meine Watchlist</span><b id="watchN">0</b></button>
       <p class="hint">Gleiche Watchlist wie im Coin-Scanner (in diesem Browser gespeichert).</p>
       <label class="chk"><input type="checkbox" id="align"> 4H und 1D in gleicher Richtung</label>
+      <label class="chk" id="ncBox"><input type="checkbox" id="nocrowd"> Überfüllte Futures-Seite ausblenden</label>
+      <a class="hint" id="futLink" href="futures.html" style="color:var(--gold)">📊 Futures-Positionierung &amp; Lagebild öffnen</a>
       <p class="hint" id="loadedHint">1H · 4H · 1D werden geladen. Laufende Kerzen sind enthalten.</p>
     </aside>
 
@@ -209,6 +216,7 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
 </dialog>
 
 <script src="gz-core.js"></script>
+<script src="futures-core.js"></script>
 <script>
 "use strict";
 const CG="https://api.coingecko.com/api/v3";
@@ -224,8 +232,8 @@ CATLAB.std.inv="Unter 1,0";CATLAB.std.gz="In der Golden Zone";
 
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||"null");localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
 const S=Object.assign({mkt:"krypto",grp:"all",mode:"std",tf:"1d",dir:0,cat:"gz",watch:false,align:false,q:""},LS("bgz1")||{});
-S.coins=[];S.loaded={};S.q="";S.stk={};S.groups={};S.stkUpd=null;
-const save=()=>LS("bgz1",{mkt:S.mkt,grp:S.grp,mode:S.mode,tf:S.tf,dir:S.dir,cat:S.cat,watch:S.watch,align:S.align});
+S.coins=[];S.loaded={};S.q="";S.fut={};S.nocrowd=!!(LS("bgz1")||{}).nocrowd;S.stk={};S.groups={};S.stkUpd=null;
+const save=()=>LS("bgz1",{nocrowd:S.nocrowd,mkt:S.mkt,grp:S.grp,mode:S.mode,tf:S.tf,dir:S.dir,cat:S.cat,watch:S.watch,align:S.align});
 const isStk=()=>S.mkt==="aktien";
 const SKEY=()=>isStk()?"bcsStk":"bcs2";
 const stars=()=>new Set((LS(SKEY())||{}).stars||[]);
@@ -295,6 +303,7 @@ async function loadStocks(tf,force){if(S.stk[tf]&&!force)return;prog(0.3);
 function fillGroups(){const g=S.groups||{},sel=$("grp");const ks=Object.keys(g);
   sel.innerHTML=`<option value="all">Alle Werte</option>`+ks.map(k=>`<option value="${esc(k)}">${esc(g[k])}</option>`).join("");
   if(S.grp!=="all"&&!g[S.grp])S.grp="all";sel.value=S.grp}
+async function loadFut(force){try{S.fut=await FUT.load(S.coins.map(c=>c.sym),"1h",null,force);render()}catch(e){}}
 function prog(v){const p=$("prog");if(v==null){p.hidden=true;return}p.hidden=false;$("progI").style.width=(v*100).toFixed(0)+"%"}
 function notice(t){const n=$("notice");if(!t){n.hidden=true;return}n.hidden=false;n.textContent=t}
 async function loadAll(force){$("refresh").disabled=true;notice("");
@@ -303,7 +312,7 @@ async function loadAll(force){$("refresh").disabled=true;notice("");
     if(!S.coins.length){notice("Keine Coins geladen – bitte später nochmal „Aktualisieren“ tippen.");return}
     await loadTf(S.tf,force);
     for(const tf of["1d","4h","1h"])if(tf!==S.tf)await loadTf(tf,force);
-    $("stand").textContent=fT()}
+    $("stand").textContent=fT();loadFut(force)}
   catch(e){notice("Fehler beim Laden: "+e.message)}
   finally{$("refresh").disabled=false}}
 
@@ -353,12 +362,13 @@ function passes(c,st,ignoreCat){const a=cur(c);if(!a||!a.dir||!a.cat)return fals
   if(S.watch&&!st.has(c.id))return false;
   if(S.align){const d4=dirOf(c,"4h","std"),d1=dirOf(c,"1d","std");if(!d4||d4!==d1||d4!==a.dir)return false}
   if(isStk()&&S.grp!=="all"&&!(c.g||[]).includes(S.grp))return false;
+  if(S.nocrowd&&!isStk()){const f=FUT.forDir(S.fut[c.sym],a.dir);if(f&&f.cls==="warn")return false}
   if(S.q){const q=S.q.toLowerCase();if(!c.sym.toLowerCase().includes(q)&&!String(c.name).toLowerCase().includes(q))return false}
   if(!ignoreCat&&S.cat!=="all"&&a.cat!==S.cat)return false;
   return true}
 function render(){const st=stars();
   document.querySelectorAll("#mktSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===S.mkt));
-  $("grpBox").hidden=!isStk();const LL=LIST();
+  $("grpBox").hidden=!isStk();$("ncBox").hidden=isStk();$("futLink").hidden=isStk();$("nocrowd").checked=S.nocrowd;const LL=LIST();
   $("qLab").textContent=isStk()?"Suchen":"Coin suchen";$("q").placeholder=isStk()?"Name oder Kürzel, z. B. BMW oder NVDA":"Name oder Kürzel, z. B. Bitcoin oder BTC";
   document.querySelectorAll("#modeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===S.mode));
   document.querySelectorAll("#tfSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.tf===S.tf));
@@ -400,6 +410,9 @@ function render(){const st=stars();
   $("grid").innerHTML=shown.length?shown.map(c=>card(c,st)).join(""):`<div class="empty">${LL.length&&ready?"Keine Werte für diese Auswahl.":isStk()&&S.stk[S.tf]===null?"Aktien-Daten noch nicht verfügbar.":"Daten werden geladen …"}</div>`}
 function tfBadges(c){return["1h","4h","1d"].map(tf=>{const dr=dirOf(c,tf,S.mode);
   return`<span class="${tf===S.tf?"cur":""}">${TFS[tf].lab}<b class="${dr===1?"up":dr===-1?"down":""}" style="color:${dr===1?"var(--up)":dr===-1?"var(--down)":"var(--muted)"}">${dr===1?"Long":dr===-1?"Short":"–"}</b></span>`}).join("")}
+function futLine(c,a){if(isStk())return"";const x=S.fut[c.sym];if(!x)return"";const f=FUT.forDir(x,a.dir);
+  const n=v=>v.toLocaleString("de-DE",{maximumFractionDigits:0});const sg=v=>(v>0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:1});
+  return`<div class="fut ${f.cls}" title="Binance Futures 1H: Crowd = Anteil Long-Konten, Top = Top-Trader-Positionsgröße long, Funding aufs Jahr, OI-Änderung 24h"><span>Crowd ${n(x.crowd)} % · Top ${x.topPos!=null?n(x.topPos):"–"} % · Fund. ${sg(x.fundAPR)} % · OI ${sg(x.oiD)} %</span><b>${f.t}</b></div>`}
 function card(c,st){CUR=c.cur??"$";const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length-1].c,on=st.has(c.id);
   const dirB=`<span class="bd ${a.dir===1?"long":"short"}">${a.dir===1?"Long":"Short"}</span>`;
   let catB,last="",boxes="";
@@ -421,7 +434,7 @@ function card(c,st){CUR=c.cur??"$";const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length
     <div class="ctop">${c.img?`<img src="${esc(c.img)}" alt="" loading="lazy">`:`<span class="ini">${esc(c.sym.replace(/^\^/,"").slice(0,3))}</span>`}<div class="nm"><b>${esc(c.sym)}</b><small>${esc(c.name)}</small></div>
       <div class="pr"><b>${fP(p)}</b><small style="color:${(c.ch??0)>=0?"var(--up)":"var(--down)"}">${fPct(c.ch)}</small></div>
       <button class="star${on?" on":""}" data-star="${esc(c.id)}" aria-label="${esc(c.sym)} zur Watchlist">${on?"★":"☆"}</button></div>
-    <div class="badges">${dirB}${catB}</div><div class="tfs">${tfBadges(c)}</div>${last}
+    <div class="badges">${dirB}${catB}</div><div class="tfs">${tfBadges(c)}</div>${last}${futLine(c,a)}
     ${svgChart(k,a,S.mode,false)}<div class="dist">${boxes}</div></article>`}
 
 async function openCoin(id){const c=LIST().find(x=>x.id===id);if(!c)return;CUR=c.cur??"$";let d=c.d[S.tf];
@@ -445,6 +458,8 @@ async function openCoin(id){const c=LIST().find(x=>x.id===id);if(!c)return;CUR=c
   rows.forEach(([n,v])=>{if(!put&&p>=v){tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);put=true}tr.push(`<tr><td>${n}</td><td>${fP(v)}</td><td>${dist(v,p)}</td></tr>`)});
   if(!put)tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);
   const big=!isStk()||!!d.full;$("dBody").innerHTML=info+(a&&a.dir?svgChart(d.k,a,S.mode,big):svgChart(d.k,null,S.mode,big))+(rows.length?`<table class="ltab"><tbody>${tr.join("")}</tbody></table>`:"");
+  if(!isStk()&&S.fut[c.sym]&&a&&a.dir){const x=S.fut[c.sym],f=FUT.forDir(x,a.dir);
+    $("dBody").insertAdjacentHTML("beforeend",`<div class="fut ${f.cls}" style="margin-top:12px;font-size:.85rem;padding:10px 12px"><span>Futures 1H: Crowd ${x.crowd.toFixed(1).replace(".",",")} % long · Top-Position ${x.topPos!=null?x.topPos.toFixed(1).replace(".",","):"–"} % · Funding ${fPct(x.fundAPR)} p. a. · OI ${fPct(x.oiD)} (24h) · ${x.lage.t}</span><b>${f.t}</b></div><p class="hint" style="margin-top:6px"><a href="futures.html" style="color:var(--gold)">Alle Futures-Werte und Lagebild →</a></p>`)}
   $("dlg").showModal()}
 
 // ---------- Ereignisse ----------
@@ -457,6 +472,7 @@ $("dirSeg").onclick=e=>{const b=e.target.closest("[data-dir]");if(!b)return;S.di
 $("flist").onclick=e=>{const b=e.target.closest("[data-cat]");if(!b)return;S.cat=b.dataset.cat;save();render()};
 $("watchBtn").onclick=()=>{S.watch=!S.watch;save();render()};
 $("align").onchange=e=>{S.align=e.target.checked;save();render()};
+$("nocrowd").onchange=e=>{S.nocrowd=e.target.checked;save();render()};
 $("q").oninput=e=>{S.q=e.target.value.trim();render()};
 $("refresh").onclick=()=>loadAll(true);
 $("howBtn").onclick=()=>$("how").showModal();
