@@ -19,13 +19,15 @@ const DEF={
   liq:{on:false,n:5},
   ob:{on:false,n:3},
   lsob:{on:false,n:3},
-  fvg:{on:false,n:4},
+  fvg:{on:false,n:4,shrink:true,dir:"both"},
+  boxes:{mode:"short",n:20},
   ma1:{on:true,type:"EMA",len:21,col:"#ffeb3b"},
   ma2:{on:true,type:"EMA",len:50,col:"#ff9800"},
   ma3:{on:false,type:"SMA",len:200,col:"#e91e63"},
   vwap:{on:false,anchor:"D"},
   bb:{on:false,len:20,mult:2},
   vol:{on:true},
+  rsic:{on:false,len:14,hi:80,lo:20,cHi:"#ffeb3b",cLo:"#e040fb"},
   rsi:{on:true,len:14,hi:80,lo:20,div:true},
   macd:{on:false,f:12,s:26,sig:9},
   risk:{on:false,table:true},
@@ -77,17 +79,20 @@ function vprofile(k,from,to,rows,va){from=Math.max(0,from);to=Math.min(k.length-
   let poc=0;b.forEach((v,i)=>{if(v>b[poc])poc=i});const tot=b.reduce((a,c)=>a+c,0);if(!tot)return null;
   let a=poc,z=poc,acc=b[poc];while(acc<tot*va/100&&(a>0||z<rows-1)){const up=z<rows-1?b[z+1]:-1,dn=a>0?b[a-1]:-1;if(up>=dn){z++;acc+=b[z]}else{a--;acc+=b[a]}}
   return{lo,step,b,poc,max:b[poc],a,z,pocP:lo+(poc+0.5)*step,vah:lo+(z+1)*step,val:lo+a*step}}
-function srzones(k,pv,at){const pts=[...pv.ph.slice(-40).map(p=>p.p),...pv.pl.slice(-40).map(p=>p.p)].sort((a,b)=>a-b);const tol=at*0.6,z=[];let cur=null;
-  pts.forEach(p=>{if(cur&&p-cur.hi<=tol){cur.hi=p;cur.n++}else{if(cur)z.push(cur);cur={lo:p,hi:p,n:1}}});if(cur)z.push(cur);
-  return z.filter(x=>x.n>=2).map(x=>({lo:x.lo-tol*0.25,hi:x.hi+tol*0.25,n:x.n}))}
+function srzones(k,pv,at){const pts=[...pv.ph.slice(-40),...pv.pl.slice(-40)].sort((a,b)=>a.p-b.p);const tol=at*0.6,z=[];let cur=null;
+  pts.forEach(q=>{if(cur&&q.p-cur.hi<=tol){cur.hi=q.p;cur.n++;cur.i=Math.min(cur.i,q.i)}else{if(cur)z.push(cur);cur={lo:q.p,hi:q.p,n:1,i:q.i}}});if(cur)z.push(cur);
+  return z.filter(x=>x.n>=2).map(x=>({lo:x.lo-tol*0.25,hi:x.hi+tol*0.25,n:x.n,i:x.i}))}
 function sweeps(k,pv,n){const out=[];
   pv.ph.forEach(p=>{for(let j=p.i+1;j<k.length;j++)if(k[j].h>p.p){if(k[j].c<p.p)out.push({t:-1,i:j,lvl:p.p,from:p.i});break}});
   pv.pl.forEach(p=>{for(let j=p.i+1;j<k.length;j++)if(k[j].l<p.p){if(k[j].c>p.p)out.push({t:1,i:j,lvl:p.p,from:p.i});break}});
   return out.sort((a,b)=>a.i-b.i).slice(-n)}
-function fvgs(k,n,at){const out=[];
-  for(let i=2;i<k.length;i++){if(k[i].l>k[i-2].h&&k[i].l-k[i-2].h>at*0.1)out.push({t:1,i:i-1,top:k[i].l,bot:k[i-2].h});
-    else if(k[i].h<k[i-2].l&&k[i-2].l-k[i].h>at*0.1)out.push({t:-1,i:i-1,top:k[i-2].l,bot:k[i].h})}
-  return out.filter(f=>{for(let j=f.i+2;j<k.length;j++)if(f.t===1?k[j].l<=f.bot:k[j].h>=f.top)return false;return true}).slice(-n)}
+// FVG (ICT): Lücke zwischen Docht Kerze 1 und Docht Kerze 3. Teilweise gefüllt = Box wird kleiner, ganz gefüllt = weg.
+function fvgs(k,n,at,shrink,dir){const out=[];
+  for(let i=2;i<k.length;i++){if(dir!=="bear"&&k[i].l>k[i-2].h&&k[i].l-k[i-2].h>at*0.15)out.push({t:1,i:i-1,top:k[i].l,bot:k[i-2].h,top0:k[i].l,bot0:k[i-2].h});
+    else if(dir!=="bull"&&k[i].h<k[i-2].l&&k[i-2].l-k[i].h>at*0.15)out.push({t:-1,i:i-1,top:k[i-2].l,bot:k[i].h,top0:k[i-2].l,bot0:k[i].h})}
+  return out.filter(f=>{for(let j=f.i+2;j<k.length;j++){if(f.t===1){if(k[j].l<=f.bot)return false;if(shrink&&k[j].l<f.top)f.top=k[j].l}
+      else{if(k[j].h>=f.top)return false;if(shrink&&k[j].h>f.bot)f.bot=k[j].h}}
+    f.fill=Math.round((1-(f.top-f.bot)/(f.top0-f.bot0))*100);return true}).slice(-n)}
 
 function orderBlocks(k,ev,n){const out=[];
   ev.forEach(e=>{const a=e.piv.i,b=e.bar;if(b-a<2)return;let m=a;
@@ -115,7 +120,8 @@ function compute(k,cfg,tf,ext){const L=cfg.pivot.auto?(PIV[tf]||10):Math.max(2,+
   if(cfg.tl.on)I.tl=tlines(k,pv,Math.max(1,+cfg.tl.n||1));
   if(cfg.sr.on)I.sr=srzones(k,pv,I.atr);
   if(cfg.liq.on)I.liq=sweeps(k,pv,Math.max(1,+cfg.liq.n||5));
-  if(cfg.fvg.on)I.fvg=fvgs(k,Math.max(1,+cfg.fvg.n||4),I.atr);
+  if(cfg.fvg.on)I.fvg=fvgs(k,Math.max(1,+cfg.fvg.n||4),I.atr,cfg.fvg.shrink!==false,cfg.fvg.dir);
+  if(cfg.rsic.on)I.rsic=rsi(c,Math.max(2,+cfg.rsic.len||14));
   if(cfg.ob.on)I.ob=orderBlocks(k,I.ms.ev,Math.max(1,+cfg.ob.n||3));
   if(cfg.lsob.on)I.lsob=lsobs(k,sweeps(k,pv,999),Math.max(1,+cfg.lsob.n||3));
   if(ext){if(cfg.risk.on&&ext.risk)Object.assign(I,{risk:ext.risk,riskTab:ext.riskTab,riskNow:ext.riskNow});if(cfg.heat.on&&ext.heat)Object.assign(I,{heat:ext.heat,heatTh:ext.heatTh,heatAvg:ext.heatAvg,heatNow:ext.heatNow})}
@@ -173,14 +179,17 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
 
   // Zonen (hinten)
   const last=k.length-1,price=k[last].c;
+  const bm=(cfg.boxes&&cfg.boxes.mode)||"short",bn=Math.max(3,+(cfg.boxes&&cfg.boxes.n)||20);
+  const endX=i=>bm==="edge"?pw:Math.min(pw,X(bm==="fix"?Math.min(i+bn,last+6):last+6));
+  const box=(o,fill,stroke,lab)=>{const x1=Math.max(0,X(o.i)),x2=endX(o.i);if(x2<=x1)return;const y1=Y(o.top),y2=Y(o.bot);ctx.fillStyle=fill;ctx.fillRect(x1,y1,x2-x1,Math.max(1,y2-y1));
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.setLineDash([]);ctx.strokeRect(x1+0.5,y1+0.5,x2-x1-1,Math.max(1,y2-y1))}
+    font(9,1);ctx.textAlign="left";ctx.fillStyle=stroke||th.txt;if(x2-x1>30)ctx.fillText(lab,x1+3,(y1+y2)/2)};
   if(cfg.sr.on&&I.sr){const above=I.sr.filter(z=>z.lo>price).sort((a,b)=>a.lo-b.lo).slice(0,2),below=I.sr.filter(z=>z.hi<price).sort((a,b)=>b.hi-a.hi).slice(0,2),inside=I.sr.filter(z=>z.lo<=price&&z.hi>=price);
-    [...above,...below,...inside].forEach(z=>{band(z.lo,z.hi,null,"rgba(141,153,171,.14)");names.push({y:Y((z.lo+z.hi)/2),col:th.grey,t:`S/R ×${z.n}`})})}
-  const box=(o,fill,stroke,lab)=>{const x1=Math.max(0,X(o.i)),y1=Y(o.top),y2=Y(o.bot);ctx.fillStyle=fill;ctx.fillRect(x1,y1,pw-x1,Math.max(1,y2-y1));
-    ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.setLineDash([]);ctx.strokeRect(x1+0.5,y1+0.5,pw-x1-1,Math.max(1,y2-y1));font(9,1);ctx.textAlign="left";ctx.fillStyle=stroke;ctx.fillText(lab,x1+3,(y1+y2)/2)};
+    [...above,...below,...inside].forEach(z=>box({i:z.i,top:z.hi,bot:z.lo},"rgba(141,153,171,.14)",null,`S/R ×${z.n}`))}
   if(cfg.ob.on&&I.ob)I.ob.forEach(o=>box(o,o.t===1?"rgba(60,207,138,.13)":"rgba(255,107,94,.13)",o.t===1?"rgba(60,207,138,.75)":"rgba(255,107,94,.75)",o.t===1?"OB ▲":"OB ▼"));
   if(cfg.lsob.on&&I.lsob)I.lsob.forEach(o=>box(o,o.t===1?"rgba(41,121,255,.15)":"rgba(233,30,99,.15)",o.t===1?"#2979ff":"#e91e63",o.t===1?"LSOB ▲":"LSOB ▼"));
-  if(cfg.fvg.on&&I.fvg)I.fvg.forEach(f=>{const x1=Math.max(0,X(f.i));const y1=Y(f.top),y2=Y(f.bot);ctx.fillStyle=f.t===1?"rgba(60,207,138,.14)":"rgba(255,107,94,.14)";ctx.fillRect(x1,y1,pw-x1,Math.max(1,y2-y1));
-    font(9);ctx.textAlign="left";ctx.fillStyle=f.t===1?th.green:th.red;ctx.fillText("FVG",x1+3,(y1+y2)/2)});
+  if(cfg.fvg.on&&I.fvg)I.fvg.forEach(f=>{box(f,f.t===1?"rgba(60,207,138,.16)":"rgba(255,107,94,.16)",null,`FVG ${f.t===1?"▲":"▼"}${f.fill>0?" "+f.fill+" %":""}`);
+    const x1=Math.max(0,X(f.i)),x2=endX(f.i);if(x2>x1){const ym=Y((f.top+f.bot)/2);line(x1,ym,x2,ym,f.t===1?"rgba(60,207,138,.6)":"rgba(255,107,94,.6)",1,[2,3])}});
 
   // Volumenprofil
   let vp=null;if(cfg.vp.on){vp=cfg.vp.range==="vis"?vprofile(k,i0,Math.min(i1,last),+cfg.vp.rows||60,+cfg.vp.va||70):I.vpFix}
@@ -228,8 +237,11 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
       font(9,1);ctx.textAlign="center";ctx.fillStyle=col;ctx.fillText(e.ch?"CHoCH":"BOS",(X(e.piv.i)+X(e.bar))/2,y+(e.d===1?-8:8))})}
 
   // Kerzen
+  const rc=cfg.rsic&&cfg.rsic.on?I.rsic:null,rHi=+(cfg.rsic&&cfg.rsic.hi)||80,rLo=+(cfg.rsic&&cfg.rsic.lo)||20;
   for(let i=i0;i<=i1;i++){const x=k[i],cx=X(i),up=x.c>=x.o,col=up?th.up:th.dn,bw=Math.max(1,cw*0.66);
-    line(cx,Y(x.h),cx,Y(x.l),col,1);const yo=Y(Math.max(x.o,x.c)),yc=Y(Math.min(x.o,x.c));ctx.fillStyle=col;ctx.fillRect(cx-bw/2,yo,bw,Math.max(1,yc-yo))}
+    line(cx,Y(x.h),cx,Y(x.l),col,1);const yo=Y(Math.max(x.o,x.c)),yc=Y(Math.min(x.o,x.c)),hgt=Math.max(1,yc-yo);
+    const rv=rc?rc[i]:null,fill=rv!=null&&rv>=rHi?cfg.rsic.cHi:rv!=null&&rv<=rLo?cfg.rsic.cLo:null;
+    ctx.fillStyle=fill||col;ctx.fillRect(cx-bw/2,yo,bw,hgt);if(fill&&bw>3){ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([]);ctx.strokeRect(cx-bw/2+0.5,yo+0.5,bw-1,Math.max(1,hgt-1))}}
   // Liquidität
   if(cfg.liq.on&&I.liq)I.liq.forEach(s=>{const x=k[s.i],cx=X(s.i),col=s.t===1?"#2979ff":"#e91e63";
     if(s.t===1)line(cx,Y(Math.min(x.o,x.c)),cx,Y(x.l),col,3);else line(cx,Y(Math.max(x.o,x.c)),cx,Y(x.h),col,3);

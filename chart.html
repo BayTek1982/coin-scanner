@@ -110,7 +110,7 @@ footer{font-size:.76rem;color:var(--muted)}
 
 
 <script src="gz-core.js?v=3"></script>
-<script src="chart-core.js?v=3"></script>
+<script src="chart-core.js?v=4"></script>
 <script>
 "use strict";
 const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
@@ -208,7 +208,7 @@ function legendItems(){const c=S.cfg,l=[];const add=(on,t,col)=>{if(on)l.push({t
   [1,2,3].forEach(q=>{const m=c["ma"+q];add(m.on,`${m.type} ${m.len}`,m.col)});add(c.vwap.on,"VWAP","#b388ff");add(c.bb.on,"BB","#5b9bff");
   add(c.sk.on,"SK","#f0a33a");add(c.gz.on,"Golden Zone","#f0a33a");add(c.fib.on,"Fibonacci","#26c6da");add(c.ms.on,"Struktur","#8d99ab");
   add(c.tl.on,"Trendlinien","#ffeb3b");add(c.sr.on,"S/R","#8d99ab");add(c.vp.on,"Volumenprofil","#ba68c8");add(c.liq.on,"Liquidität","#2979ff");add(c.fvg.on,"FVG","#3ccf8a");
-  add(c.ob.on,"OB","#3ccf8a");add(c.lsob.on,"LSOB","#2979ff");add(c.rsi.on,"RSI","#b388ff");add(c.macd.on,"MACD","#5b9bff");add(c.risk.on,"Risiko","#e6d200");add(c.heat.on,"Hitze","#18c7e6");return l}
+  add(c.ob.on,"OB","#3ccf8a");add(c.rsic.on,"RSI-Kerzen","#ffeb3b");add(c.lsob.on,"LSOB","#2979ff");add(c.rsi.on,"RSI","#b388ff");add(c.macd.on,"MACD","#5b9bff");add(c.risk.on,"Risiko","#e6d200");add(c.heat.on,"Hitze","#18c7e6");return l}
 function legend(){$("ovL").innerHTML=legendItems().map(x=>`<span style="color:${x.col}">${esc(x.t)}</span>`).join("");$("ovT").innerHTML=`${esc(S.mkt==="k"?S.sym+"/USDT":S.sym)}<small>${TFLAB[S.tf]} · ${esc(S.src)}</small>`;
   document.title=`${S.sym} ${TFLAB[S.tf]} · Chart-Bot`}
 function analysis(){const rows=S.k.length?CC.summary(S.k,S.I,S.cfg,S.tf):[];
@@ -281,14 +281,16 @@ const SCHEMA=[
   {k:"sr",t:"S/R-Zonen",d:"Zonen aus mehreren Hochs/Tiefs"},
   {k:"vp",t:"Volumenprofil",d:"VAH, VAL, POC mit Profil",p:[{k:"range",t:"Bereich",type:"sel",o:[["vis","sichtbarer Bereich"],["100","letzte 100 Kerzen"],["200","letzte 200 Kerzen"],["500","letzte 500 Kerzen"]]},{k:"rows",t:"Zeilen",type:"num",min:20,max:150},{k:"va",t:"Value Area %",type:"num",min:50,max:90},{k:"hist",t:"Profil zeigen",type:"chk"}]},
   {k:"liq",t:"Liquidität (Sweep)",d:"abgeholte Hochs/Tiefs am Docht",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:15}]},
-  {k:"fvg",t:"Fair Value Gaps",d:"offene Lücken als Box",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:15}]},
+  {k:"fvg",t:"Fair Value Gaps",d:"offene Lücken als Box, wird beim Füllen kleiner",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:15},{k:"dir",t:"Richtung",type:"sel",o:[["both","beide"],["bull","nur bullisch"],["bear","nur bärisch"]]},{k:"shrink",t:"Füllung abziehen",type:"chk"}]},
   {k:"ob",t:"Orderblöcke (OB)",d:"letzte Gegenkerze vor BOS/CHoCH, bis zum Bruch",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:10}]},
-  {k:"lsob",t:"LSOB",d:"Orderblock am Liquiditäts-Sweep (blau/pink)",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:10}]}]},
+  {k:"lsob",t:"LSOB",d:"Orderblock am Liquiditäts-Sweep (blau/pink)",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:10}]},
+  {k:"boxes",t:"Box-Länge",d:"für OB, LSOB, FVG und S/R-Zonen",always:1,p:[{k:"mode",t:"Länge",type:"sel",o:[["short","kurz (bis zur letzten Kerze)"],["fix","feste Anzahl Kerzen"],["edge","bis zum Rand"]]},{k:"n",t:"Kerzen (bei fest)",type:"num",min:3,max:300}]}]},
  {g:"Im Chart",items:[
   {k:"ma1",t:"Linie 1",d:"",ma:1},{k:"ma2",t:"Linie 2",d:"",ma:1},{k:"ma3",t:"Linie 3",d:"",ma:1},
   {k:"vwap",t:"VWAP",d:"volumengewichteter Durchschnitt",p:[{k:"anchor",t:"Neustart",type:"sel",o:[["D","jeden Tag"],["W","jede Woche"]]}]},
   {k:"bb",t:"Bollinger-Bänder",d:"",p:[{k:"len",t:"Länge",type:"num",min:2,max:200},{k:"mult",t:"Faktor",type:"num",min:0.5,max:5,step:0.5}]},
-  {k:"vol",t:"Volumen",d:"Balken unten im Chart"}]},
+  {k:"vol",t:"Volumen",d:"Balken unten im Chart"},
+  {k:"rsic",t:"Kerzen nach RSI färben",d:"wie im BWI: überkauft gelb, überverkauft magenta",p:[{k:"len",t:"RSI-Länge",type:"num",min:2,max:50},{k:"hi",t:"Oben",type:"num",min:50,max:95},{k:"lo",t:"Unten",type:"num",min:5,max:50},{k:"cHi",t:"Farbe oben",type:"col"},{k:"cLo",t:"Farbe unten",type:"col"}]}]},
  {g:"Unter dem Chart",items:[
   {k:"rsi",t:"RSI",d:"mit Divergenzen (Aqua/Pink)",p:[{k:"len",t:"Länge",type:"num",min:2,max:50},{k:"hi",t:"Oben",type:"num",min:50,max:95},{k:"lo",t:"Unten",type:"num",min:5,max:50},{k:"div",t:"Divergenzen",type:"chk"}]},
   {k:"macd",t:"MACD",d:"",p:[{k:"f",t:"Schnell",type:"num",min:2,max:50},{k:"s",t:"Langsam",type:"num",min:5,max:100},{k:"sig",t:"Signal",type:"num",min:2,max:50}]},
@@ -308,7 +310,7 @@ function renderDlg(){const c=S.cfg;let h=`<div class="grp"><div class="label">Pr
   SCHEMA.forEach(g=>{h+=`<div class="grp"><div class="label">${g.g}</div>`;g.items.forEach(it=>{const o=c[it.k];
     const params=it.ma?[{k:"type",t:"Art",type:"sel",o:[["EMA","EMA"],["SMA","SMA"]]},{k:"len",t:"Länge",type:"num",min:1,max:500},{k:"col",t:"Farbe",type:"col"}]:(it.p||[]);
     const title=it.ma?`${it.t}: ${o.type} ${o.len}`:it.t;
-    h+=`<div class="it" style="margin-top:6px"><div class="hd"><label><input type="checkbox" data-on="${it.k}" ${o.on?"checked":""}><span>${esc(title)}${it.d?`<small>${esc(it.d)}</small>`:""}</span></label></div>${params.length&&o.on?`<div class="pr">${params.map(p=>pInput(it.k,p)).join("")}</div>`:""}</div>`});h+=`</div>`});
+    h+=`<div class="it" style="margin-top:6px"><div class="hd"><label>${it.always?"":`<input type="checkbox" data-on="${it.k}" ${o.on?"checked":""}>`}<span>${esc(title)}${it.d?`<small>${esc(it.d)}</small>`:""}</span></label></div>${params.length&&(o.on||it.always)?`<div class="pr">${params.map(p=>pInput(it.k,p)).join("")}</div>`:""}</div>`});h+=`</div>`});
   $("dlgBody").innerHTML=h}
 function sideOpen(o){$("side").hidden=!o;$("stage").classList.toggle("open",o);if(o)renderDlg();paint()}
 $("indBtn").onclick=()=>sideOpen($("side").hidden);$("sideX").onclick=()=>sideOpen(false);
