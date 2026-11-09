@@ -48,7 +48,9 @@ def rows(df):
         o, h, l, c = r["Open"], r["High"], r["Low"], r["Close"]
         if any(pd.isna(x) for x in (o, h, l, c)) or c <= 0:
             continue
-        out.append([int(pd.Timestamp(ts).timestamp() * 1000), r6(o), r6(h), r6(l), r6(c)])
+        v = r.get("Volume", 0)
+        v = 0 if pd.isna(v) else int(v)
+        out.append([int(pd.Timestamp(ts).timestamp() * 1000), r6(o), r6(h), r6(l), r6(c), v])
     return out
 
 
@@ -70,7 +72,7 @@ def download(tickers, period, interval):
         for t in chunk:
             try:
                 x = df[t] if isinstance(df.columns, pd.MultiIndex) else df
-                x = x[["Open", "High", "Low", "Close"]].dropna()
+                x = x[["Open", "High", "Low", "Close", "Volume"]].dropna(subset=["Open", "High", "Low", "Close"])
             except Exception:
                 continue
             if len(x) >= 40:
@@ -90,7 +92,7 @@ def four_hours(df):
         for j in range(0, len(day), 4):
             b = day.iloc[j:j + 4]
             out.append([int(b.index[0].timestamp() * 1000), r6(b["Open"].iloc[0]), r6(b["High"].max()),
-                        r6(b["Low"].min()), r6(b["Close"].iloc[-1])])
+                        r6(b["Low"].min()), r6(b["Close"].iloc[-1]), int(b["Volume"].fillna(0).sum())])
     return out
 
 

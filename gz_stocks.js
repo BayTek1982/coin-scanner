@@ -4,7 +4,7 @@
 const fs=require("fs"),path=require("path");
 const {analyzeStd,analyzeSK}=require("./gz-core.js");
 const IN=process.argv[2]||"gz_tmp",OUT=process.argv[3]||"gz_out";
-const TFS={"1h":7,"4h":14,"1d":12,"1w":15},ORDER=["1h","4h","1d","1w"],MINI=90,DETAIL=160;
+const TFS={"1h":7,"4h":14,"1d":12,"1w":15},ORDER=["1h","4h","1d","1w"],MINI=90,DETAIL=300;
 const candles=JSON.parse(fs.readFileSync(path.join(IN,"candles.json"),"utf8"));
 const meta=JSON.parse(fs.readFileSync(path.join(IN,"meta.json"),"utf8"));
 const r6=v=>typeof v!=="number"||!isFinite(v)||v===0?v:+v.toPrecision(6);
