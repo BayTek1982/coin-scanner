@@ -25,15 +25,37 @@ MAERKTE = [  # Schlüssel, Anzeige, Yahoo-Kürzel, Gruppe, TradingView-Symbol
     ("spy", "SPY", "SPY", "USA", "AMEX:SPY"),
     ("spx", "S&P 500", "^GSPC", "USA", "SP:SPX"),
     ("qqq", "QQQ", "QQQ", "USA", "NASDAQ:QQQ"),
+    ("ndx", "Nasdaq 100 (Tech)", "^NDX", "USA", "NASDAQ:NDX"),
+    ("ixic", "Nasdaq Composite", "^IXIC", "USA", "NASDAQ:IXIC"),
+    ("dji", "Dow Jones", "^DJI", "USA", "DJ:DJI"),
     ("iwm", "IWM (Russell)", "IWM", "USA", "AMEX:IWM"),
-    ("ndx", "NDX (Tech)", "^NDX", "USA", "NASDAQ:NDX"),
+    ("rut", "Russell 2000", "^RUT", "USA", "TVC:RUT"),
     ("dax", "DAX", "^GDAXI", "Europa", "XETR:DAX"),
+    ("mdax", "MDAX", "^MDAXI", "Europa", "XETR:MDAX"),
+    ("tecdax", "TecDAX", "^TECDAX", "Europa", "XETR:TDXP"),
     ("sx5e", "Euro Stoxx 50", "^STOXX50E", "Europa", "TVC:SX5E"),
+    ("ftse", "FTSE 100 (London)", "^FTSE", "Europa", "TVC:UKX"),
+    ("cac", "CAC 40 (Paris)", "^FCHI", "Europa", "EURONEXT:PX1"),
+    ("smi", "SMI (Schweiz)", "^SSMI", "Europa", "SIX:SMI"),
     ("nky", "Nikkei 225", "^N225", "Asien", "TVC:NI225"),
+    ("hsi", "Hang Seng", "^HSI", "Asien", "TVC:HSI"),
+    ("sse", "Shanghai Composite", "000001.SS", "Asien", "SSE:000001"),
+    ("kospi", "KOSPI (Korea)", "^KS11", "Asien", "TVC:KOSPI"),
+    ("nifty", "Nifty 50 (Indien)", "^NSEI", "Asien", "NSE:NIFTY"),
     ("gold", "Gold", "GC=F", "Rohstoffe", "COMEX:GC1!"),
     ("silber", "Silber", "SI=F", "Rohstoffe", "COMEX:SI1!"),
+    ("platin", "Platin", "PL=F", "Rohstoffe", "NYMEX:PL1!"),
+    ("kupfer", "Kupfer", "HG=F", "Rohstoffe", "COMEX:HG1!"),
     ("oel", "Öl (WTI)", "CL=F", "Rohstoffe", "NYMEX:CL1!"),
+    ("brent", "Öl (Brent)", "BZ=F", "Rohstoffe", "NYMEX:BB1!"),
+    ("gas", "Erdgas", "NG=F", "Rohstoffe", "NYMEX:NG1!"),
+    ("dxy", "US-Dollar-Index", "DX-Y.NYB", "Dollar & Zinsen", "TVC:DXY"),
+    ("eurusd", "EUR/USD", "EURUSD=X", "Dollar & Zinsen", "FX:EURUSD"),
+    ("tnx", "US-Zins 10 Jahre", "^TNX", "Dollar & Zinsen", "TVC:US10Y"),
     ("btc", "Bitcoin", "BTC-USD", "Krypto", "BITSTAMP:BTCUSD"),
+    ("eth", "Ethereum", "ETH-USD", "Krypto", "BITSTAMP:ETHUSD"),
+    ("sol", "Solana", "SOL-USD", "Krypto", "COINBASE:SOLUSD"),
+    ("xrp", "XRP", "XRP-USD", "Krypto", "BITSTAMP:XRPUSD"),
 ]
 SEKTOREN = [
     ("XLE", "Energie"), ("XLU", "Versorger (Utilities)"), ("XLV", "Gesundheit (Health Care)"),
@@ -124,10 +146,12 @@ def serie_streak(close, ma):
 
 
 # Börsenschluss (deutsche Zeit) je Gruppe – vorher ist die heutige Tageskerze noch nicht geschlossen
-SCHLUSS = {"USA": (22, 15), "Europa": (17, 45), "Asien": (8, 0), "Rohstoffe": (23, 15), "Sektoren": (22, 15)}
+SCHLUSS = {"USA": (22, 15), "Europa": (17, 45), "Asien": (8, 0), "Rohstoffe": (23, 15), "Sektoren": (22, 15),
+           "Dollar & Zinsen": (23, 15)}
+SCHLUSS_TICKER = {"^HSI": (9, 30), "^NSEI": (11, 15), "000001.SS": (8, 15)}  # Börsen mit späterem Schluss
 
 
-def geschlossen(d, gruppe):
+def geschlossen(d, gruppe, ticker=None):
     """Nur geschlossene Tageskerzen behalten (zählt wie TradingView die Schlusskerzen)."""
     jetzt = dt.datetime.now(BERLIN)
     letzte = d.index[-1].date()
@@ -135,7 +159,7 @@ def geschlossen(d, gruppe):
         if letzte >= dt.datetime.now(dt.timezone.utc).date():
             return d.iloc[:-1]
         return d
-    h, m = SCHLUSS.get(gruppe, (22, 15))
+    h, m = SCHLUSS_TICKER.get(ticker) or SCHLUSS.get(gruppe, (22, 15))
     if letzte == jetzt.date() and (jetzt.hour, jetzt.minute) < (h, m):
         return d.iloc[:-1]
     return d
@@ -152,9 +176,10 @@ def wochen(c, gruppe):
     return w
 
 
-def ma21(d, gruppe="USA"):
+def ma21(d, gruppe="USA", ticker=None):
     """Kurs, Veränderungen und Lage zum 21er EMA (Tag und Woche), nur geschlossene Kerzen."""
-    d = geschlossen(d, gruppe)
+    roh = d
+    d = geschlossen(d, gruppe, ticker)
     c = d["Close"]
     m = c.ewm(span=21, adjust=False).mean()
     w = wochen(c, gruppe)
@@ -178,19 +203,21 @@ def ma21(d, gruppe="USA"):
     return {
         "p": r(p, 2), "d": chg(1), "w": chg(5), "m": chg(21), "t": c.index[-1].strftime("%Y-%m-%d"),
         "ma": r(m.iloc[-1], 2), "abst": r((p / float(m.iloc[-1]) - 1) * 100),
-        "tage": sd, "wochen": sw, "trend": trend,
+        "tage": sd, "wochen": sw, "trend": trend, "dd": distribution(roh, gruppe=gruppe, ticker=ticker),
         "kerze": None if o is None or math.isnan(o) else ("grün" if p >= o else "rot"),
     }
 
 
-def distribution(d, fenster=25):
+def distribution(d, fenster=25, gruppe="USA", ticker=None):
     """D-Days genau wie im Indikator „Jens Rabe Academy – Indicator 1“:
     1. Schluss mind. 0,2 % unter dem Vortag, 2. Volumen höher als am Vortag, 3. Tageskerzen,
     4. die letzte geschlossene Wochenkerze liegt über dem 21er EMA (Woche) – sonst zählt nichts und die Anzeige ist 0.
     Gezählt werden die D-Days der letzten 25 Tageskerzen."""
-    d = geschlossen(d, "USA")
+    d = geschlossen(d, gruppe, ticker)
     c, v = d["Close"], d["Volume"]
-    w = c.resample("W-FRI").last().dropna()
+    if float(v.iloc[-30:].fillna(0).sum()) <= 0:
+        return None  # kein Volumen (z. B. Zinsen, Devisen) -> keine D-Days möglich
+    w = c.resample("W-SUN" if gruppe == "Krypto" else "W-FRI").last().dropna()
     wema = w.ewm(span=21, adjust=False).mean()
     # wie im Indikator: Schluss der Vorwoche gegen den 21er EMA der laufenden Woche
     erlaubt_w = w.shift(1) > wema
@@ -202,7 +229,7 @@ def distribution(d, fenster=25):
     # Wie TradingView: Ab Montag beginnt eine neue Woche, auch wenn die erste Tageskerze noch läuft.
     # Dann entscheidet die zuletzt geschlossene Wochenkerze (Freitag) über dem 21er EMA.
     heute = dt.datetime.now(BERLIN).date()
-    if heute.weekday() < 5 and heute > w.index[-1].date():
+    if (gruppe == "Krypto" or heute.weekday() < 5) and heute > w.index[-1].date():
         jetzt_erlaubt = bool(w.iloc[-1] > wema.iloc[-1])
     return {"anzahl": len(tage) if jetzt_erlaubt else 0, "tage": tage if jetzt_erlaubt else [],
             "erlaubt": jetzt_erlaubt}
@@ -363,7 +390,10 @@ def main():
         out = []
         for k, n, y, g, tv in MAERKTE:
             if y in kurse:
-                out.append({"k": k, "n": n, "y": y, "g": g, "tv": tv, **ma21(kurse[y], g)})
+                try:
+                    out.append({"k": k, "n": n, "y": y, "g": g, "tv": tv, **ma21(kurse[y], g, y)})
+                except Exception as e:
+                    fehler.append(f"{n}: {e}")
         return out
 
     def sektoren():

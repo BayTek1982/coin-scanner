@@ -145,7 +145,7 @@ footer{font-size:.75rem;color:var(--muted);line-height:1.5}
 
 <section>
   <h2>Gleitender Durchschnitt (21er EMA) – Tag und Woche</h2>
-  <div class="sub">Gezählt werden nur geschlossene Kerzen: „Tage“ und „Wochen“ = wie viele Schlusskerzen in Folge über (+) bzw. unter (−) dem 21er EMA. Beispiel: −2 = die letzten 2 Kerzen haben unter dem 21er geschlossen. „neu“ = gerade gewechselt. Eigene Berechnung, nicht die O4W-Signale aus TradingView.</div>
+  <div class="sub">Gezählt werden nur geschlossene Kerzen: „Tage“ und „Wochen“ = wie viele Schlusskerzen in Folge über (+) bzw. unter (−) dem 21er EMA. Beispiel: −2 = die letzten 2 Kerzen haben unter dem 21er geschlossen. „neu“ = gerade gewechselt. „D-Days“ = Distribution Days der letzten 25 Tage nach der Regel von Jens Rabe (grau 0 = letzte Wochenkerze unter dem 21er EMA, – = kein Volumen). Eigene Berechnung, nicht die O4W-Signale aus TradingView.</div>
   <div class="tbl"><table id="tm"></table></div>
 </section>
 
@@ -268,6 +268,9 @@ const MA_SPALTEN = [
   {k: "abst", t: "Abst. 21er", num: 1, f: r => `<span class="${cls(r.abst)}">${pct(r.abst)}</span>`},
   {k: "tage", t: "Tage", num: 1, f: r => streak(r.tage)},
   {k: "wochen", t: "Wochen", num: 1, f: r => streak(r.wochen)},
+  {k: "dd", t: "D-Days", num: 1, sort: r => r.dd ? r.dd.anzahl : null, f: r => !r.dd ? '<span class="flat" title="kein Volumen">–</span>'
+      : r.dd.erlaubt === false ? '<span class="flat" title="Letzte Wochenkerze unter dem 21er EMA">0</span>'
+      : `<span class="${r.dd.anzahl >= 5 ? "ja" : ""}">${r.dd.anzahl}</span>`},
   {k: "trend", t: "Trend", f: r => `<span class="pill ${esc(r.trend)}">${esc(r.trend)}</span>`},
 ];
 
