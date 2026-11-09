@@ -54,8 +54,6 @@ MAERKTE = [  # Schlüssel, Anzeige, Yahoo-Kürzel, Gruppe, TradingView-Symbol
     ("tnx", "US-Zins 10 Jahre", "^TNX", "Dollar & Zinsen", "TVC:US10Y"),
     ("btc", "Bitcoin", "BTC-USD", "Krypto", "BITSTAMP:BTCUSD"),
     ("eth", "Ethereum", "ETH-USD", "Krypto", "BITSTAMP:ETHUSD"),
-    ("sol", "Solana", "SOL-USD", "Krypto", "COINBASE:SOLUSD"),
-    ("xrp", "XRP", "XRP-USD", "Krypto", "BITSTAMP:XRPUSD"),
 ]
 SEKTOREN = [
     ("XLE", "Energie"), ("XLU", "Versorger (Utilities)"), ("XLV", "Gesundheit (Health Care)"),
