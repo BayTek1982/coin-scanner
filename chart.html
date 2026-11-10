@@ -204,7 +204,8 @@ const CCY={"$":"USD","€":"EUR","HK$":"HKD","¥":"JPY","₩":"KRW","£":"GBP","
 const SFX={DE:"€",PA:"€",AS:"€",BR:"€",MI:"€",MC:"€",HE:"€",HK:"HK$",T:"¥",KS:"₩",L:"£",SW:"CHF"};
 function ccyOf(){if(S.mkt==="k")return"$";const it=S.list.a.find(x=>x.s===S.sym);if(it&&it.c!=null)return it.c||"$";
   if(/^\^(GDAXI|MDAXI|TECDAX|STOXX50E)$/.test(S.sym))return"€";const m=S.sym.match(/\.([A-Z]{1,2})$/);return m&&SFX[m[1]]?SFX[m[1]]:"$"}
-async function fxRates(){if(S.fx)return S.fx;try{const j=await getJSON("https://api.frankfurter.app/latest?from=EUR",12000);S.fx=j.rates||null}catch(e){S.fx=null}return S.fx}
+async function fxRates(){if(S.fx)return S.fx;for(const u of["https://api.frankfurter.dev/v1/latest?base=EUR","https://api.frankfurter.app/latest?from=EUR","https://open.er-api.com/v6/latest/EUR"]){
+    try{const j=await getJSON(u,10000);if(j&&j.rates&&j.rates.USD){S.fx=j.rates;break}}catch(e){}}return S.fx}
 async function applyCur(){S.ccy=ccyOf();const code=CCY[S.ccy]||"USD";S.F=1;S.rate=null;
   if(S.cur==="eur"&&code!=="EUR"){const fx=await fxRates();if(fx&&fx[code]){S.rate=fx[code];S.F=1/fx[code]}else notice("Wechselkurs nicht verfügbar – Kurse in Originalwährung.")}
   S.k=S.F===1?S.kO:S.kO.map(x=>({t:x.t,o:x.o*S.F,h:x.h*S.F,l:x.l*S.F,c:x.c*S.F,v:x.v}))}
