@@ -1,0 +1,17 @@
+{
+  "name": "Bayazit Coin-Scanner",
+  "short_name": "Coin-Scanner",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e131b",
+  "theme_color": "#0e131b",
+  "icons": [
+    {
+      "src": "icons/scanner-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

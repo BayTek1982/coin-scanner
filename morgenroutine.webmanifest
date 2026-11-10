@@ -1,0 +1,23 @@
+{
+  "name": "Morgenroutine",
+  "short_name": "Morgenroutine",
+  "start_url": "morgenroutine.html",
+  "scope": "./morgenroutine",
+  "display": "standalone",
+  "background_color": "#151c27",
+  "theme_color": "#151c27",
+  "icons": [
+    {
+      "src": "icons/morgen-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/morgen-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
