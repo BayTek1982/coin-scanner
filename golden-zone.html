@@ -247,7 +247,7 @@ const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
 const safeY=y=>y.replace(/[^A-Za-z0-9.\-]/g,"_");
 const shortSym=y=>/^\^|=F$|\.NYB$/.test(y)?y:y.replace(/\.[A-Z]{1,2}$/,"");
 const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
-const TVIDX={"^GSPC":"SP:SPX","^NDX":"NASDAQ:NDX","^DJI":"DJ:DJI","^RUT":"TVC:RUT","^GDAXI":"XETR:DAX","^MDAXI":"XETR:MDAX","^TECDAX":"XETR:TDXP","^STOXX50E":"TVC:SX5E","^HSI":"TVC:HSI","^N225":"TVC:NI225","^KS11":"TVC:KOSPI","GC=F":"COMEX:GC1!","SI=F":"COMEX:SI1!","CL=F":"NYMEX:CL1!","DX-Y.NYB":"TVC:DXY"};
+const TVIDX={"^GSPC":"SP:SPX","^NDX":"NASDAQ:NDX","^DJI":"DJ:DJI","^RUT":"TVC:RUT","^GDAXI":"XETR:DAX","^MDAXI":"XETR:MDAX","^TECDAX":"XETR:TDXP","^STOXX50E":"TVC:SX5E","^HSI":"TVC:HSI","^N225":"TVC:NI225","^KS11":"TVC:KOSPI","GC=F":"COMEX:GC1!","SI=F":"COMEX:SI1!","CL=F":"NYMEX:CL1!","BZ=F":"TVC:UKOIL","NG=F":"NYMEX:NG1!","HG=F":"COMEX:HG1!","PL=F":"NYMEX:PL1!","PA=F":"NYMEX:PA1!","DX-Y.NYB":"TVC:DXY"};
 function ySym(y){if(TVIDX[y])return TVIDX[y];const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+(m[2]==="HK"?m[1].replace(/^0+/,""):m[1].replace(/-/g,"_"));return y.replace(/-/g,".")}
 
 const $=id=>document.getElementById(id);

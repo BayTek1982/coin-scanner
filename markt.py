@@ -18,7 +18,7 @@ import pandas as pd
 import yfinance as yf
 
 EXTRA = ["^GSPC", "^NDX", "^DJI", "^RUT", "^GDAXI", "^MDAXI", "^TECDAX", "^STOXX50E", "^HSI", "^N225", "^KS11",
-         "GC=F", "SI=F", "CL=F"]
+         "GC=F", "SI=F", "CL=F", "BZ=F", "NG=F", "HG=F", "PL=F", "PA=F"]
 OUT = "markt_out"
 KZ = "data/kennzahlen.json"
 GAP = 3 * 3600 * 1000  # Pause > 3 Stunden = neuer Handelstag

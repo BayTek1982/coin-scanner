@@ -16,7 +16,9 @@ BENCH = {
     "^GSPC": ("S&P 500", "$"), "^NDX": ("Nasdaq 100", "$"), "^DJI": ("Dow Jones", "$"), "^RUT": ("Russell 2000", "$"),
     "^GDAXI": ("DAX", "€"), "^MDAXI": ("MDAX", "€"), "^TECDAX": ("TecDAX", "€"), "^STOXX50E": ("Euro Stoxx 50", "€"),
     "^HSI": ("Hang Seng", "HK$"), "^N225": ("Nikkei 225", "¥"), "^KS11": ("KOSPI", "₩"),
-    "GC=F": ("Gold", "$"), "SI=F": ("Silber", "$"), "CL=F": ("Öl (WTI)", "$"), "DX-Y.NYB": ("US-Dollar-Index", ""),
+    "GC=F": ("Gold", "$"), "SI=F": ("Silber", "$"), "CL=F": ("Öl (WTI)", "$"), "BZ=F": ("Öl (Brent)", "$"),
+    "NG=F": ("Erdgas", "$"), "HG=F": ("Kupfer", "$"), "PL=F": ("Platin", "$"), "PA=F": ("Palladium", "$"),
+    "DX-Y.NYB": ("US-Dollar-Index", ""),
 }
 
 
