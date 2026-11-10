@@ -125,7 +125,7 @@ footer{font-size:.76rem;color:var(--muted)}
 
 
 <script src="gz-core.js?v=3"></script>
-<script src="chart-core.js?v=5"></script>
+<script src="chart-core.js?v=6"></script>
 <script>
 "use strict";
 const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
@@ -242,7 +242,7 @@ function ohlc(){const k=S.k;if(!k.length){$("ovO").innerHTML="";return}const i=L
   $("ovO").innerHTML=`O <b>${CC.fmt(x.o)}</b> H <b>${CC.fmt(x.h)}</b> L <b>${CC.fmt(x.l)}</b> C <b style="color:${ch>=0?"var(--up)":"var(--down)"}">${CC.fmt(x.c)} (${ch>=0?"+":""}${ch.toFixed(2).replace(".",",")} %)</b>`}
 function legendItems(){const c=S.cfg,l=[];const add=(on,t,col)=>{if(on)l.push({t,col})};
   [1,2,3].forEach(q=>{const m=c["ma"+q];add(m.on,`${m.type} ${m.len}`,m.col)});add(c.vwap.on,"VWAP","#b388ff");add(c.bb.on,"BB","#5b9bff");
-  add(c.sk.on,"SK","#f0a33a");add(c.gz.on,"Golden Zone","#f0a33a");add(c.fib.on,"Fibonacci","#26c6da");add(c.ms.on,"Struktur","#8d99ab");
+  add(c.sk.on,"SK","#f0a33a");add(c.gz.on,"Golden Zone","#f0a33a");add(c.fib.on,"Fibonacci","#26c6da");add(c.dfib.on,"Dyn. Fib (BSI)","#ff9800");add(c.ms.on,"Struktur","#8d99ab");
   add(c.tl.on,"Trendlinien","#ffeb3b");add(c.sr.on,"S/R","#8d99ab");add(c.vp.on,"Volumenprofil","#ba68c8");add(c.liq.on,"Liquidität","#2979ff");add(c.fvg.on,"FVG","#3ccf8a");
   add(c.ob.on,"OB","#3ccf8a");add(c.rsic.on,"RSI-Kerzen","#ffeb3b");add(c.lsob.on,"LSOB","#2979ff");add(c.rsi.on,"RSI","#b388ff");add(c.macd.on,"MACD","#5b9bff");add(c.risk.on,"Risiko","#e6d200");add(c.heat.on,"Hitze","#18c7e6");return l}
 function legend(){$("ovL").innerHTML=legendItems().map(x=>`<span style="color:${x.col}">${esc(x.t)}</span>`).join("");$("ovT").innerHTML=`${esc(S.mkt==="k"?S.sym+"/USDT":S.sym)}<small>${TFLAB[S.tf]} · ${esc(S.src)} · ${esc(curText())}</small><a class="tvl" href="${tvUrl()}" target="_blank" rel="noopener" title="In TradingView öffnen">↗ TV</a>`;
@@ -379,6 +379,13 @@ const SCHEMA=[
    i:"Fibonacci über die letzte Bewegung in Trendrichtung (Marktstruktur). Die Golden Zone 0,618–0,786 ist der typische Bereich für Rücksetzer-Einstiege. TP1 = 1,272, TP2 = 1,618. Fällt der Kurs hinter 1,0, ist die Bewegung kaputt. Eine Berührung allein ist kein Signal."},
   {k:"fib",t:"Fibonacci (Trend)",d:"wie dein BFT: Level frei wählbar",p:[{k:"levels",t:"Level",type:"text",wide:1},{k:"zone",t:"Zone 61,8–66,7",type:"chk"},COL("cLevel","Level"),COL("cGold","61,8/66,7"),COL("cZone","Zone"),COL("cExt1","127,2"),COL("cExt2","161,8")],
    i:"Fibonacci vom letzten Tief zum Hoch (bzw. umgekehrt). Der Endpunkt wandert automatisch mit, wenn ein neues Hoch/Tief entsteht – wie in deinem BFT. Level als Komma-Liste eintragbar, z. B. 0.5, 0.618, 0.786, 1.272."},
+  {k:"dfib",t:"Dynamische Fibonacci (BSI)",d:"geschwungene Fib-Linien wie dein BSI v2.26",p:[{k:"set",t:"Level-Set",type:"sel",o:[["e","Eigene"],["sk","SK System"],["kl","Klassisch"],["ict","ICT OTE"],["all","Alle Level"]]},{k:"dir",t:"Richtung",type:"sel",o:[["auto","Auto"],["long","Long"],["short","Short"]]},
+    {k:"lb",t:"Lookback (Kerzen)",type:"num",min:10,max:1000},{k:"sm",t:"Glättung",type:"num",min:1,max:100},
+    {k:"lE",t:"Level Eigene",type:"text",wide:1},{k:"lSK",t:"Level SK",type:"text",wide:1},{k:"lKL",t:"Level Klassisch",type:"text",wide:1},{k:"lICT",t:"Level ICT",type:"text",wide:1},
+    {k:"zone",t:"Golden Zone",type:"chk"},{k:"zE",t:"Zone Eigene",type:"text"},{k:"zSK",t:"Zone SK",type:"text"},{k:"zKL",t:"Zone Klassisch",type:"text"},{k:"zICT",t:"Zone ICT",type:"text"},
+    COL("cZone","Zone"),{k:"zop",t:"Zonen-Deckkraft %",type:"num",min:3,max:60},{k:"tp",t:"Ziele als",type:"sel",o:[["line","Linie"],["dots","Punkte"]]},
+    {k:"dirCol",t:"Level 1,0 nach Richtung färben",type:"chk"},COL("cLong","1,0 Long"),COL("cShort","1,0 Short"),COL("cOther","andere Level"),{k:"lab",t:"Labels rechts",type:"chk"}],
+   i:"Wie dein BSI v2.26: Über die letzten X Kerzen (Lookback) werden höchstes Hoch und tiefstes Tief gesucht. Ist das Hoch neuer, gilt LONG (Retracement von oben nach unten, Ziele über dem Hoch), sonst SHORT. Jedes Level wird geglättet, deshalb laufen die Linien geschwungen mit dem Kurs mit. Level über 1 sind Ziele (TP). Level-Set wählt, welche Liste gilt; jede Liste ist frei änderbar (Komma-getrennt). Die Golden Zone hat je Set einen eigenen Bereich (von-bis). Farben der Level wie in deinem Indikator."},
   {k:"ms",t:"Marktstruktur",d:"HH/HL/LH/LL, BOS und CHoCH",p:[{k:"n",t:"Anzahl BOS/CHoCH",type:"num",min:1,max:10},{k:"labels",t:"HH/HL-Kürzel",type:"chk"},COL("cUp","bullisch"),COL("cDn","bärisch")],
    i:"HH/HL = höhere Hochs/Tiefs (Aufwärtstrend), LH/LL = tiefere (Abwärtstrend). BOS = Strukturbruch in Trendrichtung (Fortsetzung). CHoCH = erster Bruch gegen den Trend (möglicher Trendwechsel). Gezählt wird der Schlusskurs, nicht der Docht."},
   {k:"tl",t:"Trendlinien",d:"automatisch durch Hochs/Tiefs",p:[{k:"n",t:"Linien je Seite",type:"num",min:1,max:3},COL("cSup","Unterstützung"),COL("cRes","Widerstand")],

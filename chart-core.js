@@ -12,6 +12,8 @@ const DEF={
   sk:{on:true,cLong:"#3ccf8a",cShort:"#ff6b5e",cZone:"#f0a33a",cEntry:"#f0a33a",cSL:"#ff6b5e",cTarget:"#5b9bff"},
   gz:{on:false,cZone:"#f0a33a",cTP:"#5b9bff",cLine:"#8d99ab"},
   fib:{on:false,levels:"0.5,0.559,0.618,0.667,0.786,0.886,1.272,1.618",zone:true,cLevel:"#e7ecf3",cGold:"#26c6da",cZone:"#ffeb3b",cExt1:"#ba68c8",cExt2:"#5b9bff"},
+  dfib:{on:false,set:"sk",dir:"auto",lb:100,sm:5,lE:"0,0.5,0.618,0.786,0.882,1,1.618",lSK:"0,0.5,0.559,0.618,1,1.618",lKL:"0,0.236,0.382,0.5,0.618,0.786,1,1.272,1.618,2.618",lICT:"0,0.5,0.618,0.705,0.786,1,1.272,1.618",
+    zE:"0.618-0.786",zSK:"0.5-0.618",zKL:"0.618-0.786",zICT:"0.62-0.79",zone:true,cZone:"#ff9800",zop:10,tp:"line",dirCol:true,cLong:"#00c48c",cShort:"#ff1744",cOther:"#b0bec5",lab:true},
   ms:{on:true,n:3,labels:true,cUp:"#3ccf8a",cDn:"#ff6b5e"},
   tl:{on:true,n:1,cSup:"#ffeb3b",cRes:"#9c27b0"},
   sr:{on:false,col:"#8d99ab",op:14},
@@ -35,6 +37,23 @@ const DEF={
 };
 const clone=o=>JSON.parse(JSON.stringify(o));
 function withDefaults(cfg){const out=clone(DEF);if(cfg)for(const k in cfg)if(out[k]&&typeof cfg[k]==="object")Object.assign(out[k],cfg[k]);return out}
+
+
+// ---------- Dynamische Fibonacci (wie BSI v2.26) ----------
+// Höchstes Hoch / tiefstes Tief der letzten "lb" Kerzen; Richtung: ist das Hoch neuer -> Long. Jedes Level per EMA geglättet.
+const DFCOL={"0":"#787b86","0.236":"#787b86","0.382":"#b0bec5","0.5":"#ffeb3b","0.559":"#ffffff","0.618":"#4caf50","0.705":"#ffb300","0.786":"#ffc400","0.882":"#4caf50","1":"#388e3c",
+  "1.272":"#4fa3ff","1.618":"#2962ff","1.809":"#4fa3ff","2":"#7c4dff","2.618":"#aa00ff"};
+const parseLv=s=>String(s||"").split(/[;, ]+/).map(x=>parseFloat(x.replace(",","."))).filter(x=>isFinite(x));
+function dfLevels(f){const sets={e:f.lE,sk:f.lSK,kl:f.lKL,ict:f.lICT};let lv=f.set==="all"?[].concat(...Object.values(sets).map(parseLv),[1.809,2]):parseLv(sets[f.set]||f.lSK);
+  lv=[...new Set(lv.map(x=>+x.toFixed(4)))].sort((a,b)=>a-b);const zs={e:f.zE,sk:f.zSK,kl:f.zKL,ict:f.zICT,all:f.zE}[f.set]||f.zSK,z=String(zs||"").split(/\s*[-–\/]\s*|\s+/).map(x=>parseFloat(x.replace(",","."))).filter(x=>isFinite(x));
+  return{lv,zone:z.length>=2?[z[0],z[1]]:null}}
+function dynFib(k,f){const n=k.length,lb=Math.max(10,Math.min(5000,+f.lb||100)),sm=Math.max(1,+f.sm||5),al=2/(sm+1),{lv,zone}=dfLevels(f);
+  const W=Math.min(lb,n),start=W-1;if(n<W||n<10)return null;
+  const all=zone?lv.concat(zone):lv,v=all.map(()=>new Array(n).fill(null)),longA=new Array(n).fill(null),prev=all.map(()=>null);
+  for(let i=start;i<n;i++){let hh=-Infinity,ll=Infinity,hi=0,li=0;for(let j=i-W+1;j<=i;j++){if(k[j].h>=hh){hh=k[j].h;hi=j}if(k[j].l<=ll){ll=k[j].l;li=j}}
+    const isL=f.dir==="long"?true:f.dir==="short"?false:hi>=li,rng=hh-ll;longA[i]=isL;
+    all.forEach((r,q)=>{const raw=r<=1?(isL?hh-rng*r:ll+rng*r):(isL?ll+rng*r:hh-rng*r);prev[q]=prev[q]==null?raw:al*raw+(1-al)*prev[q];v[q][i]=prev[q]})}
+  return{lv,zone,v:v.slice(0,lv.length),zv:zone?v.slice(lv.length):null,isLong:longA,start}}
 
 // ---------- Rechnen ----------
 function sma(a,n){const o=new Array(a.length).fill(null);let s=0;for(let i=0;i<a.length;i++){s+=a[i];if(i>=n)s-=a[i-n];if(i>=n-1)o[i]=s/n}return o}
@@ -109,6 +128,7 @@ function lsobs(k,sw,n){const out=[];
 function compute(k,cfg,tf,ext){const L=cfg.pivot.auto?(PIV[tf]||10):Math.max(2,+cfg.pivot.len||10),c=k.map(x=>x.c),I={L,n:k.length};
   if(k.length<2*L+10)return I;
   const pv=G.pivots(k,L);I.pv=pv;I.atr=atr(k);
+  if(cfg.dfib.on)I.dfib=dynFib(k,cfg.dfib);
   I.ma=[1,2,3].map(q=>{const m=cfg["ma"+q];if(!m.on)return null;const len=Math.max(1,+m.len||20);return{v:(m.type==="EMA"?ema:sma)(c,len),col:m.col,lab:m.type+" "+len}});
   if(cfg.vwap.on)I.vwap=vwap(k,cfg.vwap.anchor);
   if(cfg.bb.on)I.bb=bbands(c,Math.max(2,+cfg.bb.len||20),+cfg.bb.mult||2);
@@ -226,6 +246,16 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
     const f=cfg.fib;if(f.zone)band(px(0.618),px(0.667),anchor,ra(C(f.cZone),.14));
     lv.forEach(x=>{const col=C(x>1?(Math.abs(x-1.272)<0.01?f.cExt1:f.cExt2):(x>=0.6&&x<=0.67?f.cGold:f.cLevel)),dash=x>1.5?[5,4]:null;
       hl(px(x),anchor,col,1,dash,`${nf(x*100,1).replace(",0","")} %`)});hl(h,anchor,th.grey,1,null,"0 %")}
+  // Dynamische Fibonacci (BSI)
+  const df=I.dfib;
+  if(cfg.dfib.on&&df){const f=cfg.dfib,lastL=df.isLong[last],dirC=C(lastL?f.cLong:f.cShort),fm=x=>String(+x.toFixed(3)).replace(".",",");
+    if(f.zone&&df.zv){const a=df.zv[0],b=df.zv[1],zs=Math.max(i0,df.start);ctx.beginPath();let st=false;for(let i=zs;i<=i1;i++){if(a[i]==null)continue;const x=X(i),y=Y(a[i]);st?ctx.lineTo(x,y):(ctx.moveTo(x,y),st=true)}
+      for(let i=i1;i>=zs;i--){if(b[i]!=null)ctx.lineTo(X(i),Y(b[i]))}if(st){ctx.closePath();ctx.fillStyle=ra(C(f.cZone),(+f.zop||10)/100);ctx.fill()}
+      series(a,C(f.cZone),1);series(b,C(f.cZone),1)}
+    df.lv.forEach((r,q)=>{const key=String(+r.toFixed(4)),is1=Math.abs(r-1)<1e-6,col=is1&&f.dirCol?dirC:C(DFCOL[key]||f.cOther),tp=r>1,arr=df.v[q];
+      if(tp&&f.tp==="dots"){ctx.fillStyle=col;for(let i=Math.max(i0,df.start);i<=i1;i+=Math.max(1,Math.round(4/cw))){if(arr[i]==null)continue;ctx.beginPath();ctx.arc(X(i),Y(arr[i]),1.6,0,7);ctx.fill()}}
+      else series(arr,col,is1?2:1.1);
+      if(f.lab&&arr[last]!=null){const y=Y(arr[last]);if(y>=mT-2&&y<=mB+2)lbls.push({y,col,n:(tp?"TP ":"")+fm(r),p:arr[last]})}})}
   // SK-System
   const sk=I.sk;
   if(cfg.sk.on&&sk&&sk.dir){const P2=sk.P,ix=sk.idx,c=cfg.sk,dc=C(sk.dir===1?c.cLong:c.cShort),ec=C(c.cEntry),slc=C(c.cSL),tgc=C(c.cTarget);
@@ -335,6 +365,11 @@ function summary(k,I,cfg,tf){const out=[],last=k.length-1,p=k[last].c;if(!I.pv)r
     s:ev?`letzter ${ev.ch?"CHoCH":"BOS"} vor ${last-ev.bar} Kerzen bei ${fmt(ev.piv.p)}`:""})}
   const gz=I.gz;if(gz&&gz.lv){const lab={gz:"in der Golden Zone",near:"nah an der Golden Zone (0,5–0,618)",deep:"hinter der Golden Zone (0,786–1,0)",inv:"unter 1,0 – Bewegung gefährdet",trend:"noch keine Korrektur (über 0,5)",tp1:"über TP1",tp2:"über TP2"}[gz.cat]||"–";
     out.push({t:"Golden Zone",v:`${gz.dir===1?"Long":"Short"} · ${lab}`,c:gz.cat==="gz"?"gold":"",s:`Zone ${fmt(Math.min(gz.lv.g1,gz.lv.g2))} – ${fmt(Math.max(gz.lv.g1,gz.lv.g2))} · TP1 ${fmt(gz.lv.tp1)} · Ungültig ${fmt(gz.lv.l)}`})}
+  const df=I.dfib;if(cfg.dfib&&cfg.dfib.on&&df){const isL=df.isLong[last],ret=df.lv.map((r,q)=>({r,p:df.v[q][last]})).filter(x=>x.p!=null);
+    const ab=ret.filter(x=>x.p>=p).sort((a,b)=>a.p-b.p)[0],be=ret.filter(x=>x.p<p).sort((a,b)=>b.p-a.p)[0],fm=x=>String(+x.toFixed(3)).replace(".",",");
+    let inZ=false;if(df.zv){const a=df.zv[0][last],b=df.zv[1][last];inZ=a!=null&&p>=Math.min(a,b)&&p<=Math.max(a,b)}
+    out.push({t:"Dyn. Fibonacci (BSI)",v:`${isL?"Long":"Short"}-Fib${inZ?" · Kurs in der Golden Zone":""}`,c:inZ?"gold":isL?"up":"down",
+      s:`${be?`darunter ${fm(be.r)} bei ${fmt(be.p)}`:"unter allen Leveln"} · ${ab?`darüber ${fm(ab.r)} bei ${fmt(ab.p)}`:"über allen Leveln"}`})}
   const sk=I.sk;if(cfg.sk.on){if(sk&&sk.dir){const ph=sk.phase===1?"Phase 1 – warten, A noch nicht gebrochen":!sk.goal?`A gebrochen – Korrektur B→C bei ${nf(sk.r*100,1)} %`:`Ziel erreicht – Gesamtkorrektur 0→C bei ${nf(sk.r*100,1)} %`;
       out.push({t:"SK-System",v:`${sk.dir===1?"Long":"Short"}-Struktur · ${ph}`,c:sk.cat==="entry"?"gold":"",s:sk.phase===1?`Bruch von A bei ${fmt(sk.P.a)} · ungültig ${sk.dir===1?"unter":"über"} B ${fmt(sk.P.b)}`:!sk.goal?`E1 ${fmt(sk.lv[0.5])} · E4 ${fmt(sk.lv[0.667])} · SL ${fmt(sk.lv[0.786])} · Ziel ${fmt(sk.t161)}`:`50 % ${fmt(sk.lv[0.5])} · 61,8 % ${fmt(sk.lv[0.618])} · 78,6 % ${fmt(sk.lv[0.786])}`})}
     else out.push({t:"SK-System",v:"keine gültige Struktur"})}
@@ -406,6 +441,6 @@ function drawDrawings(ctx,L,k,tf,list,sel,th){if(!L||!list||!list.length)return;
     if(sel===d.id){dwHandles(d,L,k,tf).forEach(h=>{ctx.fillStyle=th.bg;ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.arc(h.x,h.y,5,0,7);ctx.fill();ctx.stroke()})}});
   ctx.restore()}
 
-return{DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile,rkCol,heatCol,heatTxt,tIdx,idxT,drawDrawings,dwHandles,dwHit,DFIB};
+return{dfLevels,DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile,rkCol,heatCol,heatTxt,tIdx,idxT,drawDrawings,dwHandles,dwHit,DFIB};
 })();
 if(typeof module!=="undefined")module.exports=CC;
