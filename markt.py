@@ -84,7 +84,8 @@ def intraday():
                     continue
                 ts = [int(pd.Timestamp(s).timestamp() * 1000) for s in x.index]
                 start = len(ts) - 1
-                while start > 0 and ts[start] - ts[start - 1] < GAP:
+                gap = 45 * 60 * 1000 if "=F" in t else GAP  # Rohstoffe handeln fast rund um die Uhr
+                while start > 0 and ts[start] - ts[start - 1] < gap:
                     start -= 1
                 day = x.iloc[start:]
                 if len(day) < 2:
