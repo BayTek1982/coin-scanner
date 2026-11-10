@@ -306,7 +306,7 @@ def tv_chart(symbol, balken=5):
 
 def mmfi():
     """MMFI = Percent of Stocks Above 50-Day Average (TradingView INDEX:MMFI), letzte geschlossene Tageskerze."""
-    k = tv_chart("INDEX:MMFI", 6)
+    k = tv_chart("INDEX:MMFI", 130)
     heute_utc = dt.datetime.now(dt.timezone.utc).date()
     jetzt = dt.datetime.now(BERLIN)
     # laufende Tageskerze erst nach US-Schluss werten
@@ -314,7 +314,9 @@ def mmfi():
         k = k[:-1]
     t = dt.datetime.fromtimestamp(k[-1][0], dt.timezone.utc).strftime("%Y-%m-%d")
     return {"wert": r(k[-1][4], 2), "vortag": r(k[-2][4], 2) if len(k) > 1 else None, "t": t,
-            "verlauf": [r(x[4], 2) for x in k], "quelle": "TradingView (INDEX:MMFI)"}
+            "verlauf": [r(x[4], 2) for x in k[-120:]],
+            "tage": [dt.datetime.fromtimestamp(x[0], dt.timezone.utc).strftime("%Y-%m-%d") for x in k[-120:]],
+            "quelle": "TradingView (INDEX:MMFI)"}
 
 
 def kalender():
@@ -356,6 +358,36 @@ def earnings():
         except Exception:
             pass
     out.sort(key=lambda x: x["datum"])
+    return out
+
+
+def termin(t):
+    cal = yf.Ticker(t).calendar
+    ed = cal.get("Earnings Date") if isinstance(cal, dict) else None
+    if not ed:
+        return None
+    d = ed[0] if isinstance(ed, (list, tuple)) else ed
+    return pd.Timestamp(d).date()
+
+
+def earnings_gross(anzahl_us=60, anzahl_dax=15, tage=35):
+    """Earnings der wichtigsten Werte (größte S&P-500- und DAX-Firmen nach Börsenwert) für diese Woche und die nächsten ~5 Wochen."""
+    st = load("data/stocks.json", {}).get("indices", {})
+    def groesste(idx, n):
+        it = [x for x in st.get(idx, {}).get("items", []) if x.get("mc")]
+        return sorted(it, key=lambda x: -x["mc"])[:n]
+    liste = [(x, "USA") for x in groesste("spx", anzahl_us)] + [(x, "DAX") for x in groesste("dax", anzahl_dax)]
+    heute = dt.date.today()
+    out = []
+    for x, markt in liste:
+        try:
+            d = termin(x["y"])
+        except Exception:
+            continue
+        if d and heute - dt.timedelta(days=1) <= d <= heute + dt.timedelta(days=tage):
+            out.append({"y": x["y"], "n": x.get("n") or x["y"], "markt": markt, "mc": r(x["mc"] / 1e9, 0),
+                        "datum": d.isoformat(), "tage": (d - heute).days})
+    out.sort(key=lambda e: (e["datum"], -(e["mc"] or 0)))
     return out
 
 
@@ -415,6 +447,11 @@ def main():
         if "^VIX9D" in kurse:
             out["vix9d"] = r(geschlossen(kurse["^VIX9D"], "USA")["Close"].iloc[-1])
         out["umkehr"] = bool(h >= 20 and h - c >= 3)
+        try:
+            m = ma21(kurse["^VIX"], "USA", "^VIX")
+            out["ma"] = {"tage": m["tage"], "wochen": m["wochen"], "abst": m["abst"]}
+        except Exception as e:
+            fehler.append(f"VIX 21er: {e}")
         return out
 
     def spy_extra():
@@ -436,6 +473,7 @@ def main():
     schritt("mmfi", mmfi)
     schritt("kalender", kalender)
     schritt("earnings", earnings)
+    schritt("earnings_gross", earnings_gross)
 
     # ---- Checks wie in der Excel-Morgenroutine
     v, fg, spy = res.get("vola", {}), res.get("fg", {}), res.get("spy", {})
@@ -455,14 +493,22 @@ def main():
     ]
     contango = v.get("kurve") == "Contango"
     bub = spx.get("trend") == "Aufwärts" and contango and spym.get("kerze") == "grün"
+    res["strategien"] = [
+        {"n": "Brot & Butter", "info": "Short Put (Basiswert unter 100 $) bzw. Bull Put Spread (über 100 $), Delta 7–12 (variabel bis 20), hohe IV wenn möglich",
+         "bedingungen": [
+             {"n": "SPY grüne Tageskerze", "ok": spym.get("kerze") == "grün", "wert": spym.get("kerze") or "–"},
+             {"n": "S&P 500 im Aufwärtstrend (21er Tag + Woche)", "ok": spx.get("trend") == "Aufwärts", "wert": spx.get("trend", "–")},
+             {"n": "VIX-Kurve in Contango", "ok": contango, "wert": v.get("kurve", "–")},
+         ]},
+    ]
+    for st in res["strategien"]:
+        st["ok"] = all(b["ok"] for b in st["bedingungen"])
     res["checks"] = {
         "panik": panik, "hedging": hedging,
         "ampel": [
             {"n": "S&P 500 Trend (21er Tag + Woche)", "wert": spx.get("trend", "–"),
              "farbe": {"Aufwärts": "gruen", "Abwärts": "rot"}.get(spx.get("trend"), "gelb")},
             {"n": "VIX-Kurve", "wert": v.get("kurve", "–"), "farbe": "gruen" if contango else "rot"},
-            {"n": "Brot & Butter (SPY grüne Kerze, Aufwärtstrend, Contango)", "wert": "ja" if bub else "nein",
-             "farbe": "gruen" if bub else "rot"},
             {"n": "Hedging prüfen", "wert": "ja" if spx.get("trend") == "Abwärts" or (v.get("vix") or 0) > 20 else "nein",
              "farbe": "rot" if spx.get("trend") == "Abwärts" or (v.get("vix") or 0) > 20 else "gruen"},
             {"n": "Panikzeichen", "wert": f"{sum(x['ja'] for x in panik)}/3",
