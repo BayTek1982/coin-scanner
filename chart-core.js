@@ -9,27 +9,27 @@ const PIV={"5m":5,"15m":10,"1h":7,"4h":14,"1d":12,"1w":15};
 // ---------- Standard-Einstellungen ----------
 const DEF={
   pivot:{auto:true,len:10},
-  sk:{on:true},
-  gz:{on:false},
-  fib:{on:false,levels:"0.5,0.559,0.618,0.667,0.786,0.886,1.272,1.618",zone:true},
-  ms:{on:true,n:3,labels:true},
-  tl:{on:true,n:1},
-  sr:{on:false},
-  vp:{on:false,range:"vis",rows:60,va:70,hist:true},
-  liq:{on:false,n:5},
-  ob:{on:false,n:3},
-  lsob:{on:false,n:3},
-  fvg:{on:false,n:4,shrink:true,dir:"both"},
+  sk:{on:true,cLong:"#3ccf8a",cShort:"#ff6b5e",cZone:"#f0a33a",cEntry:"#f0a33a",cSL:"#ff6b5e",cTarget:"#5b9bff"},
+  gz:{on:false,cZone:"#f0a33a",cTP:"#5b9bff",cLine:"#8d99ab"},
+  fib:{on:false,levels:"0.5,0.559,0.618,0.667,0.786,0.886,1.272,1.618",zone:true,cLevel:"#e7ecf3",cGold:"#26c6da",cZone:"#ffeb3b",cExt1:"#ba68c8",cExt2:"#5b9bff"},
+  ms:{on:true,n:3,labels:true,cUp:"#3ccf8a",cDn:"#ff6b5e"},
+  tl:{on:true,n:1,cSup:"#ffeb3b",cRes:"#9c27b0"},
+  sr:{on:false,col:"#8d99ab",op:14},
+  vp:{on:false,range:"vis",rows:60,va:70,hist:true,cVA:"#64b5f6",cPOC:"#ba68c8"},
+  liq:{on:false,n:5,cBull:"#2979ff",cBear:"#e91e63"},
+  ob:{on:false,n:3,cBull:"#3ccf8a",cBear:"#ff6b5e",op:13},
+  lsob:{on:false,n:3,cBull:"#2979ff",cBear:"#e91e63",op:15},
+  fvg:{on:false,n:4,shrink:true,dir:"both",cBull:"#3ccf8a",cBear:"#ff6b5e",op:16},
   boxes:{mode:"short",n:20},
   ma1:{on:true,type:"EMA",len:21,col:"#ffeb3b"},
   ma2:{on:true,type:"EMA",len:50,col:"#ff9800"},
   ma3:{on:false,type:"SMA",len:200,col:"#e91e63"},
-  vwap:{on:false,anchor:"D"},
-  bb:{on:false,len:20,mult:2},
+  vwap:{on:false,anchor:"D",col:"#b388ff"},
+  bb:{on:false,len:20,mult:2,col:"#5b9bff"},
   vol:{on:true},
   rsic:{on:false,len:14,hi:80,lo:20,cHi:"#ffeb3b",cLo:"#e040fb"},
-  rsi:{on:true,len:14,hi:80,lo:20,div:true},
-  macd:{on:false,f:12,s:26,sig:9},
+  rsi:{on:true,len:14,hi:80,lo:20,div:true,col:"#b388ff",cDivUp:"#00e5ff",cDivDn:"#ff4081"},
+  macd:{on:false,f:12,s:26,sig:9,cM:"#5b9bff",cS:"#ff9800"},
   risk:{on:false,table:true},
   heat:{on:false}
 };
@@ -145,6 +145,14 @@ const BUB=[[.5,"#1d2bd6"],[.75,"#2f6bff"],[1,"#18c7e6"],[1.25,"#22c55e"],[1.5,"#
 const heatIdx=(v,th)=>{if(th){const k=th.findIndex(t=>v<t);return k<0?7:k}return BUB.findIndex(b=>v<b[0])};
 const heatCol=(v,th)=>BUB[heatIdx(v,th)][1];
 const heatTxt=(v,th)=>["Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Normal","Warm","Heiß","Sehr heiß","Überhitzt"][heatIdx(v,th)];
+const hexRgb=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||"");if(!m)return null;const n=parseInt(m[1],16);return[n>>16&255,n>>8&255,n&255]};
+const ra=(h,a)=>{const c=hexRgb(h);return c?`rgba(${c[0]},${c[1]},${c[2]},${a})`:h};
+const isLight=h=>{const c=hexRgb(h);return c?(0.299*c[0]+0.587*c[1]+0.114*c[2])/255>0.85:false};
+// Zeit <-> Kerzen-Index (für Zeichnungen, auch über Zeitrahmen hinweg)
+const TFMS={"5m":3e5,"15m":9e5,"1h":36e5,"4h":144e5,"1d":864e5,"1w":6048e5};
+function tIdx(k,t,tf){const n=k.length,ms=TFMS[tf]||864e5;if(!n)return 0;if(t<=k[0].t)return(t-k[0].t)/ms;if(t>=k[n-1].t)return n-1+(t-k[n-1].t)/ms;
+  let a=0,b=n-1;while(b-a>1){const m=(a+b)>>1;if(k[m].t<=t)a=m;else b=m}return a+(t-k[a].t)/(k[b].t-k[a].t)}
+function idxT(k,i,tf){const n=k.length,ms=TFMS[tf]||864e5;if(!n)return 0;if(i<=0)return k[0].t+i*ms;if(i>=n-1)return k[n-1].t+(i-n+1)*ms;const a=Math.floor(i);return k[a].t+(i-a)*(k[a+1].t-k[a].t)}
 function niceStep(range,n){const raw=range/n,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;return(f<1.5?1:f<3?2:f<7?5:10)*p}
 
 function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=S.tf;
@@ -160,15 +168,15 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
   const pad=(hi-lo)*0.08||hi*0.01;lo-=pad;hi+=pad;
   if(S.view.man&&S.view.hi>S.view.lo){lo=S.view.lo;hi=S.view.hi}
   const mT=6,mB=mainH-6,Y=p=>mT+(hi-p)/(hi-lo)*(mB-mT),P=y=>hi-(y-mT)/(mB-mT)*(hi-lo);
-  const tags=[],names=[];
+  const tags=[],lbls=[],lightTh=th.bg===THEME.light.bg,C=h=>lightTh&&isLight(h)?th.fg:h;
+  const last0=k.length-1,LE=Math.max(0,Math.min(pw-4,(last0-from+0.5+4)*cw));
   const font=(s,b)=>ctx.font=`${b?"600 ":""}${s}px "JetBrains Mono",ui-monospace,monospace`;
   const line=(x1,y1,x2,y2,col,w=1,dash)=>{ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([])};
   const series=(v,col,w=1.4,dash,Yf=Y)=>{ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=w;ctx.setLineDash(dash||[]);let on=false;
     for(let i=i0;i<=i1;i++){if(v[i]==null){on=false;continue}const x=X(i),y=Yf(v[i]);if(on)ctx.lineTo(x,y);else{ctx.moveTo(x,y);on=true}}ctx.stroke();ctx.setLineDash([])};
-  const hl=(p,fromI,col,w,dash,name,tag=true)=>{if(p==null||!isFinite(p))return;const y=Y(p);const x1=fromI==null?0:Math.max(0,X(fromI));
-    if(y>=mT-2&&y<=mB+2){line(x1,y,pw,y,col,w,dash);if(name)names.push({y,col,t:name})}
-    if(tag)tags.push({y:Math.max(mT,Math.min(mB,y)),col,t:fmt(p),off:y<mT||y>mB})};
-  const band=(a,b,fromI,col)=>{if(a==null||b==null)return;const y1=Y(Math.max(a,b)),y2=Y(Math.min(a,b)),x1=fromI==null?0:Math.max(0,X(fromI));ctx.fillStyle=col;ctx.fillRect(x1,y1,pw-x1,Math.max(1,y2-y1))};
+  const hl=(p,fromI,col,w,dash,name)=>{if(p==null||!isFinite(p))return;const y=Y(p);const x1=fromI==null?0:Math.max(0,Math.min(X(fromI),LE-12));
+    if(y>=mT-2&&y<=mB+2){line(x1,y,LE,y,col,w,dash);if(name)lbls.push({y,col,n:name,p})}};
+  const band=(a,b,fromI,col)=>{if(a==null||b==null)return;const y1=Y(Math.max(a,b)),y2=Y(Math.min(a,b)),x1=fromI==null?0:Math.max(0,Math.min(X(fromI),LE-12));ctx.fillStyle=col;ctx.fillRect(x1,y1,LE-x1,Math.max(1,y2-y1))};
   const dot=(i,p,col,txt,above)=>{const x=X(i),y=Y(p);if(x<-10||x>pw+10)return;ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,3.5,0,7);ctx.fill();if(txt){font(11,1);ctx.textAlign="center";ctx.fillText(txt,x,y+(above?-12:12))}};
 
   // Raster
@@ -185,55 +193,56 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
     if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.setLineDash([]);ctx.strokeRect(x1+0.5,y1+0.5,x2-x1-1,Math.max(1,y2-y1))}
     font(9,1);ctx.textAlign="left";ctx.fillStyle=stroke||th.txt;if(x2-x1>30)ctx.fillText(lab,x1+3,(y1+y2)/2)};
   if(cfg.sr.on&&I.sr){const above=I.sr.filter(z=>z.lo>price).sort((a,b)=>a.lo-b.lo).slice(0,2),below=I.sr.filter(z=>z.hi<price).sort((a,b)=>b.hi-a.hi).slice(0,2),inside=I.sr.filter(z=>z.lo<=price&&z.hi>=price);
-    [...above,...below,...inside].forEach(z=>box({i:z.i,top:z.hi,bot:z.lo},"rgba(141,153,171,.14)",null,`S/R ×${z.n}`))}
-  if(cfg.ob.on&&I.ob)I.ob.forEach(o=>box(o,o.t===1?"rgba(60,207,138,.13)":"rgba(255,107,94,.13)",o.t===1?"rgba(60,207,138,.75)":"rgba(255,107,94,.75)",o.t===1?"OB ▲":"OB ▼"));
-  if(cfg.lsob.on&&I.lsob)I.lsob.forEach(o=>box(o,o.t===1?"rgba(41,121,255,.15)":"rgba(233,30,99,.15)",o.t===1?"#2979ff":"#e91e63",o.t===1?"LSOB ▲":"LSOB ▼"));
-  if(cfg.fvg.on&&I.fvg)I.fvg.forEach(f=>{box(f,f.t===1?"rgba(60,207,138,.16)":"rgba(255,107,94,.16)",null,`FVG ${f.t===1?"▲":"▼"}${f.fill>0?" "+f.fill+" %":""}`);
-    const x1=Math.max(0,X(f.i)),x2=endX(f.i);if(x2>x1){const ym=Y((f.top+f.bot)/2);line(x1,ym,x2,ym,f.t===1?"rgba(60,207,138,.6)":"rgba(255,107,94,.6)",1,[2,3])}});
+    [...above,...below,...inside].forEach(z=>box({i:z.i,top:z.hi,bot:z.lo},ra(cfg.sr.col,(+cfg.sr.op||14)/100),null,`S/R ×${z.n}`))}
+  const bc=(o,c,t)=>C(t===1?c.cBull:c.cBear),op=c=>(+c.op||15)/100;
+  if(cfg.ob.on&&I.ob)I.ob.forEach(o=>box(o,ra(bc(o,cfg.ob,o.t),op(cfg.ob)),ra(bc(o,cfg.ob,o.t),.8),o.t===1?"OB ▲":"OB ▼"));
+  if(cfg.lsob.on&&I.lsob)I.lsob.forEach(o=>box(o,ra(bc(o,cfg.lsob,o.t),op(cfg.lsob)),bc(o,cfg.lsob,o.t),o.t===1?"LSOB ▲":"LSOB ▼"));
+  if(cfg.fvg.on&&I.fvg)I.fvg.forEach(f=>{const fc=bc(f,cfg.fvg,f.t);box(f,ra(fc,op(cfg.fvg)),null,`FVG ${f.t===1?"▲":"▼"}${f.fill>0?" "+f.fill+" %":""}`);
+    const x1=Math.max(0,X(f.i)),x2=endX(f.i);if(x2>x1){const ym=Y((f.top+f.bot)/2);line(x1,ym,x2,ym,ra(fc,.6),1,[2,3])}});
 
   // Volumenprofil
   let vp=null;if(cfg.vp.on){vp=cfg.vp.range==="vis"?vprofile(k,i0,Math.min(i1,last),+cfg.vp.rows||60,+cfg.vp.va||70):I.vpFix}
   if(vp){if(cfg.vp.hist!==false){const wMax=pw*0.22;vp.b.forEach((v,r)=>{const yA=Y(vp.lo+(r+1)*vp.step),yB=Y(vp.lo+r*vp.step),w=v/vp.max*wMax;
-        ctx.fillStyle=r===vp.poc?"rgba(156,39,176,.55)":r>=vp.a&&r<=vp.z?"rgba(91,155,255,.28)":"rgba(141,153,171,.16)";ctx.fillRect(pw-w,yA+0.5,w,Math.max(1,yB-yA-1))})}
-    hl(vp.vah,null,"#64b5f6",1,[4,3],"VAH");hl(vp.val,null,"#64b5f6",1,[4,3],"VAL");hl(vp.pocP,null,"#ba68c8",1.4,null,"POC")}
+        ctx.fillStyle=r===vp.poc?ra(cfg.vp.cPOC,.55):r>=vp.a&&r<=vp.z?ra(cfg.vp.cVA,.28):"rgba(141,153,171,.16)";ctx.fillRect(pw-w,yA+0.5,w,Math.max(1,yB-yA-1))})}
+    hl(vp.vah,i0,C(cfg.vp.cVA),1,[4,3],"VAH");hl(vp.val,i0,C(cfg.vp.cVA),1,[4,3],"VAL");hl(vp.pocP,i0,C(cfg.vp.cPOC),1.4,null,"POC")}
 
   // Volumen
   if(cfg.vol.on){let vm=0;for(let i=i0;i<=i1;i++)vm=Math.max(vm,k[i].v||0);if(vm>0){const vh=mainH*0.16;
       for(let i=i0;i<=i1;i++){const x=k[i],h=(x.v||0)/vm*vh;ctx.fillStyle=x.c>=x.o?"rgba(60,207,138,.28)":"rgba(141,153,171,.25)";ctx.fillRect(X(i)-cw*0.35,mB-h,Math.max(1,cw*0.7),h)}}}
 
   // Linien-Indikatoren
-  if(cfg.bb.on&&I.bb){series(I.bb.up,"rgba(91,155,255,.7)",1);series(I.bb.dn,"rgba(91,155,255,.7)",1);series(I.bb.mid,"rgba(91,155,255,.45)",1,[4,3])}
-  (I.ma||[]).forEach(m=>{if(m){series(m.v,m.col,1.5);const v=m.v[last];if(v!=null)tags.push({y:Y(v),col:m.col,t:fmt(v),off:Y(v)<mT||Y(v)>mB})}});
-  if(cfg.vwap.on&&I.vwap){series(I.vwap,"#b388ff",1.5);tags.push({y:Y(I.vwap[last]),col:"#b388ff",t:fmt(I.vwap[last])})}
+  if(cfg.bb.on&&I.bb){const bcl=C(cfg.bb.col);series(I.bb.up,ra(bcl,.7),1);series(I.bb.dn,ra(bcl,.7),1);series(I.bb.mid,ra(bcl,.45),1,[4,3])}
+  (I.ma||[]).forEach(m=>{if(m){m.col=C(m.col);series(m.v,m.col,1.5);const v=m.v[last];if(v!=null)tags.push({y:Y(v),col:m.col,t:fmt(v),off:Y(v)<mT||Y(v)>mB})}});
+  if(cfg.vwap.on&&I.vwap){const vc=C(cfg.vwap.col);series(I.vwap,vc,1.5);tags.push({y:Y(I.vwap[last]),col:vc,t:fmt(I.vwap[last])})}
 
   // Golden Zone
   const gz=I.gz;
-  if(cfg.gz.on&&gz&&gz.lv){const v=gz.lv,fr=gz.from,dc=gz.dir===1?th.green:th.red;band(v.g1,v.g2,fr,th.goldbg);
-    hl(v.h,fr,th.grey,1,null,"0");hl(v.f5,fr,th.grey,1,[4,3],"0,5");hl(v.g1,fr,th.gold,1.3,null,"0,618");hl(v.g2,fr,th.gold,1.3,null,"0,786");
-    hl(v.l,fr,dc,1.5,null,"1,0");hl(v.tp1,fr,th.blue,1.3,null,"TP1");hl(v.tp2,fr,th.blue,1.1,[5,4],"TP2")}
+  if(cfg.gz.on&&gz&&gz.lv){const v=gz.lv,fr=gz.from,dc=gz.dir===1?C(cfg.sk.cLong):C(cfg.sk.cShort),gc=C(cfg.gz.cZone),tc=C(cfg.gz.cTP),lc=C(cfg.gz.cLine);band(v.g1,v.g2,fr,ra(gc,.16));
+    hl(v.h,fr,lc,1,null,"GZ 0");hl(v.f5,fr,lc,1,[4,3],"GZ 0,5");hl(v.g1,fr,gc,1.3,null,"GZ 0,618");hl(v.g2,fr,gc,1.3,null,"GZ 0,786");
+    hl(v.l,fr,dc,1.5,null,"GZ 1,0");hl(v.tp1,fr,tc,1.3,null,"TP1");hl(v.tp2,fr,tc,1.1,[5,4],"TP2")}
   // Fibonacci (Trend, wie BFT)
   if(cfg.fib.on&&gz&&gz.lv){const h=gz.lv.h,l=gz.lv.l,px=x=>h+x*(l-h),anchor=gz.dir===1?gz.Hi:gz.Hi;
     const lv=String(cfg.fib.levels).split(/[,; ]+/).map(Number).filter(x=>isFinite(x));
-    if(cfg.fib.zone)band(px(0.618),px(0.667),anchor,"rgba(255,235,59,.14)");
-    lv.forEach(x=>{const col=x>1?(Math.abs(x-1.272)<0.01?"#ba68c8":th.blue):(x>=0.6&&x<=0.67?"#26c6da":th.fg),dash=x>1.5?[5,4]:null;
-      hl(px(x),anchor,col,1,dash,`${nf(x*100,1).replace(",0","")} %`)});hl(h,anchor,th.grey,1,null,"0 %",false)}
+    const f=cfg.fib;if(f.zone)band(px(0.618),px(0.667),anchor,ra(C(f.cZone),.14));
+    lv.forEach(x=>{const col=C(x>1?(Math.abs(x-1.272)<0.01?f.cExt1:f.cExt2):(x>=0.6&&x<=0.67?f.cGold:f.cLevel)),dash=x>1.5?[5,4]:null;
+      hl(px(x),anchor,col,1,dash,`${nf(x*100,1).replace(",0","")} %`)});hl(h,anchor,th.grey,1,null,"0 %")}
   // SK-System
   const sk=I.sk;
-  if(cfg.sk.on&&sk&&sk.dir){const P2=sk.P,ix=sk.idx,dc=sk.dir===1?th.green:th.red;
-    hl(P2.z,ix.z,dc,1.4,null,"0");hl(P2.a,ix.a,th.grey,1.2,null,"A");hl(P2.b,ix.b,th.red,1.2,[2,3],"B");
-    if(sk.phase===1){[0.5,0.618,0.786].forEach(x=>hl(sk.lv[x],ix.b,th.grey,1,[3,3],`${nf(x*100,1)} %`))}
-    else{const fr=sk.goal?ix.z:ix.b;hl(P2.c,ix.c,dc,1.2,null,"C");band(sk.lv[0.5],sk.lv[0.786],fr,th.goldbg);
-      [[0.5,"E1"],[0.559,"E2"],[0.618,"E3"],[0.667,"E4"]].forEach(([x,n])=>hl(sk.lv[x],fr,th.gold,1,null,n));
-      hl(sk.lv[0.786],fr,th.red,1.3,[5,3],"SL 78,6");hl(sk.lv[0.886],fr,th.grey,1,[2,3],"88,6");
-      if(!sk.goal){hl(sk.t161,ix.brk,th.blue,1.3,null,"Ziel 161,8");hl(sk.t200,ix.brk,th.blue,1,[5,4],"200 %")}}
-    dot(ix.z,P2.z,dc,"0",sk.dir===-1);dot(ix.a,P2.a,th.grey,"A",sk.dir===1);dot(ix.b,P2.b,th.red,"B",sk.dir===-1);if(ix.c!=null)dot(ix.c,P2.c,dc,"C",sk.dir===1)}
+  if(cfg.sk.on&&sk&&sk.dir){const P2=sk.P,ix=sk.idx,c=cfg.sk,dc=C(sk.dir===1?c.cLong:c.cShort),ec=C(c.cEntry),slc=C(c.cSL),tgc=C(c.cTarget);
+    hl(P2.z,ix.z,dc,1.4,null,"SK 0");hl(P2.a,ix.a,th.grey,1.2,null,"A");hl(P2.b,ix.b,slc,1.2,[2,3],"B");
+    if(sk.phase===1){[0.5,0.618,0.786].forEach(x=>hl(sk.lv[x],ix.b,th.grey,1,[3,3],`0→A ${nf(x*100,1)} %`))}
+    else{const fr=sk.goal?ix.z:ix.b;hl(P2.c,ix.c,dc,1.2,null,"C");band(sk.lv[0.5],sk.lv[0.786],fr,ra(C(c.cZone),.16));
+      [[0.5,"E1"],[0.559,"E2"],[0.618,"E3"],[0.667,"E4"]].forEach(([x,n])=>hl(sk.lv[x],fr,ec,1,null,n));
+      hl(sk.lv[0.786],fr,slc,1.3,[5,3],"SL 78,6");hl(sk.lv[0.886],fr,th.grey,1,[2,3],"88,6");
+      if(!sk.goal){hl(sk.t161,ix.brk,tgc,1.3,null,"Ziel 161,8");hl(sk.t200,ix.brk,tgc,1,[5,4],"Ziel 200")}}
+    dot(ix.z,P2.z,dc,"0",sk.dir===-1);dot(ix.a,P2.a,th.grey,"A",sk.dir===1);dot(ix.b,P2.b,slc,"B",sk.dir===-1);if(ix.c!=null)dot(ix.c,P2.c,dc,"C",sk.dir===1)}
   // Trendlinien
-  if(cfg.tl.on&&I.tl)I.tl.forEach(t=>{const col=t.sup?"#ffeb3b":"#9c27b0",ext=last+8,y2=t.a.p+t.sl*(ext-t.a.i);
+  if(cfg.tl.on&&I.tl)I.tl.forEach(t=>{const col=C(t.sup?cfg.tl.cSup:cfg.tl.cRes),ext=last+8,y2=t.a.p+t.sl*(ext-t.a.i);
     line(X(t.a.i),Y(t.a.p),X(ext),Y(y2),col,2);const vNow=t.a.p+t.sl*(last-t.a.i);tags.push({y:Y(vNow),col,t:fmt(vNow),off:Y(vNow)<mT||Y(vNow)>mB})});
   // Marktstruktur
   if(cfg.ms.on&&I.ms){if(cfg.ms.labels!==false){font(10,1);ctx.textAlign="center";const hs=I.ms.lab.filter(l=>l.up).slice(-10),ls=I.ms.lab.filter(l=>!l.up).slice(-10);
-      [...hs,...ls].forEach(l=>{const x=X(l.i);if(x<0||x>pw)return;ctx.fillStyle=l.t==="HH"||l.t==="HL"?th.green:l.t==="LH"||l.t==="LL"?th.red:th.txt;ctx.fillText(l.t,x,Y(l.p)+(l.up?-11:11))})}
-    I.ms.ev.slice(-(+cfg.ms.n||3)).forEach(e=>{const col=e.d===1?th.green:th.red,y=Y(e.piv.p);line(X(e.piv.i),y,X(e.bar),y,col,1,[4,3]);
+      [...hs,...ls].forEach(l=>{const x=X(l.i);if(x<0||x>pw)return;ctx.fillStyle=l.t==="HH"||l.t==="HL"?C(cfg.ms.cUp):l.t==="LH"||l.t==="LL"?C(cfg.ms.cDn):th.txt;ctx.fillText(l.t,x,Y(l.p)+(l.up?-11:11))})}
+    I.ms.ev.slice(-(+cfg.ms.n||3)).forEach(e=>{const col=C(e.d===1?cfg.ms.cUp:cfg.ms.cDn),y=Y(e.piv.p);line(X(e.piv.i),y,X(e.bar),y,col,1,[4,3]);
       font(9,1);ctx.textAlign="center";ctx.fillStyle=col;ctx.fillText(e.ch?"CHoCH":"BOS",(X(e.piv.i)+X(e.bar))/2,y+(e.d===1?-8:8))})}
 
   // Kerzen
@@ -243,16 +252,19 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
     const rv=rc?rc[i]:null,fill=rv!=null&&rv>=rHi?cfg.rsic.cHi:rv!=null&&rv<=rLo?cfg.rsic.cLo:null;
     ctx.fillStyle=fill||col;ctx.fillRect(cx-bw/2,yo,bw,hgt);if(fill&&bw>3){ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([]);ctx.strokeRect(cx-bw/2+0.5,yo+0.5,bw-1,Math.max(1,hgt-1))}}
   // Liquidität
-  if(cfg.liq.on&&I.liq)I.liq.forEach(s=>{const x=k[s.i],cx=X(s.i),col=s.t===1?"#2979ff":"#e91e63";
+  if(cfg.liq.on&&I.liq)I.liq.forEach(s=>{const x=k[s.i],cx=X(s.i),col=C(s.t===1?cfg.liq.cBull:cfg.liq.cBear);
     if(s.t===1)line(cx,Y(Math.min(x.o,x.c)),cx,Y(x.l),col,3);else line(cx,Y(Math.max(x.o,x.c)),cx,Y(x.h),col,3);
     line(X(s.from),Y(s.lvl),cx,Y(s.lvl),col,1,[3,3])});
   // Divergenz im Kurs
-  if(cfg.rsi.on&&cfg.rsi.div&&I.div)I.div.forEach(d=>{const col=d.t===1?"#00e5ff":"#ff4081";line(X(d.a),Y(d.pa),X(d.b),Y(d.pb),col,1.5,[2,3]);
+  if(cfg.rsi.on&&cfg.rsi.div&&I.div)I.div.forEach(d=>{const col=C(d.t===1?cfg.rsi.cDivUp:cfg.rsi.cDivDn);line(X(d.a),Y(d.pa),X(d.b),Y(d.pb),col,1.5,[2,3]);
     font(9,1);ctx.textAlign="center";ctx.fillStyle=col;ctx.fillText(d.t===1?"Div▲":"Div▼",X(d.b),Y(d.pb)+(d.t===1?14:-14))});
 
-  // Namen der Linien (rechts im Chart)
-  names.sort((a,b)=>a.y-b.y);let prevN=-99;font(10,1);ctx.textAlign="right";
-  names.forEach(n=>{if(n.y<mT||n.y>mB)return;const y=Math.max(n.y-7,prevN+11);prevN=y;ctx.fillStyle=n.col;ctx.fillText(n.t,pw-6,y)});
+  // Beschriftung am Linienende: Name (Preis); fast gleiche Preise zusammenfassen
+  lbls.sort((a,b)=>a.y-b.y);const mg=[];lbls.forEach(l=>{const m=mg[mg.length-1];if(m&&Math.abs(m.p-l.p)<=Math.abs(l.p)*0.0008){if(!m.n.split(" · ").includes(l.n))m.n+=" · "+l.n}else mg.push({...l})});
+  font(10,1);ctx.textAlign="left";let prevL=-99;
+  mg.forEach(l=>{if(l.y<mT-4||l.y>mB+4)return;const t=`${l.n} (${fmt(l.p)})`,w=ctx.measureText(t).width;const y=Math.max(l.y,prevL+12);prevL=y;
+    let x=LE+5;if(x+w>pw-3){x=pw-3-w;ctx.fillStyle=lightTh?"rgba(255,255,255,.82)":"rgba(14,19,27,.78)";ctx.fillRect(x-3,y-6,w+6,12)}
+    ctx.fillStyle=l.col;ctx.fillText(t,x,y)});
   ctx.restore();
 
   // Unterfenster
@@ -262,16 +274,16 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
     if(s==="rsi"){const Yr=v=>pT+(100-v)/100*(pB-pT);const hiL=+cfg.rsi.hi||70,loL=+cfg.rsi.lo||30;
       ctx.fillStyle="rgba(179,136,255,.06)";ctx.fillRect(0,Yr(hiL),pw,Yr(loL)-Yr(hiL));
       line(0,Yr(hiL),pw,Yr(hiL),th.grey,1,[4,3]);line(0,Yr(loL),pw,Yr(loL),th.grey,1,[4,3]);line(0,Yr(50),pw,Yr(50),th.grid,1,[2,3]);
-      series(I.rsi,"#b388ff",1.4,null,Yr);
-      if(cfg.rsi.div&&I.div)I.div.forEach(d=>line(X(d.a),Yr(d.ra),X(d.b),Yr(d.rb),d.t===1?"#00e5ff":"#ff4081",1.5,[2,3]));
-      const rv=I.rsi[last];font(10,1);ctx.textAlign="left";ctx.fillStyle="#b388ff";ctx.fillText(`RSI ${cfg.rsi.len}  ${rv!=null?nf(rv,1):"–"}`,6,pT+8);
-      axQ.push({y:Yr(hiL),t:String(hiL)},{y:Yr(50),t:"50"},{y:Yr(loL),t:String(loL)});if(rv!=null)subTags.push({y:Yr(rv),col:"#b388ff",t:nf(rv,1)})}
+      const rcl=C(cfg.rsi.col);series(I.rsi,rcl,1.4,null,Yr);
+      if(cfg.rsi.div&&I.div)I.div.forEach(d=>line(X(d.a),Yr(d.ra),X(d.b),Yr(d.rb),C(d.t===1?cfg.rsi.cDivUp:cfg.rsi.cDivDn),1.5,[2,3]));
+      const rv=I.rsi[last];font(10,1);ctx.textAlign="left";ctx.fillStyle=rcl;ctx.fillText(`RSI ${cfg.rsi.len}  ${rv!=null?nf(rv,1):"–"}`,6,pT+8);
+      axQ.push({y:Yr(hiL),t:String(hiL)},{y:Yr(50),t:"50"},{y:Yr(loL),t:String(loL)});if(rv!=null)subTags.push({y:Yr(rv),col:rcl,t:nf(rv,1)})}
     else if(s==="macd"){const m=I.macd;let mx=0;for(let i=i0;i<=i1;i++)[m.m[i],m.sig[i],m.h[i]].forEach(v=>{if(v!=null)mx=Math.max(mx,Math.abs(v))});mx=mx||1;
       const Ym=v=>pT+(mx-v)/(2*mx)*(pB-pT);line(0,Ym(0),pw,Ym(0),th.grid,1);
       for(let i=i0;i<=i1;i++){const v=m.h[i];if(v==null)continue;ctx.fillStyle=v>=0?"rgba(60,207,138,.5)":"rgba(255,107,94,.5)";const y=Ym(v),y0=Ym(0);ctx.fillRect(X(i)-cw*0.35,Math.min(y,y0),Math.max(1,cw*0.7),Math.abs(y-y0))}
-      series(m.m,"#5b9bff",1.3,null,Ym);series(m.sig,"#ff9800",1.3,null,Ym);
+      const mc=C(cfg.macd.cM),sc=C(cfg.macd.cS);series(m.m,mc,1.3,null,Ym);series(m.sig,sc,1.3,null,Ym);
       font(10,1);ctx.textAlign="left";ctx.fillStyle=th.txt;ctx.fillText(`MACD ${cfg.macd.f}/${cfg.macd.s}/${cfg.macd.sig}`,6,pT+8);
-      axQ.push({y:Ym(0),t:"0"});const mv=m.m[last],sv=m.sig[last];if(mv!=null)subTags.push({y:Ym(mv),col:"#5b9bff",t:fmt(mv)});if(sv!=null)subTags.push({y:Ym(sv),col:"#ff9800",t:fmt(sv)})}
+      axQ.push({y:Ym(0),t:"0"});const mv=m.m[last],sv=m.sig[last];if(mv!=null)subTags.push({y:Ym(mv),col:mc,t:fmt(mv)});if(sv!=null)subTags.push({y:Ym(sv),col:sc,t:fmt(sv)})}
     else if(s==="risk"){const Yk=v=>pT+(1-v)*(pB-pT),r=I.risk;
       [[1,th.red,[4,3]],[0.8,"rgba(255,107,94,.45)",[2,3]],[0.5,th.grey,[4,3]],[0.2,"rgba(60,207,138,.45)",[2,3]],[0,th.green,[4,3]]].forEach(([v,c,d])=>line(0,Yk(v),pw,Yk(v),c,1,d));
       ctx.lineWidth=1.8;ctx.setLineDash([]);let pv=null;
@@ -341,6 +353,59 @@ function summary(k,I,cfg,tf){const out=[],last=k.length-1,p=k[last].c;if(!I.pv)r
   if(I.liq&&I.liq.length){const s=I.liq[I.liq.length-1];out.push({t:"Liquidität",v:`${s.t===1?"Tief":"Hoch"} bei ${fmt(s.lvl)} abgeholt vor ${last-s.i} Kerzen`,c:s.t===1?"up":"down"})}
   return out}
 
-return{DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile,rkCol,heatCol,heatTxt};
+
+// ---------- Zeichnungen (Werkzeuge) ----------
+const DFIB=[0,0.5,0.559,0.618,0.667,0.786,0.886,1];
+function dwXY(L,k,tf){const X=t=>(tIdx(k,t,tf)-L.from+0.5)*L.cw;return{X,Y:L.Y,T:x=>idxT(k,L.from+x/L.cw-0.5,tf),P:L.P}}
+function dwHandles(d,L,k,tf){const {X,Y}=dwXY(L,k,tf),p=d.pts;
+  if(d.type==="pos")return[{h:"e",x:X(p[0].t),y:Y(p[0].p)},{h:"tp",x:X(p[0].t),y:Y(d.tp)},{h:"sl",x:X(p[0].t),y:Y(d.sl)},{h:"t2",x:X(d.t2),y:Y(p[0].p)}];
+  if(d.type==="hl")return[{h:0,x:Math.min(L.pw-30,Math.max(30,X(p[0].t))),y:Y(p[0].p)}];
+  const hs=p.map((q,i)=>({h:i,x:X(q.t),y:Y(q.p)}));
+  if(d.type==="chan"&&p.length>1)hs.push({h:"off",x:(X(p[0].t)+X(p[1].t))/2,y:Y((p[0].p+p[1].p)/2+d.off)});
+  return hs}
+function segDist(px,py,x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,l=dx*dx+dy*dy;let t=l?((px-x1)*dx+(py-y1)*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-(x1+t*dx),py-(y1+t*dy))}
+function dwHit(d,L,k,tf,x,y){const {X,Y}=dwXY(L,k,tf),p=d.pts,tol=7;
+  switch(d.type){
+    case"hl":return Math.abs(y-Y(p[0].p))<tol;
+    case"ray":return Math.abs(y-Y(p[0].p))<tol&&x>=X(p[0].t)-tol;
+    case"vl":return Math.abs(x-X(p[0].t))<tol;
+    case"text":{return Math.abs(x-X(p[0].t)-30)<40&&Math.abs(y-Y(p[0].p))<10}
+    case"tl":{const x1=X(p[0].t),y1=Y(p[0].p);let x2=X(p[1].t),y2=Y(p[1].p);if(d.ext&&x2!==x1){const s=(y2-y1)/(x2-x1);x2=L.pw;y2=y1+s*(x2-x1)}return segDist(x,y,x1,y1,x2,y2)<tol}
+    case"chan":{const o=Y(p[0].p+d.off)-Y(p[0].p);return segDist(x,y,X(p[0].t),Y(p[0].p),X(p[1].t),Y(p[1].p))<tol||segDist(x,y,X(p[0].t),Y(p[0].p)+o,X(p[1].t),Y(p[1].p)+o)<tol}
+    case"pos":{const x1=X(p[0].t),x2=X(d.t2),ys=[Y(d.tp),Y(d.sl)];return x>=Math.min(x1,x2)&&x<=Math.max(x1,x2)&&y>=Math.min(...ys)&&y<=Math.max(...ys)}
+    default:{const xs=[X(p[0].t),X(p[1].t)],ys=[Y(p[0].p),Y(p[1].p)];return x>=Math.min(...xs)-tol&&x<=Math.max(...xs)+tol&&y>=Math.min(...ys)-tol&&y<=Math.max(...ys)+tol}}}
+function drawDrawings(ctx,L,k,tf,list,sel,th){if(!L||!list||!list.length)return;const {X,Y}=dwXY(L,k,tf),pw=L.pw;
+  ctx.save();ctx.beginPath();ctx.rect(0,0,pw,L.mainH);ctx.clip();
+  const ln=(x1,y1,x2,y2,c,w,dash)=>{ctx.beginPath();ctx.strokeStyle=c;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([])};
+  const tx=(t,x,y,c,al,bold)=>{ctx.font=`${bold?"700 ":"600 "}11px "JetBrains Mono",ui-monospace,monospace`;ctx.textAlign=al||"left";ctx.textBaseline="middle";ctx.fillStyle=c;ctx.fillText(t,x,y)};
+  list.forEach(d=>{const p=d.pts,c=d.col||"#f0a33a",w=+d.w||2;if(!p||!p.length)return;
+    switch(d.type){
+      case"tl":{const x1=X(p[0].t),y1=Y(p[0].p);let x2=X(p[1].t),y2=Y(p[1].p);if(d.ext&&x2!==x1){const s=(y2-y1)/(x2-x1);const xe=x2>x1?pw:0;y2=y1+s*(xe-x1);x2=xe}ln(x1,y1,x2,y2,c,w);break}
+      case"hl":{const y=Y(p[0].p);ln(0,y,pw,y,c,w);const t=fmt(p[0].p);ctx.font='600 10px "JetBrains Mono",monospace';const tw=ctx.measureText(t).width;ctx.fillStyle=c;ctx.fillRect(pw-tw-10,y-7,tw+8,14);tx(t,pw-6,y,"#0e131b","right");break}
+      case"ray":{const x1=X(p[0].t),y=Y(p[0].p);ln(x1,y,pw,y,c,w);tx(fmt(p[0].p),x1+4,y-8,c);break}
+      case"vl":{const x=X(p[0].t);ln(x,0,x,L.mainH,c,w,[6,4]);break}
+      case"rect":{const x1=X(p[0].t),x2=X(p[1].t),y1=Y(p[0].p),y2=Y(p[1].p);ctx.fillStyle=ra(c,.15);ctx.fillRect(Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1));ctx.strokeStyle=c;ctx.lineWidth=w;ctx.setLineDash([]);ctx.strokeRect(Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1));break}
+      case"text":{ctx.font='700 13px Archivo,system-ui,sans-serif';ctx.textAlign="left";ctx.textBaseline="middle";ctx.fillStyle=c;ctx.fillText(d.text||"Text",X(p[0].t),Y(p[0].p));break}
+      case"fib":{if(p.length<2)break;const xa=Math.min(X(p[0].t),X(p[1].t)),xb=Math.max(X(p[0].t),X(p[1].t))+40,lv=x=>p[1].p+(p[0].p-p[1].p)*x;
+        ctx.fillStyle=ra(c,.13);const za=Y(lv(0.618)),zb=Y(lv(0.667));ctx.fillRect(xa,Math.min(za,zb),xb-xa,Math.abs(zb-za));
+        ln(X(p[0].t),Y(p[0].p),X(p[1].t),Y(p[1].p),ra(c,.5),1,[3,3]);
+        DFIB.forEach(x=>{const y=Y(lv(x));ln(xa,y,xb,y,x===0||x===1?th.txt:c,1);tx(`${nf(x*100,1).replace(",0","")} % (${fmt(lv(x))})`,xb+4,y,x===0||x===1?th.txt:c)});break}
+      case"pos":{const x1=X(p[0].t),x2=X(d.t2),xa=Math.min(x1,x2),xw=Math.abs(x2-x1),e=p[0].p,ye=Y(e),yt=Y(d.tp),ys=Y(d.sl),lg=d.tp>e;
+        ctx.fillStyle="rgba(60,207,138,.18)";ctx.fillRect(xa,Math.min(ye,yt),xw,Math.abs(yt-ye));ctx.fillStyle="rgba(255,107,94,.18)";ctx.fillRect(xa,Math.min(ye,ys),xw,Math.abs(ys-ye));
+        ln(xa,ye,xa+xw,ye,th.fg,1.5);const tp=(d.tp/e-1)*100,sl=(d.sl/e-1)*100,crv=Math.abs(d.tp-e)/Math.abs(e-d.sl||1);
+        tx(`${lg?"Long":"Short"} · Ziel ${fmt(d.tp)} (${tp>=0?"+":""}${nf(tp,2)} %) · CRV ${nf(crv,2)}`,xa+4,yt+(lg?9:-9),"#3ccf8a",null,1);
+        tx(`Stop ${fmt(d.sl)} (${sl>=0?"+":""}${nf(sl,2)} %)`,xa+4,ys+(lg?-9:9),"#ff6b5e",null,1);tx(`Einstieg ${fmt(e)}`,xa+4,ye+(lg?9:-9),th.fg);break}
+      case"measure":{if(p.length<2)break;const x1=X(p[0].t),x2=X(p[1].t),y1=Y(p[0].p),y2=Y(p[1].p),up=p[1].p>=p[0].p,col=up?"#5b9bff":"#ff6b5e";
+        ctx.fillStyle=ra(col,.14);ctx.fillRect(Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1));ln(x1,y1,x2,y2,col,1.5);
+        const pc=(p[1].p/p[0].p-1)*100,bars=Math.round(tIdx(k,p[1].t,tf)-tIdx(k,p[0].t,tf));
+        const t=`${pc>=0?"+":""}${nf(pc,2)} % · ${fmt(p[1].p-p[0].p)} · ${Math.abs(bars)} Kerzen`;ctx.font='700 11px "JetBrains Mono",monospace';const tw=ctx.measureText(t).width;
+        const lx=(x1+x2)/2-tw/2-6,ly=up?Math.min(y1,y2)-18:Math.max(y1,y2)+4;ctx.fillStyle=col;ctx.fillRect(lx,ly,tw+12,15);tx(t,lx+6,ly+7.5,"#fff");break}
+      case"chan":{if(p.length<2)break;const x1=X(p[0].t),x2=X(p[1].t),y1=Y(p[0].p),y2=Y(p[1].p),o=Y(p[0].p+(d.off||0))-y1;
+        ctx.fillStyle=ra(c,.08);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x2,y2+o);ctx.lineTo(x1,y1+o);ctx.closePath();ctx.fill();
+        ln(x1,y1,x2,y2,c,w);ln(x1,y1+o,x2,y2+o,c,w);ln(x1,y1+o/2,x2,y2+o/2,ra(c,.5),1,[4,4]);break}}
+    if(sel===d.id){dwHandles(d,L,k,tf).forEach(h=>{ctx.fillStyle=th.bg;ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.arc(h.x,h.y,5,0,7);ctx.fill();ctx.stroke()})}});
+  ctx.restore()}
+
+return{DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile,rkCol,heatCol,heatTxt,tIdx,idxT,drawDrawings,dwHandles,dwHit,DFIB};
 })();
 if(typeof module!=="undefined")module.exports=CC;

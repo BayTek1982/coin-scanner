@@ -52,6 +52,18 @@ canvas{display:block;width:100%;height:100%;cursor:crosshair}
 @media (min-width:1000px){.stage.open{grid-template-columns:minmax(0,1fr) 390px}}
 @media (max-width:999px){.side{position:fixed;left:0;right:0;bottom:0;height:52vh;min-height:0;z-index:40;border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.45)}
   .side .dh::before{content:"";position:absolute;top:5px;left:50%;width:44px;height:4px;margin-left:-22px;border-radius:2px;background:var(--line)}}
+.ib{background:none;border:0;color:var(--muted);font-size:1rem;cursor:pointer;padding:2px 4px;line-height:1}.ib:hover{color:var(--gold)}
+.itx{font-size:.8rem;line-height:1.45;color:var(--fg);background:var(--chip);border-radius:8px;padding:8px 10px}
+.it .pr label.cl{gap:4px}.rs{background:none;border:0;color:var(--muted);cursor:pointer;font-size:.85rem;padding:0 2px}
+.ov .t a.tvl{pointer-events:auto;font:600 .72rem var(--f-num);color:var(--muted);text-decoration:none;margin-left:8px;border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+.ov .t a.tvl:hover{color:var(--gold);border-color:var(--gold)}
+.tools{position:absolute;left:6px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:3px;z-index:6;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:4px;opacity:.92}
+.tools button{width:30px;height:28px;border:0;border-radius:6px;background:none;color:var(--fg);cursor:pointer;font:700 .8rem var(--f-num);display:grid;place-items:center}
+.tools button:hover{background:var(--chip)}.tools button.on{background:var(--gold);color:var(--accent-ink)}.tools hr{border:0;border-top:1px solid var(--line);margin:2px 0}
+.ebar{position:absolute;top:8px;right:84px;z-index:7;display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:.78rem;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.ebar input[type=color]{width:30px;height:24px;border:0;background:none;padding:0}.ebar select,.ebar button{font:600 .76rem var(--f-body);background:var(--chip);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:3px 7px;cursor:pointer}
+.curseg button{padding:7px 10px}
+@media (max-width:700px){.tools{top:auto;bottom:34px;transform:none;flex-direction:row;flex-wrap:wrap;max-width:calc(100% - 90px)}.tools hr{display:none}}
 .autob{position:absolute;right:82px;bottom:30px;font:700 .72rem var(--f-num);background:var(--gold);color:var(--accent-ink);border:0;border-radius:6px;padding:4px 8px;cursor:pointer;z-index:5}
 .dh{position:sticky;top:0;position:sticky;background:var(--panel);display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);z-index:2}
 .dh h2{margin:0;font-size:1.1rem}
@@ -92,6 +104,7 @@ footer{font-size:.76rem;color:var(--muted)}
     <div class="seg" id="mktSeg"><button data-k="k">₿ Krypto</button><button data-k="a">📈 Aktien</button></div>
     <div class="sym"><input id="sym" autocomplete="off" spellcheck="false" placeholder="z. B. BTC"><div class="sug" id="sug" hidden></div></div>
     <div class="seg" id="tfSeg"></div>
+    <div class="seg curseg" id="curSeg" title="Währung der Kurse"><button data-cur="orig">Original</button><button data-cur="eur">€</button></div>
     <button class="btn ghost" id="refresh" title="Neu laden">⟳</button>
   </div>
   <p class="notice" id="notice" hidden></p>
@@ -99,6 +112,8 @@ footer{font-size:.76rem;color:var(--muted)}
   <div class="chartbox" id="box"><canvas id="cv"></canvas>
     <div class="ov"><div class="t" id="ovT">–</div><div class="o" id="ovO"></div><div class="lg" id="ovL"></div></div>
     <button class="autob" id="autoB" hidden title="Preisachse wieder automatisch">Auto</button>
+    <div class="tools" id="tools"></div>
+    <div class="ebar" id="ebar" hidden></div>
     <div class="loading" id="loading">Lädt …</div>
   </div>
   <aside class="side" id="side" hidden><div class="dh"><h2>Indikatoren</h2><button class="x" id="sideX" aria-label="Schließen">✕</button></div><div class="db" id="dlgBody"></div></aside>
@@ -110,7 +125,7 @@ footer{font-size:.76rem;color:var(--muted)}
 
 
 <script src="gz-core.js?v=3"></script>
-<script src="chart-core.js?v=4"></script>
+<script src="chart-core.js?v=5"></script>
 <script>
 "use strict";
 const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
@@ -125,18 +140,19 @@ function toast(t){const d=document.createElement("div");d.className="toast";d.te
 
 // ---------- Zustand ----------
 const saved=LS("bcb1")||{};
-const S={ext:null,mkt:saved.mkt||"k",sym:saved.sym||"BTC",tf:saved.tf||"4h",cfg:CC.withDefaults(saved.cfg),profiles:saved.profiles||{},k:[],I:{},view:null,cross:null,src:"",list:{k:[],a:[]}};
+const S={ext:null,cur:saved.cur||"orig",fx:null,F:1,ccy:"$",kO:[],tool:null,dw:[],sel:null,pend:null,dwd:null,mag:saved.mag!==false,dwShared:false,mkt:saved.mkt||"k",sym:saved.sym||"BTC",tf:saved.tf||"4h",cfg:CC.withDefaults(saved.cfg),profiles:saved.profiles||{},k:[],I:{},view:null,cross:null,src:"",list:{k:[],a:[]}};
 (function readHash(){const h=new URLSearchParams(location.hash.slice(1));if(!h.get("s"))return;
   S.mkt=h.get("m")==="a"?"a":"k";S.sym=h.get("s").toUpperCase().replace(/[^A-Z0-9.^=\-]/g,"");if(h.get("tf"))S.tf=h.get("tf");
-  if(h.get("i"))try{S.cfg=CC.withDefaults(JSON.parse(decodeURIComponent(escape(atob(h.get("i"))))))}catch(e){}})();
+  if(h.get("i"))try{S.cfg=CC.withDefaults(JSON.parse(decodeURIComponent(escape(atob(h.get("i"))))))}catch(e){}
+  if(h.get("d"))try{S.hashDw=JSON.parse(decodeURIComponent(escape(atob(h.get("d")))))}catch(e){}})();
 if(!TF[S.mkt].includes(S.tf))S.tf="1d";
-const save=()=>LS("bcb1",{mkt:S.mkt,sym:S.sym,tf:S.tf,cfg:S.cfg,profiles:S.profiles});
+const save=()=>LS("bcb1",{mkt:S.mkt,sym:S.sym,tf:S.tf,cfg:S.cfg,profiles:S.profiles,cur:S.cur,mag:S.mag});
 
 // ---------- Daten ----------
 async function loadList(){
   try{const t=await getJSON("https://data-api.binance.vision/api/v3/ticker/24hr?type=MINI");
     S.list.k=t.filter(x=>/USDT$/.test(x.symbol)&&+x.closeTime>Date.now()-2*864e5).map(x=>({s:x.symbol.slice(0,-4),n:"",v:+x.quoteVolume})).filter(x=>!/^(USDC|FDUSD|TUSD|USDP|DAI|EUR|BUSD|USD1)$/.test(x.s)).sort((a,b)=>b.v-a.v)}catch(e){}
-  try{const j=await getJSON(RAW+"gz_1d.json?t="+Math.floor(Date.now()/36e5),40000);S.list.a=(j.items||[]).map(x=>({s:x.y,n:x.n}))}catch(e){}}
+  try{const j=await getJSON(RAW+"gz_1d.json?t="+Math.floor(Date.now()/36e5),40000);S.list.a=(j.items||[]).map(x=>({s:x.y,n:x.n,c:x.c}))}catch(e){}}
 async function klines(){const s=S.sym,tf=S.tf;
   if(S.mkt==="k"){
     try{const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${s}USDT&interval=${tf}&limit=1000`);
@@ -172,28 +188,46 @@ function buildExt(L){const k=S.k,n=k.length;if(!n||!L.e.length)return null;const
   const at=d=>{let a=0,b=e.length-1,r=-1;while(a<=b){const m=(a+b)>>1;if(e[m].d<=d){r=m;a=m+1}else b=m-1}return r};
   const risk=new Array(n).fill(null),heat=new Array(n).fill(null);
   for(let i=0;i<n;i++){const j=at(dayOf(k[i].t));if(j<0)continue;const x=e[j];if(dayOf(k[i].t)-x.d>10)continue;risk[i]=x.r;heat[i]=x.h??null}
-  const p=k[n-1].c,ext={heatTh:L.th};
+  const p=S.kO[n-1].c,F=S.F,ext={heatTh:L.th};
   if(L.R){ext.riskNow=rkAt(L.R,p);risk[n-1]=ext.riskNow}
-  if(L.wc){const wk=wkDay(dayOf(Date.now()));const done=L.wc.filter(w=>w[0]<wk).slice(-19);if(done.length===19){const s=done.reduce((a,w)=>a+w[1],0);ext.heatAvg=(s+p)/20;ext.heatNow=p/ext.heatAvg;heat[n-1]=ext.heatNow}}
+  if(L.wc){const wk=wkDay(dayOf(Date.now()));const done=L.wc.filter(w=>w[0]<wk).slice(-19);if(done.length===19){const s=done.reduce((a,w)=>a+w[1],0);ext.heatAvg=(s+p)/20*F;ext.heatNow=p*F/ext.heatAvg;heat[n-1]=ext.heatNow}}
   if(risk.some(v=>v!=null))ext.risk=risk;if(heat.some(v=>v!=null))ext.heat=heat;
   if(L.R&&ext.riskNow!=null){const rs=e.map(x=>x.r).filter(v=>v!=null),tot=rs.length||1,rows=[];
-    for(let q=0;q<=10;q++){const r=q/10,z=rs.filter(v=>q===10?v>=0.995:v>=r&&v<r+0.1).length/tot*100;rows.push({r,p:rkPrice(L.R,r),z})}
+    for(let q=0;q<=10;q++){const r=q/10,z=rs.filter(v=>q===10?v>=0.995:v>=r&&v<r+0.1).length/tot*100;rows.push({r,p:rkPrice(L.R,r)*F,z})}
     const cur=ext.riskNow,below=rows.filter(w=>w.r<=cur).slice(-3),above=rows.filter(w=>w.r>cur).slice(0,2);
-    ext.riskTab=[...below,{r:cur,p,cur:true},...above]}
+    ext.riskTab=[...below,{r:cur,p:p*F,cur:true},...above]}
   return ext}
 async function refreshExt(){if(!(S.cfg.risk.on||S.cfg.heat.on)||!S.k.length){S.ext=null;return}
   try{S.ext=buildExt(await longData())}catch(e){S.ext=null}}
+// ---------- Währung ----------
+const CCY={"$":"USD","€":"EUR","HK$":"HKD","¥":"JPY","₩":"KRW","£":"GBP","CHF":"CHF","":"USD"};
+const SFX={DE:"€",PA:"€",AS:"€",BR:"€",MI:"€",MC:"€",HE:"€",HK:"HK$",T:"¥",KS:"₩",L:"£",SW:"CHF"};
+function ccyOf(){if(S.mkt==="k")return"$";const it=S.list.a.find(x=>x.s===S.sym);if(it&&it.c!=null)return it.c||"$";
+  if(/^\^(GDAXI|MDAXI|TECDAX|STOXX50E)$/.test(S.sym))return"€";const m=S.sym.match(/\.([A-Z]{1,2})$/);return m&&SFX[m[1]]?SFX[m[1]]:"$"}
+async function fxRates(){if(S.fx)return S.fx;try{const j=await getJSON("https://api.frankfurter.app/latest?from=EUR",12000);S.fx=j.rates||null}catch(e){S.fx=null}return S.fx}
+async function applyCur(){S.ccy=ccyOf();const code=CCY[S.ccy]||"USD";S.F=1;S.rate=null;
+  if(S.cur==="eur"&&code!=="EUR"){const fx=await fxRates();if(fx&&fx[code]){S.rate=fx[code];S.F=1/fx[code]}else notice("Wechselkurs nicht verfügbar – Kurse in Originalwährung.")}
+  S.k=S.F===1?S.kO:S.kO.map(x=>({t:x.t,o:x.o*S.F,h:x.h*S.F,l:x.l*S.F,c:x.c*S.F,v:x.v}))}
+const shownCcy=()=>S.F!==1?"€":S.ccy||"$";
+function curText(){if(S.F!==1)return`in € (umgerechnet, 1 € = ${CC.fmt(S.rate)} ${S.ccy})`;return`in ${S.ccy||"$"}${S.cur==="eur"&&S.ccy!=="€"?"":" (Original)"}`}
 let loadId=0;
 async function load(keepView){const id=++loadId;$("loading").hidden=!!keepView;notice("");
   try{const r=await klines();if(id!==loadId)return;const atEnd=!S.view||S.view.to>=S.k.length-1;
-    const grow=r.k.length-S.k.length;S.k=r.k;S.src=r.src;
+    const grow=r.k.length-S.kO.length;S.kO=r.k;S.src=r.src;await applyCur();if(id!==loadId)return;loadDw();
     if(!keepView||!S.view)resetView();else if(atEnd){S.view.from+=grow;S.view.to+=grow}
     await refreshExt();if(id!==loadId)return;recompute()}
   catch(e){if(id===loadId){notice(e.message);S.k=[];S.I={};paint()}}
   finally{if(id===loadId)$("loading").hidden=true}}
-function resetView(){const n=S.k.length,w=Math.min(n,innerWidth<700?90:160);S.view={from:n-w,to:n+Math.max(4,w*0.08),man:false}}
+function resetView(){const n=S.k.length,w=Math.min(n,innerWidth<700?90:160);S.view={from:n-w,to:n+Math.max(6,w*0.2),man:false}}
 function recompute(){S.I=S.k.length?CC.compute(S.k,S.cfg,S.tf,S.ext):{};paint();analysis();legend()}
 function notice(t){$("notice").hidden=!t;$("notice").textContent=t||""}
+
+// ---------- TradingView-Link ----------
+const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
+const TVIDX={"^GSPC":"SP:SPX","^NDX":"NASDAQ:NDX","^DJI":"DJ:DJI","^RUT":"TVC:RUT","^GDAXI":"XETR:DAX","^MDAXI":"XETR:MDAX","^TECDAX":"XETR:TDXP","^STOXX50E":"TVC:SX5E","^HSI":"TVC:HSI","^N225":"TVC:NI225","^KS11":"TVC:KOSPI","GC=F":"COMEX:GC1!","SI=F":"COMEX:SI1!","CL=F":"NYMEX:CL1!","DX-Y.NYB":"TVC:DXY"};
+function tvSym(){if(S.mkt==="k")return(/OKX/.test(S.src)?"OKX:":"BINANCE:")+S.sym+"USDT";const y=S.sym;if(TVIDX[y])return TVIDX[y];
+  const m=y.match(/^(.+)\.([A-Z]{1,2})$/);if(m&&YEX[m[2]])return YEX[m[2]]+":"+(m[2]==="HK"?m[1].replace(/^0+/,""):m[1].replace(/-/g,"_"));return y.replace(/-/g,".")}
+const tvUrl=()=>`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSym())}&interval=${{"5m":"5","15m":"15","1h":"60","4h":"240","1d":"D","1w":"W"}[S.tf]}`;
 
 // ---------- Zeichnen ----------
 const cv=$("cv"),ctx=cv.getContext("2d");let L=null,raf=0;
@@ -201,7 +235,8 @@ const dark=()=>matchMedia("(prefers-color-scheme: dark)").matches;
 function paint(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;
   if(cv.width!==Math.round(r.width*d)||cv.height!==Math.round(r.height*d)){cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d)}
   ctx.setTransform(d,0,0,d,0,0);if(!S.view&&S.k.length)resetView();
-  L=CC.draw(ctx,r.width,r.height,{k:S.k,I:S.I,cfg:S.cfg,tf:S.tf,view:S.view||{from:0,to:1},cross:S.cross,th:CC.THEME[dark()?"dark":"light"]});ohlc();$("autoB").hidden=!(S.view&&S.view.man)})}
+  const th=CC.THEME[dark()?"dark":"light"];L=CC.draw(ctx,r.width,r.height,{k:S.k,I:S.I,cfg:S.cfg,tf:S.tf,view:S.view||{from:0,to:1},cross:S.cross,th});
+  if(L&&S.k.length)CC.drawDrawings(ctx,L,S.k,S.tf,dispDw(),S.sel,th);renderEbar();ohlc();$("autoB").hidden=!(S.view&&S.view.man)})}
 function ohlc(){const k=S.k;if(!k.length){$("ovO").innerHTML="";return}const i=L&&L.ci!=null?L.ci:k.length-1,x=k[i],p=i>0?k[i-1].c:x.o,ch=(x.c/p-1)*100;
   $("ovO").innerHTML=`O <b>${CC.fmt(x.o)}</b> H <b>${CC.fmt(x.h)}</b> L <b>${CC.fmt(x.l)}</b> C <b style="color:${ch>=0?"var(--up)":"var(--down)"}">${CC.fmt(x.c)} (${ch>=0?"+":""}${ch.toFixed(2).replace(".",",")} %)</b>`}
 function legendItems(){const c=S.cfg,l=[];const add=(on,t,col)=>{if(on)l.push({t,col})};
@@ -209,13 +244,14 @@ function legendItems(){const c=S.cfg,l=[];const add=(on,t,col)=>{if(on)l.push({t
   add(c.sk.on,"SK","#f0a33a");add(c.gz.on,"Golden Zone","#f0a33a");add(c.fib.on,"Fibonacci","#26c6da");add(c.ms.on,"Struktur","#8d99ab");
   add(c.tl.on,"Trendlinien","#ffeb3b");add(c.sr.on,"S/R","#8d99ab");add(c.vp.on,"Volumenprofil","#ba68c8");add(c.liq.on,"Liquidität","#2979ff");add(c.fvg.on,"FVG","#3ccf8a");
   add(c.ob.on,"OB","#3ccf8a");add(c.rsic.on,"RSI-Kerzen","#ffeb3b");add(c.lsob.on,"LSOB","#2979ff");add(c.rsi.on,"RSI","#b388ff");add(c.macd.on,"MACD","#5b9bff");add(c.risk.on,"Risiko","#e6d200");add(c.heat.on,"Hitze","#18c7e6");return l}
-function legend(){$("ovL").innerHTML=legendItems().map(x=>`<span style="color:${x.col}">${esc(x.t)}</span>`).join("");$("ovT").innerHTML=`${esc(S.mkt==="k"?S.sym+"/USDT":S.sym)}<small>${TFLAB[S.tf]} · ${esc(S.src)}</small>`;
+function legend(){$("ovL").innerHTML=legendItems().map(x=>`<span style="color:${x.col}">${esc(x.t)}</span>`).join("");$("ovT").innerHTML=`${esc(S.mkt==="k"?S.sym+"/USDT":S.sym)}<small>${TFLAB[S.tf]} · ${esc(S.src)} · ${esc(curText())}</small><a class="tvl" href="${tvUrl()}" target="_blank" rel="noopener" title="In TradingView öffnen">↗ TV</a>`;
+  document.querySelectorAll("#curSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cur===S.cur));
   document.title=`${S.sym} ${TFLAB[S.tf]} · Chart-Bot`}
 function analysis(){const rows=S.k.length?CC.summary(S.k,S.I,S.cfg,S.tf):[];
   if(S.k.length&&S.cfg.risk.on&&!S.I.risk)rows.push({t:"Risiko",v:"keine Daten",s:S.mkt==="k"?"Risiko gibt es für die Coins mit langer Kurs-Historie (wie im Coin-Scanner).":"Für diese Aktie liegen keine Risiko-Daten vor."});
   if(S.k.length&&S.cfg.heat.on&&!S.I.heat)rows.push({t:"Hitze",v:"keine Daten",s:"zu wenig Wochen-Historie"});
   $("ana").innerHTML=rows.map(r=>`<div class="r ${r.c||""}"><span class="k">${esc(r.t)}</span><span class="v">${esc(r.v)}</span>${r.s?`<span class="s">${esc(r.s)}</span>`:""}</div>`).join("");
-  $("anaSub").textContent=S.k.length?`${S.sym} · ${TFLAB[S.tf]} · Pivot ${S.I.L||"–"} · Stand ${new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`:""}
+  $("anaSub").textContent=S.k.length?`${S.sym} · ${TFLAB[S.tf]} · ${curText()} · Pivot ${S.I.L||"–"} · Stand ${new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} Uhr`:""}
 
 // ---------- Bedienung Chart ----------
 const ptrs=new Map();let drag=null,pinch=null;
@@ -227,9 +263,11 @@ const onAxis=(x,y)=>L&&x>L.pw&&y<L.mainH;
 function setMan(){if(S.view&&!S.view.man&&L){S.view.man=true;S.view.lo=L.lo;S.view.hi=L.hi}}
 function scaleY(f){setMan();const v=S.view,mid=(v.lo+v.hi)/2,half=(v.hi-v.lo)/2*f;v.lo=mid-half;v.hi=mid+half}
 cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+  if(ptrs.size===1&&dwDown(e.offsetX,e.offsetY,e.pointerType)){drag=null;return}
   if(ptrs.size===1&&S.view)drag={x:e.offsetX,y:e.offsetY,from:S.view.from,to:S.view.to,lo:L?L.lo:0,hi:L?L.hi:1,man:S.view.man,moved:false,vert:false,touch:e.pointerType==="touch",axis:onAxis(e.offsetX,e.offsetY)};
   if(ptrs.size===2&&S.view){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),from:S.view.from,to:S.view.to,cx:(a.x+b.x)/2};drag=null}});
 cv.addEventListener("pointermove",e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+  if(dwMove(e.offsetX,e.offsetY,ptrs.has(e.pointerId)))return;
   cv.style.cursor=onAxis(e.offsetX,e.offsetY)?"ns-resize":drag&&drag.moved?"grabbing":"crosshair";
   if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(d>10){const f=pinch.d/d;S.view.from=pinch.from;S.view.to=pinch.to;const c=idxAt(pinch.cx);
       S.view.from=c-(c-pinch.from)*f;S.view.to=c+(pinch.to-c)*f;clampView();paint()}return}
@@ -240,7 +278,7 @@ cv.addEventListener("pointermove",e=>{if(ptrs.has(e.pointerId))ptrs.set(e.pointe
       if(drag.vert&&L){const pp=(drag.hi-drag.lo)/(L.mB-L.mT),off=(drag.man?0:0);S.view.man=true;S.view.lo=drag.lo+dy*pp+off;S.view.hi=drag.hi+dy*pp+off}
       S.cross=drag.touch?null:{x:e.offsetX,y:e.offsetY};paint();return}}
   if(e.pointerType!=="touch"||drag){S.cross={x:e.offsetX,y:e.offsetY};paint()}});
-const up=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(drag&&!drag.moved&&drag.touch&&!drag.axis){S.cross=S.cross?null:{x:e.offsetX,y:e.offsetY};paint()}if(!ptrs.size)drag=null};
+const up=e=>{ptrs.delete(e.pointerId);if(dwUp(e.offsetX,e.offsetY))return;if(ptrs.size<2)pinch=null;if(drag&&!drag.moved&&drag.touch&&!drag.axis){S.cross=S.cross?null:{x:e.offsetX,y:e.offsetY};paint()}if(!ptrs.size)drag=null};
 cv.addEventListener("pointerup",up);cv.addEventListener("pointercancel",up);
 cv.addEventListener("pointerleave",e=>{if(e.pointerType!=="touch"){S.cross=null;paint()}});
 cv.addEventListener("wheel",e=>{e.preventDefault();if(onAxis(e.offsetX,e.offsetY)){scaleY(e.deltaY>0?1.1:1/1.1);paint();return}zoom(e.deltaY>0?1.12:1/1.12,e.offsetX)},{passive:false});
@@ -249,12 +287,73 @@ $("autoB").onclick=()=>{if(S.view){S.view.man=false;paint()}};
 addEventListener("resize",paint);matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",paint);
 if(window.ResizeObserver)new ResizeObserver(()=>paint()).observe($("box"));
 
+// ---------- Zeichenwerkzeuge ----------
+const TOOLS=[["sel","✥","Auswählen / verschieben"],["tl","╱","Trendlinie"],["hl","─","Horizontale Linie"],["ray","⟶","Horizontaler Strahl"],["vl","│","Vertikale Linie"],["rect","▭","Rechteck / Zone"],["text","T","Text"],
+  ["fib","F","Fibonacci (SK-Level)"],["long","L↑","Long-Position"],["short","S↓","Short-Position"],["measure","↔","Messen"],["chan","⫽","Paralleler Kanal"],["-"],["mag","🧲","Magnet (rastet an Hoch/Tief/Open/Close ein)"],["clear","🗑","Alle Zeichnungen dieses Werts löschen"]];
+const TWO=["tl","rect","fib","measure","chan"];
+function renderTools(){$("tools").innerHTML=TOOLS.map(t=>t[0]==="-"?"<hr>":`<button data-tool="${t[0]}" title="${t[2]}" class="${(t[0]==="sel"&&!S.tool)||S.tool===t[0]||(t[0]==="mag"&&S.mag)?"on":""}">${t[1]}</button>`).join("")}
+$("tools").addEventListener("click",e=>{const b=e.target.closest("[data-tool]");if(!b)return;const t=b.dataset.tool;
+  if(t==="mag"){S.mag=!S.mag;save();toast(S.mag?"Magnet an":"Magnet aus")}
+  else if(t==="clear"){if(S.dw.length&&confirm(`Alle ${S.dw.length} Zeichnungen für ${S.sym} löschen?`)){S.dw=[];S.sel=null;saveDw()}}
+  else{S.tool=t==="sel"?null:t;S.pend=null;S.sel=null}
+  renderTools();paint()});
+const dwKey=()=>`bcbD:${S.mkt}:${S.sym}`;
+function loadDw(){if(S.hashDw){S.dw=S.hashDw;S.hashDw=null;S.dwShared=true}else{S.dw=LS(dwKey())||[];S.dwShared=false}S.sel=null;S.pend=null}
+function saveDw(){S.dwShared=false;LS(dwKey(),S.dw)}
+const nid=()=>Math.random().toString(36).slice(2,9);
+// gespeichert wird in Originalwährung, angezeigt in der aktuellen
+function dispDw(){const F=S.F;if(F===1)return S.dw;return S.dw.map(d=>({...d,pts:d.pts.map(q=>({t:q.t,p:q.p*F})),tp:d.tp!=null?d.tp*F:d.tp,sl:d.sl!=null?d.sl*F:d.sl,off:d.off!=null?d.off*F:d.off}))}
+function toPt(x,y){const k=S.k,i=Math.round(S.view.from+x/L.cw-0.5);let t=CC.idxT(k,S.view.from+x/L.cw-0.5,S.tf),p=L.P(y);
+  if(S.mag&&i>=0&&i<k.length){let best=null;[k[i].o,k[i].h,k[i].l,k[i].c].forEach(v=>{const d=Math.abs(L.Y(v)-y);if(d<16&&(!best||d<best.d))best={d,v}});if(best){p=best.v;t=k[i].t}}
+  return{t,p:p/S.F}}
+function hitDw(x,y){const list=dispDw();for(let j=list.length-1;j>=0;j--){const d=list[j];
+    if(S.sel===d.id){const h=CC.dwHandles(d,L,S.k,S.tf).find(h=>Math.hypot(h.x-x,h.y-y)<11);if(h)return{d:S.dw[j],h:h.h}}}
+  for(let j=list.length-1;j>=0;j--)if(CC.dwHit(list[j],L,S.k,S.tf,x,y))return{d:S.dw[j],h:null};return null}
+function dwDown(x,y,ptype){if(!L||!S.k.length||x>L.pw||y>L.mainH)return false;const pt=toPt(x,y);
+  if(S.pend){const d=S.pend;d.pts[1]=pt;S.pend=null;S.tool=null;S.sel=d.id;saveDw();renderTools();paint();return true}
+  if(S.tool){const t=S.tool,d={id:nid(),type:t,col:t==="tl"||t==="chan"?"#ffeb3b":t==="fib"?"#26c6da":t==="rect"?"#5b9bff":t==="text"?"#e7ecf3":"#f0a33a",w:2,pts:[pt]};
+    if(t==="text"){const tx=prompt("Text:","");if(!tx){return true}d.text=tx.slice(0,80)}
+    if(t==="long"||t==="short"){const lg=t==="long";d.type="pos";d.tp=pt.p*(lg?1.04:0.96);d.sl=pt.p*(lg?0.98:1.02);d.t2=CC.idxT(S.k,CC.tIdx(S.k,pt.t,S.tf)+20,S.tf)}
+    if(t==="chan")d.off=-(L.hi-L.lo)*0.08/S.F;
+    S.dw.push(d);
+    if(TWO.includes(t)){d.pts[1]={...pt};S.pend=d;S.dwd={mode:"new",x,y,moved:false}}else{S.tool=null;S.sel=d.id;saveDw();renderTools()}
+    paint();return true}
+  const hit=hitDw(x,y);if(hit){S.sel=hit.d.id;S.dwd={id:hit.d.id,h:hit.h,start:pt,orig:JSON.parse(JSON.stringify(hit.d)),x,y,moved:false};paint();return true}
+  if(S.sel){S.sel=null;paint()}return false}
+function lineP(d,t){const a=d.pts[0],b=d.pts[1];if(!b||b.t===a.t)return a.p;return a.p+(b.p-a.p)*(t-a.t)/(b.t-a.t)}
+function dwMove(x,y,pressed){if(!L)return false;
+  if(S.pend&&S.dwd&&S.dwd.mode==="new"){if(Math.hypot(x-S.dwd.x,y-S.dwd.y)>6)S.dwd.moved=true;S.pend.pts[1]=toPt(x,y);paint();return true}
+  if(S.pend){S.pend.pts[1]=toPt(x,y);paint();return true}
+  if(S.dwd&&pressed){const g=S.dwd,d=S.dw.find(z=>z.id===g.id);if(!d)return false;const pt=toPt(x,y);if(Math.hypot(x-g.x,y-g.y)>3)g.moved=true;const o=g.orig;
+    if(g.h==null){const dt=pt.t-g.start.t,dp=pt.p-g.start.p;d.pts=o.pts.map(q=>({t:q.t+dt,p:q.p+dp}));if(o.type==="pos"){d.tp=o.tp+dp;d.sl=o.sl+dp;d.t2=o.t2+dt}}
+    else if(o.type==="pos"){if(g.h==="e"){const dp=pt.p-o.pts[0].p,dt=pt.t-o.pts[0].t;d.pts=[{t:o.pts[0].t+dt,p:pt.p}];d.tp=o.tp+dp;d.sl=o.sl+dp;d.t2=o.t2+dt}else if(g.h==="tp")d.tp=pt.p;else if(g.h==="sl")d.sl=pt.p;else if(g.h==="t2")d.t2=pt.t}
+    else if(g.h==="off"){d.off=pt.p-lineP(d,pt.t)}
+    else if(o.type==="hl"){d.pts=[{t:o.pts[0].t,p:pt.p}]}
+    else d.pts[g.h]=pt;
+    paint();return true}
+  if(!pressed&&L){cv.style.cursor=S.tool?"crosshair":hitDw(x,y)?"move":cv.style.cursor}
+  return false}
+function dwUp(x,y){if(S.pend&&S.dwd&&S.dwd.mode==="new"){const moved=S.dwd.moved;S.dwd=null;if(moved){const d=S.pend;S.pend=null;S.tool=null;S.sel=d.id;saveDw();renderTools();paint()}return true}
+  if(S.dwd){const g=S.dwd;S.dwd=null;if(g.moved)saveDw();return true}return false}
+function renderEbar(){const b=$("ebar"),d=S.dw.find(z=>z.id===S.sel);if(!d){b.hidden=true;return}b.hidden=false;
+  if(b.dataset.id===d.id&&b.dataset.t===d.type)return;b.dataset.id=d.id;b.dataset.t=d.type;
+  const names={tl:"Trendlinie",hl:"Horizontale Linie",ray:"Strahl",vl:"Vertikale Linie",rect:"Rechteck",text:"Text",fib:"Fibonacci",pos:"Position",measure:"Messen",chan:"Kanal"};
+  b.innerHTML=`<b>${names[d.type]||""}</b>${d.type!=="pos"&&d.type!=="measure"?`<input type="color" data-e="col" value="${d.col}" title="Farbe"><select data-e="w" title="Stärke">${[1,2,3,4].map(n=>`<option ${+d.w===n?"selected":""}>${n}</option>`).join("")}</select>`:""}${d.type==="tl"?`<label><input type="checkbox" data-e="ext" ${d.ext?"checked":""}> verlängern</label>`:""}${d.type==="text"?`<button data-e="txt">Text ändern</button>`:""}<button data-e="del" title="Löschen (Entf)">🗑 Löschen</button>`}
+$("ebar").addEventListener("input",e=>{const d=S.dw.find(z=>z.id===S.sel);if(!d)return;const k=e.target.dataset.e;if(k==="col")d.col=e.target.value;if(k==="w")d.w=+e.target.value;if(k==="ext")d.ext=e.target.checked;saveDw();paint()});
+$("ebar").addEventListener("click",e=>{const k=e.target.dataset&&e.target.dataset.e,d=S.dw.find(z=>z.id===S.sel);if(!d)return;
+  if(k==="del"){S.dw=S.dw.filter(z=>z.id!==d.id);S.sel=null;saveDw();paint()}if(k==="txt"){const t=prompt("Text:",d.text||"");if(t!=null){d.text=t.slice(0,80);saveDw();paint()}}});
+addEventListener("keydown",e=>{if(e.target.matches("input,select,textarea"))return;
+  if((e.key==="Delete"||e.key==="Backspace")&&S.sel){S.dw=S.dw.filter(z=>z.id!==S.sel);S.sel=null;saveDw();paint()}
+  if(e.key==="Escape"){if(S.pend){S.dw=S.dw.filter(z=>z!==S.pend);S.pend=null}S.tool=null;S.sel=null;renderTools();paint()}});
+
 // ---------- Oben: Markt, Symbol, Zeitrahmen ----------
 function renderBar(){document.querySelectorAll("#mktSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===S.mkt));
   $("tfSeg").innerHTML=TF[S.mkt].map(t=>`<button data-tf="${t}" aria-pressed="${t===S.tf}">${TFLAB[t]}</button>`).join("");$("sym").value=S.sym}
 $("mktSeg").onclick=e=>{const b=e.target.closest("[data-k]");if(!b||b.dataset.k===S.mkt)return;S.mkt=b.dataset.k;S.sym=S.mkt==="k"?"BTC":"^GDAXI";if(!TF[S.mkt].includes(S.tf))S.tf="1d";save();renderBar();load()};
 $("tfSeg").onclick=e=>{const b=e.target.closest("[data-tf]");if(!b)return;S.tf=b.dataset.tf;save();renderBar();load()};
 $("refresh").onclick=()=>load(true);
+$("curSeg").onclick=async e=>{const b=e.target.closest("[data-cur]");if(!b||b.dataset.cur===S.cur)return;S.cur=b.dataset.cur;save();
+  const k0=S.k.length;await applyCur();if(S.view&&S.view.man){S.view.man=false}await refreshExt();recompute()};
 let sugI=-1;
 function showSug(){const q=$("sym").value.trim().toUpperCase(),list=S.list[S.mkt];if(!q){$("sug").hidden=true;return}
   const m=list.filter(x=>x.s.toUpperCase().startsWith(q)||(x.n&&x.n.toUpperCase().includes(q))).slice(0,30);
@@ -270,36 +369,57 @@ $("sug").addEventListener("pointerdown",e=>{const b=e.target.closest("[data-s]")
 $("sym").addEventListener("blur",()=>setTimeout(()=>$("sug").hidden=true,150));
 
 // ---------- Indikator-Einstellungen ----------
-const COLS=[["#ffeb3b","Gelb"],["#ff9800","Orange"],["#e91e63","Pink"],["#5b9bff","Blau"],["#3ccf8a","Grün"],["#ffffff","Weiß"],["#b388ff","Violett"]];
+const COL=(k,t)=>({k,t,type:"col"}),OP={k:"op",t:"Deckkraft %",type:"num",min:5,max:60};
 const SCHEMA=[
  {g:"Meine Systeme",items:[
-  {k:"sk",t:"SK-System",d:"Struktur 0-A-B-C, Einstiege E1–E4, SL, Ziel"},
-  {k:"gz",t:"Golden Zone",d:"0,5 · 0,618–0,786 · TP1/TP2 in Trendrichtung"},
-  {k:"fib",t:"Fibonacci (Trend)",d:"wie dein BFT: Level frei wählbar",p:[{k:"levels",t:"Level",type:"text",wide:1},{k:"zone",t:"Zone 61,8–66,7",type:"chk"}]},
-  {k:"ms",t:"Marktstruktur",d:"HH/HL/LH/LL, BOS und CHoCH",p:[{k:"n",t:"Anzahl BOS/CHoCH",type:"num",min:1,max:10},{k:"labels",t:"HH/HL-Kürzel",type:"chk"}]},
-  {k:"tl",t:"Trendlinien",d:"Unterstützung gelb, Widerstand violett",p:[{k:"n",t:"Linien je Seite",type:"num",min:1,max:3}]},
-  {k:"sr",t:"S/R-Zonen",d:"Zonen aus mehreren Hochs/Tiefs"},
-  {k:"vp",t:"Volumenprofil",d:"VAH, VAL, POC mit Profil",p:[{k:"range",t:"Bereich",type:"sel",o:[["vis","sichtbarer Bereich"],["100","letzte 100 Kerzen"],["200","letzte 200 Kerzen"],["500","letzte 500 Kerzen"]]},{k:"rows",t:"Zeilen",type:"num",min:20,max:150},{k:"va",t:"Value Area %",type:"num",min:50,max:90},{k:"hist",t:"Profil zeigen",type:"chk"}]},
-  {k:"liq",t:"Liquidität (Sweep)",d:"abgeholte Hochs/Tiefs am Docht",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:15}]},
-  {k:"fvg",t:"Fair Value Gaps",d:"offene Lücken als Box, wird beim Füllen kleiner",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:15},{k:"dir",t:"Richtung",type:"sel",o:[["both","beide"],["bull","nur bullisch"],["bear","nur bärisch"]]},{k:"shrink",t:"Füllung abziehen",type:"chk"}]},
-  {k:"ob",t:"Orderblöcke (OB)",d:"letzte Gegenkerze vor BOS/CHoCH, bis zum Bruch",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:10}]},
-  {k:"lsob",t:"LSOB",d:"Orderblock am Liquiditäts-Sweep (blau/pink)",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:10}]},
-  {k:"boxes",t:"Box-Länge",d:"für OB, LSOB, FVG und S/R-Zonen",always:1,p:[{k:"mode",t:"Länge",type:"sel",o:[["short","kurz (bis zur letzten Kerze)"],["fix","feste Anzahl Kerzen"],["edge","bis zum Rand"]]},{k:"n",t:"Kerzen (bei fest)",type:"num",min:3,max:300}]}]},
+  {k:"sk",t:"SK-System",d:"Struktur 0-A-B-C, Einstiege E1–E4, SL, Ziel",p:[COL("cLong","Long"),COL("cShort","Short"),COL("cZone","Zone"),COL("cEntry","E1–E4"),COL("cSL","SL / B"),COL("cTarget","Ziel")],
+   i:"Deine SK-Regeln (Stefan Kassing): 0 = höheres Hoch bzw. tieferes Tief, A = Korrektur, B = gescheiterter Versuch (mind. 50 % von 0→A). Phase 1: warten, bis A gebrochen wird. Danach Fibonacci B→C mit Einstiegen E1–E4 (50/55,9/61,8/66,7 %) und SL bei 78,6 %. Ziel 161,8–200 % von 0→A; danach gilt die Gesamtkorrektur 0→C."},
+  {k:"gz",t:"Golden Zone",d:"0,5 · 0,618–0,786 · TP1/TP2 in Trendrichtung",p:[COL("cZone","Zone"),COL("cTP","TP1/TP2"),COL("cLine","0 / 0,5")],
+   i:"Fibonacci über die letzte Bewegung in Trendrichtung (Marktstruktur). Die Golden Zone 0,618–0,786 ist der typische Bereich für Rücksetzer-Einstiege. TP1 = 1,272, TP2 = 1,618. Fällt der Kurs hinter 1,0, ist die Bewegung kaputt. Eine Berührung allein ist kein Signal."},
+  {k:"fib",t:"Fibonacci (Trend)",d:"wie dein BFT: Level frei wählbar",p:[{k:"levels",t:"Level",type:"text",wide:1},{k:"zone",t:"Zone 61,8–66,7",type:"chk"},COL("cLevel","Level"),COL("cGold","61,8/66,7"),COL("cZone","Zone"),COL("cExt1","127,2"),COL("cExt2","161,8")],
+   i:"Fibonacci vom letzten Tief zum Hoch (bzw. umgekehrt). Der Endpunkt wandert automatisch mit, wenn ein neues Hoch/Tief entsteht – wie in deinem BFT. Level als Komma-Liste eintragbar, z. B. 0.5, 0.618, 0.786, 1.272."},
+  {k:"ms",t:"Marktstruktur",d:"HH/HL/LH/LL, BOS und CHoCH",p:[{k:"n",t:"Anzahl BOS/CHoCH",type:"num",min:1,max:10},{k:"labels",t:"HH/HL-Kürzel",type:"chk"},COL("cUp","bullisch"),COL("cDn","bärisch")],
+   i:"HH/HL = höhere Hochs/Tiefs (Aufwärtstrend), LH/LL = tiefere (Abwärtstrend). BOS = Strukturbruch in Trendrichtung (Fortsetzung). CHoCH = erster Bruch gegen den Trend (möglicher Trendwechsel). Gezählt wird der Schlusskurs, nicht der Docht."},
+  {k:"tl",t:"Trendlinien",d:"automatisch durch Hochs/Tiefs",p:[{k:"n",t:"Linien je Seite",type:"num",min:1,max:3},COL("cSup","Unterstützung"),COL("cRes","Widerstand")],
+   i:"Automatische Trendlinien durch zwei Tiefs (Unterstützung) bzw. zwei Hochs (Widerstand), die bis heute nicht per Schlusskurs gebrochen wurden. Der Wert an der Preisachse zeigt, wo die Linie aktuell liegt."},
+  {k:"sr",t:"S/R-Zonen",d:"Zonen aus mehreren Hochs/Tiefs",p:[COL("col","Farbe"),OP],
+   i:"Bereiche, an denen der Kurs mehrfach gedreht hat (mindestens 2 Hochs/Tiefs auf ähnlicher Höhe). ×3 bedeutet: 3 Berührungen. Gezeigt werden die nächsten Zonen über und unter dem Kurs."},
+  {k:"vp",t:"Volumenprofil",d:"VAH, VAL, POC mit Profil",p:[{k:"range",t:"Bereich",type:"sel",o:[["vis","sichtbarer Bereich"],["100","letzte 100 Kerzen"],["200","letzte 200 Kerzen"],["500","letzte 500 Kerzen"]]},{k:"rows",t:"Zeilen",type:"num",min:20,max:150},{k:"va",t:"Value Area %",type:"num",min:50,max:90},{k:"hist",t:"Profil zeigen",type:"chk"},COL("cVA","VAH/VAL"),COL("cPOC","POC")],
+   i:"Zeigt, auf welchen Preisen am meisten gehandelt wurde. POC = Preis mit dem meisten Volumen. VAH/VAL = obere/untere Grenze der Value Area (z. B. 70 % des Volumens). Diese Level wirken oft als Magnet bzw. Unterstützung/Widerstand."},
+  {k:"liq",t:"Liquidität (Sweep)",d:"abgeholte Hochs/Tiefs am Docht",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:15},COL("cBull","unten (bullisch)"),COL("cBear","oben (bärisch)")],
+   i:"Ein altes Hoch oder Tief wird per Docht kurz überschritten, die Kerze schließt aber wieder zurück. Dort lagen Stopps (Liquidität), die abgeholt wurden – oft der Start einer Gegenbewegung. Der Docht wird eingefärbt, die gestrichelte Linie zeigt das abgeholte Level."},
+  {k:"fvg",t:"Fair Value Gaps",d:"offene Lücken als Box, wird beim Füllen kleiner",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:15},{k:"dir",t:"Richtung",type:"sel",o:[["both","beide"],["bull","nur bullisch"],["bear","nur bärisch"]]},{k:"shrink",t:"Füllung abziehen",type:"chk"},COL("cBull","bullisch"),COL("cBear","bärisch"),OP],
+   i:"Lücke zwischen dem Docht von Kerze 1 und Kerze 3 nach einer starken Bewegung (ICT). Der Kurs kommt oft zurück, um sie zu füllen. Die Prozentzahl zeigt, wie viel schon gefüllt ist; die gestrichelte Linie ist die Mitte (50 %). Ganz gefüllte FVGs verschwinden."},
+  {k:"ob",t:"Orderblöcke (OB)",d:"letzte Gegenkerze vor BOS/CHoCH, bis zum Bruch",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:10},COL("cBull","bullisch"),COL("cBear","bärisch"),OP],
+   i:"Die letzte Gegenkerze vor einer Bewegung, die die Struktur bricht. Dort haben große Marktteilnehmer oft Orders platziert. Kommt der Kurs zurück in einen bullischen OB, ist eine Reaktion nach oben möglich. Ein Schlusskurs durch die Box macht ihn ungültig."},
+  {k:"lsob",t:"LSOB",d:"Orderblock am Liquiditäts-Sweep",p:[{k:"n",t:"Anzahl",type:"num",min:1,max:10},COL("cBull","bullisch"),COL("cBear","bärisch"),OP],
+   i:"Orderblock, der direkt an einem Liquiditäts-Sweep entsteht: Ein altes Hoch/Tief wird abgeholt, danach dreht der Kurs kräftig (Schluss über bzw. unter der Kerze). Gilt als besonders starker Orderblock."},
+  {k:"boxes",t:"Box-Länge",d:"für OB, LSOB, FVG und S/R-Zonen",always:1,p:[{k:"mode",t:"Länge",type:"sel",o:[["short","kurz (bis zur letzten Kerze)"],["fix","feste Anzahl Kerzen"],["edge","bis zum Rand"]]},{k:"n",t:"Kerzen (bei fest)",type:"num",min:3,max:300}],
+   i:"Wie weit die Boxen nach rechts reichen: kurz endet direkt nach der letzten Kerze, fest = Anzahl Kerzen ab Entstehung, bis zum Rand = über den ganzen Chart."}]},
  {g:"Im Chart",items:[
-  {k:"ma1",t:"Linie 1",d:"",ma:1},{k:"ma2",t:"Linie 2",d:"",ma:1},{k:"ma3",t:"Linie 3",d:"",ma:1},
-  {k:"vwap",t:"VWAP",d:"volumengewichteter Durchschnitt",p:[{k:"anchor",t:"Neustart",type:"sel",o:[["D","jeden Tag"],["W","jede Woche"]]}]},
-  {k:"bb",t:"Bollinger-Bänder",d:"",p:[{k:"len",t:"Länge",type:"num",min:2,max:200},{k:"mult",t:"Faktor",type:"num",min:0.5,max:5,step:0.5}]},
-  {k:"vol",t:"Volumen",d:"Balken unten im Chart"},
-  {k:"rsic",t:"Kerzen nach RSI färben",d:"wie im BWI: überkauft gelb, überverkauft magenta",p:[{k:"len",t:"RSI-Länge",type:"num",min:2,max:50},{k:"hi",t:"Oben",type:"num",min:50,max:95},{k:"lo",t:"Unten",type:"num",min:5,max:50},{k:"cHi",t:"Farbe oben",type:"col"},{k:"cLo",t:"Farbe unten",type:"col"}]}]},
+  {k:"ma1",t:"Linie 1",d:"",ma:1,i:"Gleitender Durchschnitt. EMA reagiert schneller auf neue Kurse, SMA ist gleichmäßiger. Kurs über der Linie = eher Stärke, darunter = eher Schwäche. Beliebt: EMA 21, EMA 50, SMA 200."},
+  {k:"ma2",t:"Linie 2",d:"",ma:1,i:"Gleitender Durchschnitt (wie Linie 1). Kreuzen sich zwei Linien, kann das einen Trendwechsel anzeigen."},
+  {k:"ma3",t:"Linie 3",d:"",ma:1,i:"Gleitender Durchschnitt (wie Linie 1). Der SMA 200 gilt auf 1D als wichtigste Trendlinie."},
+  {k:"vwap",t:"VWAP",d:"volumengewichteter Durchschnitt",p:[{k:"anchor",t:"Neustart",type:"sel",o:[["D","jeden Tag"],["W","jede Woche"]]},COL("col","Farbe")],
+   i:"Durchschnittspreis, gewichtet nach Volumen, startet jeden Tag (oder jede Woche) neu. Gilt als fairer Preis – Kurs darüber: Käufer im Vorteil, darunter: Verkäufer. Sinnvoll auf kleinen Zeitrahmen."},
+  {k:"bb",t:"Bollinger-Bänder",d:"",p:[{k:"len",t:"Länge",type:"num",min:2,max:200},{k:"mult",t:"Faktor",type:"num",min:0.5,max:5,step:0.5},COL("col","Farbe")],
+   i:"Mittellinie (SMA) plus/minus 2 Standardabweichungen. Enge Bänder = ruhiger Markt, oft vor einer starken Bewegung. Kurs am Band = weit vom Durchschnitt entfernt."},
+  {k:"vol",t:"Volumen",d:"Balken unten im Chart",i:"Gehandelte Menge je Kerze. Grün = steigende Kerze, grau = fallende. Hohes Volumen bestätigt eine Bewegung."},
+  {k:"rsic",t:"Kerzen nach RSI färben",d:"wie im BWI: überkauft gelb, überverkauft magenta",p:[{k:"len",t:"RSI-Länge",type:"num",min:2,max:50},{k:"hi",t:"Oben",type:"num",min:50,max:95},{k:"lo",t:"Unten",type:"num",min:5,max:50},COL("cHi","Farbe oben"),COL("cLo","Farbe unten")],
+   i:"Färbt die Kerzenfüllung, wenn der RSI über der oberen (überkauft) oder unter der unteren Grenze (überverkauft) liegt. Funktioniert auch ohne RSI-Fenster."}]},
  {g:"Unter dem Chart",items:[
-  {k:"rsi",t:"RSI",d:"mit Divergenzen (Aqua/Pink)",p:[{k:"len",t:"Länge",type:"num",min:2,max:50},{k:"hi",t:"Oben",type:"num",min:50,max:95},{k:"lo",t:"Unten",type:"num",min:5,max:50},{k:"div",t:"Divergenzen",type:"chk"}]},
-  {k:"macd",t:"MACD",d:"",p:[{k:"f",t:"Schnell",type:"num",min:2,max:50},{k:"s",t:"Langsam",type:"num",min:5,max:100},{k:"sig",t:"Signal",type:"num",min:2,max:50}]},
-  {k:"risk",t:"Risiko",d:"0 = historisch günstig, 1 = teuer (wie im Coin-Scanner)",p:[{k:"table",t:"Tabelle Risiko/Preis/Zeit %",type:"chk"}]},
-  {k:"heat",t:"Hitze",d:"Kurs ÷ 20-Wochen-Schnitt als Histogramm"}]}];
+  {k:"rsi",t:"RSI",d:"mit Divergenzen",p:[{k:"len",t:"Länge",type:"num",min:2,max:50},{k:"hi",t:"Oben",type:"num",min:50,max:95},{k:"lo",t:"Unten",type:"num",min:5,max:50},{k:"div",t:"Divergenzen",type:"chk"},COL("col","Linie"),COL("cDivUp","Div. bullisch"),COL("cDivDn","Div. bärisch")],
+   i:"Relative Stärke 0–100. Über 80 überkauft, unter 20 überverkauft. Divergenz: Kurs macht ein tieferes Tief, der RSI ein höheres (bullisch) – oder umgekehrt (bärisch). Wird im Chart und im RSI als Linie gezeigt."},
+  {k:"macd",t:"MACD",d:"",p:[{k:"f",t:"Schnell",type:"num",min:2,max:50},{k:"s",t:"Langsam",type:"num",min:5,max:100},{k:"sig",t:"Signal",type:"num",min:2,max:50},COL("cM","MACD"),COL("cS","Signal")],
+   i:"Abstand zweier EMAs (12/26) mit Signallinie (9). Kreuzt der MACD die Signallinie nach oben = Momentum dreht nach oben. Das Histogramm zeigt den Abstand."},
+  {k:"risk",t:"Risiko",d:"0 = historisch günstig, 1 = teuer",p:[{k:"table",t:"Tabelle Risiko/Preis/Zeit %",type:"chk"}],
+   i:"Langfrist-Risiko wie im Coin-Scanner: Abstand des Kurses zum langen Durchschnitt, auf 0–1 skaliert. Niedrig = historisch günstig, hoch = historisch teuer. Die Tabelle zeigt, bei welchem Preis welches Risiko erreicht wäre und wie viel Zeit der Kurs dort verbracht hat."},
+  {k:"heat",t:"Hitze",d:"Kurs ÷ 20-Wochen-Schnitt",
+   i:"Kurs geteilt durch den 20-Wochen-Durchschnitt. 1,0 = genau auf dem Schnitt. Deutlich darüber = überhitzt (Rückschlaggefahr), darunter = kalt. Farben wie im Coin-Scanner."}]}];
 function pInput(key,p){const v=S.cfg[key][p.k],id=`${key}.${p.k}`;
   if(p.type==="chk")return`<label><input type="checkbox" data-p="${id}" ${v!==false?"checked":""}> ${p.t}</label>`;
   if(p.type==="sel")return`<label>${p.t} <select data-p="${id}">${p.o.map(([a,b])=>`<option value="${a}" ${String(v)===a?"selected":""}>${b}</option>`).join("")}</select></label>`;
-  if(p.type==="col")return`<label>${p.t} <input type="color" data-p="${id}" value="${esc(v)}"></label>`;
+  if(p.type==="col")return`<label class="cl">${p.t} <input type="color" data-p="${id}" value="${esc(v)}"><button type="button" class="rs" data-rc="${id}" title="Standardfarbe">↺</button></label>`;
   if(p.type==="text")return`<label class="${p.wide?"wide":""}">${p.t} <input type="text" data-p="${id}" value="${esc(v)}"></label>`;
   return`<label>${p.t} <input type="number" data-p="${id}" value="${esc(v)}" min="${p.min??""}" max="${p.max??""}" step="${p.step||1}"></label>`}
 function renderDlg(){const c=S.cfg;let h=`<div class="grp"><div class="label">Profile</div><div class="prof">`+[1,2,3].map(n=>{const p=S.profiles[n];
@@ -310,7 +430,7 @@ function renderDlg(){const c=S.cfg;let h=`<div class="grp"><div class="label">Pr
   SCHEMA.forEach(g=>{h+=`<div class="grp"><div class="label">${g.g}</div>`;g.items.forEach(it=>{const o=c[it.k];
     const params=it.ma?[{k:"type",t:"Art",type:"sel",o:[["EMA","EMA"],["SMA","SMA"]]},{k:"len",t:"Länge",type:"num",min:1,max:500},{k:"col",t:"Farbe",type:"col"}]:(it.p||[]);
     const title=it.ma?`${it.t}: ${o.type} ${o.len}`:it.t;
-    h+=`<div class="it" style="margin-top:6px"><div class="hd"><label>${it.always?"":`<input type="checkbox" data-on="${it.k}" ${o.on?"checked":""}>`}<span>${esc(title)}${it.d?`<small>${esc(it.d)}</small>`:""}</span></label></div>${params.length&&(o.on||it.always)?`<div class="pr">${params.map(p=>pInput(it.k,p)).join("")}</div>`:""}</div>`});h+=`</div>`});
+    h+=`<div class="it" style="margin-top:6px"><div class="hd"><label>${it.always?"":`<input type="checkbox" data-on="${it.k}" ${o.on?"checked":""}>`}<span>${esc(title)}${it.d?`<small>${esc(it.d)}</small>`:""}</span></label>${it.i?`<button type="button" class="ib" data-ib="${it.k}" aria-label="Info">ⓘ</button>`:""}</div>${it.i?`<div class="itx" id="ix-${it.k}" ${S.openInfo===it.k?"":"hidden"}>${esc(it.i)}</div>`:""}${params.length&&(o.on||it.always)?`<div class="pr">${params.map(p=>pInput(it.k,p)).join("")}</div>`:""}</div>`});h+=`</div>`});
   $("dlgBody").innerHTML=h}
 function sideOpen(o){$("side").hidden=!o;$("stage").classList.toggle("open",o);if(o)renderDlg();paint()}
 $("indBtn").onclick=()=>sideOpen($("side").hidden);$("sideX").onclick=()=>sideOpen(false);
@@ -319,17 +439,20 @@ $("dlgBody").addEventListener("change",e=>{const t=e.target;
     if(key==="risk"||key==="heat"){refreshExt().then(()=>{recompute();renderDlg();$("side").scrollTop=sc})}else{recompute();renderDlg();$("side").scrollTop=sc}return}
   if(t.dataset.p){const [a,b]=t.dataset.p.split(".");S.cfg[a][b]=t.type==="checkbox"?t.checked:t.type==="number"?+t.value:t.value;save();recompute();if(b==="type"||b==="len"){const sc=$("side").scrollTop;renderDlg();$("side").scrollTop=sc}}});
 $("dlgBody").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.ib){e.preventDefault();S.openInfo=S.openInfo===b.dataset.ib?null:b.dataset.ib;document.querySelectorAll(".itx").forEach(x=>x.hidden=x.id!=="ix-"+S.openInfo);return}
+  if(b.dataset.rc){e.preventDefault();const [a,c]=b.dataset.rc.split(".");S.cfg[a][c]=CC.DEF[a][c];save();recompute();const sc=$("side").scrollTop;renderDlg();$("side").scrollTop=sc;return}
   if(b.dataset.save){const n=b.dataset.save,name=prompt(`Name für Profil ${n}:`,S.profiles[n]?.name||`Profil ${n}`);if(name==null)return;S.profiles[n]={name:name.slice(0,24)||`Profil ${n}`,cfg:JSON.parse(JSON.stringify(S.cfg))};save();renderDlg();toast("Profil gespeichert")}
   if(b.dataset.load){const p=S.profiles[b.dataset.load];if(p){S.cfg=CC.withDefaults(p.cfg);save();refreshExt().then(()=>{recompute();renderDlg()});toast(`„${p.name}“ geladen`)}}
   if(b.hasAttribute("data-reset")){S.cfg=CC.withDefaults();save();refreshExt().then(()=>{recompute();renderDlg()})}});
 
 // ---------- Teilen / Bild ----------
 $("shareBtn").onclick=async()=>{const i=btoa(unescape(encodeURIComponent(JSON.stringify(S.cfg))));
-  const url=`${location.origin}${location.pathname}#m=${S.mkt}&s=${encodeURIComponent(S.sym)}&tf=${S.tf}&i=${i}`;
+  const dw=S.dw.length?"&d="+btoa(unescape(encodeURIComponent(JSON.stringify(S.dw)))):"";
+  const url=`${location.origin}${location.pathname}#m=${S.mkt}&s=${encodeURIComponent(S.sym)}&tf=${S.tf}&i=${i}${dw}`;
   try{await navigator.clipboard.writeText(url);toast("Link kopiert – mit Freunden teilen")}catch(e){prompt("Link kopieren:",url)}};
 $("pngBtn").onclick=()=>{const d=devicePixelRatio||1,c2=document.createElement("canvas");c2.width=cv.width;c2.height=cv.height;const x=c2.getContext("2d");x.drawImage(cv,0,0);x.scale(d,d);
   const th=CC.THEME[dark()?"dark":"light"],W=cv.width/d,H=cv.height/d,now=new Date(),p2=n=>String(n).padStart(2,"0");
-  const title=`${S.mkt==="k"?S.sym+"/USDT":S.sym} · ${TFLAB[S.tf]} · ${S.src}`,date=`${p2(now.getDate())}.${p2(now.getMonth()+1)}.${now.getFullYear()} ${p2(now.getHours())}:${p2(now.getMinutes())} Uhr`;
+  const title=`${S.mkt==="k"?S.sym+"/USDT":S.sym} · ${TFLAB[S.tf]} · ${S.src} · ${S.F!==1?"in € (umgerechnet)":"in "+(S.ccy||"$")}`,date=`${p2(now.getDate())}.${p2(now.getMonth()+1)}.${now.getFullYear()} ${p2(now.getHours())}:${p2(now.getMinutes())} Uhr`;
   const items=legendItems();x.font='600 11px "JetBrains Mono",monospace';const lw=items.reduce((a,it)=>a+x.measureText(it.t).width+10,0);x.font='800 16px Archivo,system-ui,sans-serif';const tw=Math.max(x.measureText(title).width,260,lw);
   x.fillStyle=th.bg;x.globalAlpha=.9;x.fillRect(6,6,Math.min(W-90,tw+24),items.length?74:52);x.globalAlpha=1;x.textBaseline="middle";x.textAlign="left";
   x.fillStyle=th.fg;x.fillText(title,14,20);x.font='500 11px "JetBrains Mono",monospace';x.fillStyle=th.txt;
@@ -339,7 +462,7 @@ $("pngBtn").onclick=()=>{const d=devicePixelRatio||1,c2=document.createElement("
   const a=document.createElement("a");a.download=`${S.sym}_${TFLAB[S.tf]}_${now.getFullYear()}${p2(now.getMonth()+1)}${p2(now.getDate())}.png`;a.href=c2.toDataURL("image/png");a.click()};
 
 // ---------- Start ----------
-renderBar();load();loadList();
+renderBar();renderTools();loadList().then(()=>{if(S.mkt==="a"){applyCur().then(()=>{legend();recompute()})}});load();
 setInterval(()=>{if(S.mkt==="k"&&document.visibilityState==="visible")load(true)},60000);
 </script>
 </body>
