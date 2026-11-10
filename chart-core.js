@@ -4,7 +4,7 @@
 "use strict";
 const CC=(()=>{
 const G=typeof module!=="undefined"&&typeof window==="undefined"?require("./gz-core.js"):{pivots,structure,analyzeStd,analyzeSK};
-const PIV={"5m":5,"15m":10,"1h":7,"4h":14,"1d":12,"1w":15};
+const PIV={"1m":5,"3m":5,"5m":5,"15m":10,"30m":5,"1h":7,"2h":10,"4h":14,"12h":12,"1d":12,"1w":15,"1M":12};
 
 // ---------- Standard-Einstellungen ----------
 const DEF={
@@ -153,7 +153,7 @@ const nf=(p,d)=>p.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractio
 function fmt(p){if(p==null||!isFinite(p))return"–";const a=Math.abs(p);if(a>=1000)return nf(p,2);if(a>=100)return nf(p,2);if(a>=1)return nf(p,a>=10?3:4);return p.toLocaleString("de-DE",{maximumSignificantDigits:4})}
 const pct=v=>(v>=0?"+":"")+nf(v,1)+" %";
 function tlab(t,tf,full){const d=new Date(t),p=n=>String(n).padStart(2,"0");
-  if(tf==="1w")return`${p(d.getDate())}.${p(d.getMonth()+1)}.${String(d.getFullYear()).slice(2)}`;
+  if(tf==="1w"||tf==="1M")return`${p(d.getDate())}.${p(d.getMonth()+1)}.${String(d.getFullYear()).slice(2)}`;
   if(tf==="1d")return full?`${p(d.getDate())}.${p(d.getMonth()+1)}.${d.getFullYear()}`:`${p(d.getDate())}.${p(d.getMonth()+1)}.`;
   return full?`${p(d.getDate())}.${p(d.getMonth()+1)}. ${p(d.getHours())}:${p(d.getMinutes())}`:`${p(d.getHours())}:${p(d.getMinutes())}`}
 
@@ -169,7 +169,7 @@ const hexRgb=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||"");if(!m)return null;cons
 const ra=(h,a)=>{const c=hexRgb(h);return c?`rgba(${c[0]},${c[1]},${c[2]},${a})`:h};
 const isLight=h=>{const c=hexRgb(h);return c?(0.299*c[0]+0.587*c[1]+0.114*c[2])/255>0.85:false};
 // Zeit <-> Kerzen-Index (für Zeichnungen, auch über Zeitrahmen hinweg)
-const TFMS={"5m":3e5,"15m":9e5,"1h":36e5,"4h":144e5,"1d":864e5,"1w":6048e5};
+const TFMS={"1m":6e4,"3m":18e4,"5m":3e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"12h":432e5,"1d":864e5,"1w":6048e5,"1M":2592e6};
 function tIdx(k,t,tf){const n=k.length,ms=TFMS[tf]||864e5;if(!n)return 0;if(t<=k[0].t)return(t-k[0].t)/ms;if(t>=k[n-1].t)return n-1+(t-k[n-1].t)/ms;
   let a=0,b=n-1;while(b-a>1){const m=(a+b)>>1;if(k[m].t<=t)a=m;else b=m}return a+(t-k[a].t)/(k[b].t-k[a].t)}
 function idxT(k,i,tf){const n=k.length,ms=TFMS[tf]||864e5;if(!n)return 0;if(i<=0)return k[0].t+i*ms;if(i>=n-1)return k[n-1].t+(i-n+1)*ms;const a=Math.floor(i);return k[a].t+(i-a)*(k[a+1].t-k[a].t)}
@@ -343,7 +343,7 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
   axQ.forEach(a=>{ctx.fillStyle=th.txt;ctx.fillText(a.t,pw+6,a.y)});
   ctx.textAlign="center";let lastDay=null;
   for(let i=Math.ceil(from/step)*step;i<=to;i+=step){if(i<0||i>last)continue;const d=new Date(k[i].t),day=d.toDateString();
-    const txt=(tf!=="1d"&&tf!=="1w"&&day!==lastDay)?tlab(k[i].t,"1d"):tlab(k[i].t,tf);lastDay=day;ctx.fillText(txt,X(i),H-TA/2)}
+    const txt=(tf!=="1d"&&tf!=="1w"&&tf!=="1M"&&day!==lastDay)?tlab(k[i].t,"1d"):tlab(k[i].t,tf);lastDay=day;ctx.fillText(txt,X(i),H-TA/2)}
   // Preis-Schilder
   tags.push({y:Y(price),col:price>=k[last].o?th.up:th.red,t:fmt(price),main:1});
   tags.filter(t=>!t.off||t.main).sort((a,b)=>a.y-b.y).reduce((prev,t)=>{const y=Math.max(t.y,prev+15);tagDraw(ctx,pw,y,t.col,t.t,AX,th,t.main);return y},-99);
