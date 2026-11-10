@@ -33,7 +33,9 @@ const DEF={
   rsi:{on:true,len:14,hi:80,lo:20,div:true,col:"#b388ff",cDivUp:"#00e5ff",cDivDn:"#ff4081"},
   macd:{on:false,f:12,s:26,sig:9,cM:"#5b9bff",cS:"#ff9800"},
   risk:{on:false,table:true},
-  heat:{on:false}
+  heat:{on:false},
+  bod:{on:false,modus:"oi",cvdReset:"nie",kerzen:false,grau:true,marker:false,markerSig:true,sigLen:20,sigMult:1.5,bezug:"k",n:20,stunden:24,extrem:3,lageLen:100,tab:true,erw:true,tabOrt:"ur",tabGr:"klein",tabAbst:0,tabSchritt:1.5,
+    fL:"#4caf50",fSQ:"#ff9800",fS:"#ffeb3b",fLQ:"#e91e63",fKauf:"#4caf50",fVerk:"#f23645"}
 };
 const clone=o=>JSON.parse(JSON.stringify(o));
 function withDefaults(cfg){const out=clone(DEF);if(cfg)for(const k in cfg)if(out[k]&&typeof cfg[k]==="object")Object.assign(out[k],cfg[k]);return out}

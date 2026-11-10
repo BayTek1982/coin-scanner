@@ -106,6 +106,16 @@ html,body{height:100%;overflow:hidden}
 .gh.off{cursor:default;color:var(--muted)}
 .gnote{font-size:.76rem;color:var(--muted);margin:3px 0 0}
 #anaBody{border:0;border-radius:0;background:none}#anaBody .rows{grid-template-columns:1fr}
+.ccol{display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;height:100%}
+.ccol .chartbox{flex:1 1 0;height:auto;min-height:0}
+.bodbox{position:relative;flex:0 0 clamp(176px,28%,270px);background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.bodbox canvas{cursor:default}
+.bodH{position:absolute;left:8px;top:4px;right:calc(var(--ax,74px) + 4px);display:flex;gap:8px;align-items:center;font:600 .7rem var(--f-num);color:var(--muted);white-space:nowrap;overflow:hidden;pointer-events:none}
+.bodH b.n{color:var(--fg);font:800 .76rem var(--f-body)}
+.bodH .seg{pointer-events:auto;padding:2px;border-radius:7px;flex:none}.bodH .seg button{font-size:.68rem;padding:2px 7px;border-radius:5px}
+#bodTab{position:absolute;display:grid;grid-template-columns:auto auto;gap:1px;font-family:var(--f-num);font-weight:600;line-height:1.25;z-index:3;cursor:help}
+#bodTab span{padding:1px 7px;background:rgba(19,23,34,.92);white-space:nowrap}#bodTab .a{color:#d6d9df;background:rgba(30,34,45,.95)}
+#bodTip{position:absolute;left:8px;bottom:6px;max-width:min(420px,calc(100% - var(--ax,74px) - 16px));background:var(--fg);color:var(--bg);font-size:.78rem;line-height:1.4;padding:7px 10px;border-radius:8px;white-space:pre-line;z-index:5;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 </style>
 </head>
 <body>
@@ -127,13 +137,17 @@ html,body{height:100%;overflow:hidden}
   </div>
   <p class="notice" id="notice" hidden></p>
   <div class="stage" id="stage">
-  <div class="chartbox" id="box"><canvas id="cv"></canvas>
+  <div class="ccol"><div class="chartbox" id="box"><canvas id="cv"></canvas>
     <div class="ov"><div class="t" id="ovT">–</div><div class="o" id="ovO"></div><div class="lg" id="ovL"></div></div>
     <button class="autob" id="autoB" hidden title="Preisachse wieder automatisch">Auto</button>
     <div class="tools" id="tools"></div>
     <div class="ebar" id="ebar" hidden></div>
     <div class="loading" id="loading">Lädt …</div>
   </div>
+  <div class="bodbox" id="bodBox" hidden><canvas id="bodCv"></canvas>
+    <div class="bodH"><b class="n">BOD V1.8</b><div class="seg" id="bodSeg"><button data-m="doi">ΔOI</button><button data-m="oi">OI</button><button data-m="delta">Delta</button><button data-m="cvd">CVD</button></div><span id="bodInfo"></span></div>
+    <div id="bodTab" hidden></div><div id="bodTip" hidden></div>
+  </div></div>
   <aside class="side" id="side" hidden><div class="dh"><h2 id="sideH">Indikatoren</h2><button class="x" id="sideX" aria-label="Schließen">✕</button></div>
     <div class="db" id="dlgBody"></div>
     <div class="db ana" id="anaBody" hidden><span class="sub" id="anaSub"></span><div class="rows" id="ana"></div>
@@ -142,7 +156,7 @@ html,body{height:100%;overflow:hidden}
 </div>
 
 <script src="gz-core.js?v=3"></script>
-<script src="chart-core.js?v=7"></script>
+<script src="chart-core.js?v=8"></script>
 <script>
 "use strict";
 const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
@@ -173,7 +187,7 @@ async function loadList(){
 async function klines(){const s=S.sym,tf=S.tf;
   if(S.mkt==="k"){
     try{const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${s}USDT&interval=${tf}&limit=1000`);
-      if(Array.isArray(j)&&j.length)return{src:"Binance",k:j.map(r=>({t:+r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5]}))}}catch(e){}
+      if(Array.isArray(j)&&j.length)return{src:"Binance",k:j.map(r=>({t:+r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5],b:+r[9]}))}}catch(e){}
     try{const j=await getJSON(`https://www.okx.com/api/v5/market/candles?instId=${s}-USDT&bar=${OKXB[tf]}&limit=300`);
       const d=(j.data||[]).map(r=>({t:+r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5]})).reverse();if(d.length)return{src:"OKX",k:d}}catch(e){}
     throw new Error(`${s}/USDT wurde bei Binance und OKX nicht gefunden.`)}
@@ -254,7 +268,7 @@ function paint(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const 
   if(cv.width!==Math.round(r.width*d)||cv.height!==Math.round(r.height*d)){cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d)}
   ctx.setTransform(d,0,0,d,0,0);if(!S.view&&S.k.length)resetView();
   const th=CC.THEME[dark()?"dark":"light"];L=CC.draw(ctx,r.width,r.height,{k:S.k,I:S.I,cfg:S.cfg,tf:S.tf,view:S.view||{from:0,to:1},cross:S.cross,th});
-  if(L&&S.k.length)CC.drawDrawings(ctx,L,S.k,S.tf,dispDw(),S.sel,th);renderEbar();ohlc();$("autoB").hidden=!(S.view&&S.view.man)})}
+  if(L&&S.k.length)CC.drawDrawings(ctx,L,S.k,S.tf,dispDw(),S.sel,th);if(L&&S.k.length){bodMain(th);bodPaint(th)}renderEbar();ohlc();$("autoB").hidden=!(S.view&&S.view.man)})}
 function ohlc(){const k=S.k;if(!k.length){$("ovO").innerHTML="";return}const i=L&&L.ci!=null?L.ci:k.length-1,x=k[i],p=i>0?k[i-1].c:x.o,ch=(x.c/p-1)*100;
   $("ovO").innerHTML=`O <b>${CC.fmt(x.o)}</b> H <b>${CC.fmt(x.h)}</b> L <b>${CC.fmt(x.l)}</b> C <b style="color:${ch>=0?"var(--up)":"var(--down)"}">${CC.fmt(x.c)} (${ch>=0?"+":""}${ch.toFixed(2).replace(".",",")} %)</b>`}
 function legendItems(){const c=S.cfg,l=[];const add=(on,t,col)=>{if(on)l.push({t,col})};
@@ -443,6 +457,20 @@ const SCHEMA=[
    i:"Kurs geteilt durch den 20-Wochen-Durchschnitt. 1,0 = genau auf dem Schnitt. Deutlich darüber = überhitzt (Rückschlaggefahr), darunter = kalt. Farben wie im Coin-Scanner."}]}];
 // ---------- Gruppen nach den Namen deiner TradingView-Indikatoren ----------
 {const ALL={};SCHEMA.forEach(g=>g.items.forEach(it=>ALL[it.k]=it));
+ALL.bod={k:"bod",t:"OI & Delta Monitor",d:"Open Interest, Volumen-Delta und CVD im eigenen Fenster",p:[
+   {k:"modus",t:"Anzeige im Panel",type:"sel",o:[["doi","ΔOI-Histogramm"],["oi","Open Interest"],["delta","Volumen-Delta"],["cvd","CVD"]]},
+   {k:"cvdReset",t:"CVD zurücksetzen",type:"sel",o:[["nie","Nie"],["tag","Täglich"],["woche","Wöchentlich"]]},
+   {k:"kerzen",t:"Kerzen im Chart einfärben",type:"chk"},{k:"grau",t:"Unwichtige Balken ausgrauen",type:"chk"},{k:"marker",t:"Info-Marker an den Kerzen",type:"chk"},{k:"markerSig",t:"Marker nur bei signifikanten Kerzen",type:"chk"},
+   {k:"sigLen",t:"Durchschnitt (Kerzen)",type:"num",min:5,max:500},{k:"sigMult",t:"Signifikanz-Faktor",type:"num",min:1,max:10,step:0.1},
+   {k:"bezug",t:"Bezugszeitraum Tabelle",type:"sel",o:[["k","Letzte X Kerzen"],["std","Letzte X Stunden"],["tag","Seit Tagesbeginn"],["woche","Seit Wochenbeginn"],["monat","Seit Monatsbeginn"]]},
+   {k:"n",t:"Letzte X Kerzen",type:"num",min:2,max:4900},{k:"stunden",t:"Letzte X Stunden",type:"num",min:1,max:720},
+   {k:"extrem",t:"Extrem-Faktor",type:"num",min:1.5,max:20,step:0.5},{k:"lageLen",t:"OI-Lage Zeitraum (Kerzen)",type:"num",min:20,max:900},
+   {k:"tab",t:"Tabelle anzeigen",type:"chk"},{k:"erw",t:"Erweiterte Signale",type:"chk"},
+   {k:"tabOrt",t:"Position",type:"sel",o:[["ol","Oben links"],["om","Oben Mitte"],["or","Oben rechts"],["ml","Mitte links"],["mm","Mitte"],["mr","Mitte rechts"],["ul","Unten links"],["um","Unten Mitte"],["ur","Unten rechts"]]},
+   {k:"tabGr",t:"Größe",type:"sel",o:[["winzig","Winzig"],["klein","Klein"],["normal","Normal"],["gross","Groß"]]},
+   {k:"tabAbst",t:"Abstand vom Rand",type:"num",min:0,max:6},{k:"tabSchritt",t:"Schrittweite Abstand (%)",type:"num",min:0.5,max:10,step:0.5},
+   COL("fL","Neue Longs (Preis ↑ OI ↑)"),COL("fSQ","Short Squeeze (Preis ↑ OI ↓)"),COL("fS","Neue Shorts (Preis ↓ OI ↑)"),COL("fLQ","Long-Abbau (Preis ↓ OI ↓)"),COL("fKauf","Delta Käufer"),COL("fVerk","Delta Verkäufer")],
+  i:"Zeigt, ob neues Geld in den Markt kommt (Open Interest) und welche Seite drückt (Volumen-Delta). L+ = neue Longs, SQ = Short Squeeze, S+ = neue Shorts, L− = Long-Abbau. Tippe in der Tabelle auf ein Kürzel oder einen Wert für die Erklärung. Open Interest kommt von der Binance-Terminbörse (5m bis 1D, höchstens 30 Tage zurück). Das Delta ist hier das echte Käufer-/Verkäufer-Volumen und deshalb genauer als die Schätzung in TradingView – die Zahlen weichen etwas ab."};
  const G=[
   ["Bayazit Strategie Indikator v2.26","Dynamische Fibonacci, drei Durchschnitts-Linien, VWAP, Volumenprofil, LSOB.",["dfib","ma1","ma2","ma3","vwap","vp","lsob"]],
   ["Bayazit Wellen Indikator V2.30","SK-System 0-A-B-C mit Einstiegen, RSI mit Divergenzen, RSI-Kerzenfarbe, Liquiditäts-Sweep.",["sk","rsi","rsic","liq"]],
@@ -450,7 +478,7 @@ const SCHEMA=[
   ["Bayazit Fibonacci Trend V2.3","Fibonacci in Trendrichtung, Marktstruktur (HH/HL, BOS/CHoCH), FVG, Orderblöcke, Golden Zone.",["fib","ms","fvg","ob","gz"]],
   ["Bayazit Risiko-Indikator (0 bis 1)","",["risk"]],
   ["Bayazit Blasen-Risiko (Kurs / 20-Wochen-Schnitt)","",["heat"]],
-  ["Bayazit OI & Delta Monitor V1.8","Noch nicht enthalten – braucht Open-Interest-Daten der Terminbörse.",[]]];
+  ["Bayazit OI & Delta Monitor V1.8","Open Interest, ΔOI, Volumen-Delta, CVD und die Tabelle mit Fazit. Ohne Alarme.",["bod"]]];
  const neu=G.map(([g,note,ks])=>({g,note,own:1,items:ks.map(k=>ALL[k])}));
  neu.push({g:"Standard",items:["vol","bb","macd","boxes"].map(k=>ALL[k])});
  SCHEMA.splice(0,SCHEMA.length,...neu)}
@@ -527,7 +555,7 @@ function wsStart(){const key=S.sym+"|"+S.tf;
   sock.onerror=()=>{try{sock.close()}catch(_){}};
   sock.onclose=()=>{if(sock!==ws)return;ws=null;liveState(false,"getrennt – verbinde neu …");if(!got)wsI++;clearTimeout(wsT);wsT=setTimeout(()=>{if(document.visibilityState==="visible")wsStart()},3000)}}
 function tick(q){const a=S.kO,n=a.length;if(!n||q.i!==S.tf||q.s!==S.sym+"USDT")return;
-  const c={t:+q.t,o:+q.o,h:+q.h,l:+q.l,c:+q.c,v:+q.v},last=a[n-1];if(!(c.c>0)||c.t<last.t)return;
+  const c={t:+q.t,o:+q.o,h:+q.h,l:+q.l,c:+q.c,v:+q.v,b:+q.V},last=a[n-1];if(!(c.c>0)||c.t<last.t)return;
   const F=S.F,same=S.k===a,d=F===1?c:{t:c.t,o:c.o*F,h:c.h*F,l:c.l*F,c:c.c*F,v:c.v},neu=c.t>last.t;
   if(!neu){a[n-1]=c;if(!same)S.k[n-1]=d}else{a.push(c);if(!same)S.k.push(d);if(S.view&&S.view.to>=n-1){S.view.from++;S.view.to++}}
   liveState(true,CC.fmt(d.c)+" "+shownCcy());document.title=`${CC.fmt(d.c)} ${S.sym} ${TFLAB[S.tf]}`;
@@ -543,12 +571,163 @@ let histBusy=false;const histEnd={};
 async function older(){const key=S.sym+"|"+S.tf;if(histBusy||S.src!=="Binance"||!S.kO.length||S.kO.length>=5000||histEnd[key])return;histBusy=true;const id=loadId;
   try{const j=await getJSON(`https://data-api.binance.vision/api/v3/klines?symbol=${S.sym}USDT&interval=${S.tf}&limit=1000&endTime=${S.kO[0].t-1}`);
     if(id!==loadId)return;if(!Array.isArray(j)||!j.length){histEnd[key]=1;return}
-    const add=j.map(r=>({t:+r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5]})).filter(x=>x.t<S.kO[0].t);
+    const add=j.map(r=>({t:+r[0],o:+r[1],h:+r[2],l:+r[3],c:+r[4],v:+r[5],b:+r[9]})).filter(x=>x.t<S.kO[0].t);
     if(j.length<1000)histEnd[key]=1;if(!add.length)return;
     S.kO=add.concat(S.kO);await applyCur();if(id!==loadId)return;if(S.view){S.view.from+=add.length;S.view.to+=add.length}
     await refreshExt();recompute()}
   catch(e){}finally{histBusy=false}}
 setInterval(()=>{if(S.view&&S.view.from<150&&!drag&&!pinch&&!S.pend&&!S.dwd)older()},600);
+
+// ════════════════════════════════════════════════════════════════
+//  Bayazit OI & Delta Monitor (BOD) V1.8 – Nachbau aus dem Pine-Code
+//  OI: Binance-Terminbörse (openInterestHist, max. 30 Tage, 5m–1D).
+//  Delta: echtes Käufer-/Verkäufer-Volumen aus den Kerzen (Taker-Volumen).
+// ════════════════════════════════════════════════════════════════
+const BOD={key:"",oi:new Map(),cur:null,st:"",busy:false,sym:"",R:null};
+const BSTEP={"1m":6e4,"3m":18e4,"5m":3e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"12h":432e5,"1d":864e5,"1w":6048e5,"1M":2592e6};
+const BOIP={"5m":1,"15m":1,"30m":1,"1h":1,"2h":1,"4h":1,"12h":1,"1d":1};
+const FAPI="https://fapi.binance.com/";
+const bKey=()=>S.sym+"|"+S.tf;
+function fv(x,sign){if(x==null||!isFinite(x))return"–";const a=Math.abs(x),s=x<0?"−":sign?"+":"";const f=(v,u)=>s+v.toFixed(2).replace(".",",")+u;
+  return a>=1e9?f(a/1e9," Mrd"):a>=1e6?f(a/1e6," Mio"):a>=1e3?f(a/1e3," Tsd"):f(a,"")}
+const SZK=["–","L+","SQ","S+","L−"],EVK=["–","Aufb ▲","S-Flush","Aufb ▼","L-Flush"];
+const SZL=["Keine OI-Daten verfügbar.","Neue Longs: Preis steigt, OI steigt.\nNeues Geld kauft – gesunder Anstieg.","Short Squeeze: Preis steigt, OI fällt.\nShorts werden eingedeckt – Anstieg oft kurzlebig.","Neue Shorts: Preis fällt, OI steigt.\nNeues Geld verkauft – starker Abwärtsdruck.","Long-Abbau: Preis fällt, OI fällt.\nLongs schließen oder werden liquidiert – läuft das aus, ist oft ein Boden nahe."];
+const EVL=["Kein Extrem-Ereignis im geladenen Verlauf.","Starker Long-Aufbau: Preis steigt, OI springt nach oben.\nViel neues Geld auf einmal – Trendstart oder später Liquidationsgefahr.","Short-Flush: Preis steigt, OI bricht ein.\nShorts wurden massenhaft liquidiert – danach oft Abkühlung.","Starker Short-Aufbau: Preis fällt, OI springt nach oben.\nViel neues Geld setzt auf fallende Kurse – Squeeze-Treibstoff, falls der Preis dreht.","Long-Flush: Preis fällt, OI bricht ein.\nLongs wurden massenhaft liquidiert – häufig in der Nähe eines lokalen Bodens."];
+function szCol(s){const c=S.cfg.bod;return s===1?c.fL:s===2?c.fSQ:s===3?c.fS:s===4?c.fLQ:"#808080"}
+
+async function bodLoad(){const key=bKey();if(BOD.busy)return;BOD.busy=true;
+  if(BOD.key!==key){BOD.key=key;BOD.oi=new Map();BOD.cur=null;BOD.sym="";BOD.st="lädt"}
+  try{if(S.src!=="Binance"){BOD.st="keine";return}
+    if(!BOIP[S.tf]){BOD.st="tf";return}
+    let rows=null,fs="";
+    for(const s of(BOD.sym?[BOD.sym]:[S.sym+"USDT","1000"+S.sym+"USDT"])){
+      try{const j=await getJSON(`${FAPI}futures/data/openInterestHist?symbol=${s}&period=${S.tf}&limit=500`,15000);if(Array.isArray(j)&&j.length){rows=j;fs=s;break}}catch(e){}}
+    if(key!==bKey())return;if(!rows){BOD.st="keine";return}
+    const first=!BOD.sym;BOD.sym=fs;rows.forEach(r=>BOD.oi.set(+r.timestamp,+r.sumOpenInterest));BOD.st="ok";
+    if(first){try{const j=await getJSON(`${FAPI}futures/data/openInterestHist?symbol=${fs}&period=${S.tf}&limit=500&endTime=${+rows[0].timestamp-1}`,15000);
+        if(key===bKey()&&Array.isArray(j))j.forEach(r=>BOD.oi.set(+r.timestamp,+r.sumOpenInterest))}catch(e){}}
+    await bodNow(key)}
+  finally{BOD.busy=false;if(key===bKey()){bodCalc();paint()}else if(S.cfg.bod.on)bodLoad()}}
+async function bodNow(key){try{const j=await getJSON(`${FAPI}fapi/v1/openInterest?symbol=${BOD.sym}`,10000);if(key===bKey()&&j&&+j.openInterest>0)BOD.cur=+j.openInterest}catch(e){}}
+async function bodRefresh(){if(!S.cfg.bod.on||BOD.st!=="ok"||BOD.busy||document.visibilityState!=="visible")return;const key=bKey();
+  try{const j=await getJSON(`${FAPI}futures/data/openInterestHist?symbol=${BOD.sym}&period=${S.tf}&limit=6`,10000);if(key!==bKey())return;
+    if(Array.isArray(j))j.forEach(r=>BOD.oi.set(+r.timestamp,+r.sumOpenInterest))}catch(e){}
+  await bodNow(key);if(key===bKey()){bodCalc();paint()}}
+setInterval(bodRefresh,60000);
+
+function bodCalc(){const c=S.cfg.bod,box=$("bodBox");if(box.hidden===c.on){box.hidden=!c.on}
+  if(!c.on||!S.kO.length){BOD.R=null;$("bodTab").hidden=true;return}
+  if(BOD.key!==bKey()&&!BOD.busy)bodLoad();
+  const k=S.kO,n=k.length,step=BSTEP[S.tf],has=BOD.key===bKey()&&BOD.st==="ok";
+  const oi=new Array(n).fill(null),dOI=new Array(n).fill(null),sig=new Array(n).fill(false),ext=new Array(n).fill(false),szen=new Array(n).fill(0),delta=new Array(n),cvd=new Array(n);
+  if(has){for(let i=0;i<n;i++){const v=BOD.oi.get(k[i].t+step);if(v!=null)oi[i]=v}
+    if(oi[n-1]==null&&BOD.cur!=null&&(n<2||oi[n-2]!=null))oi[n-1]=BOD.cur}
+  // Szenario je Kerze
+  const absD=new Array(n).fill(null);
+  for(let i=1;i<n;i++)if(oi[i]!=null&&oi[i-1]!=null){dOI[i]=oi[i]-oi[i-1];absD[i]=Math.abs(dOI[i])}
+  const sl=Math.max(5,+c.sigLen||20);let run=0,cnt=0;const avg=new Array(n).fill(null);
+  for(let i=0;i<n;i++){if(absD[i]==null){run=0;cnt=0;continue}run+=absD[i];cnt++;if(cnt>sl){run-=absD[i-sl];cnt=sl}if(cnt===sl)avg[i]=run/sl}
+  for(let i=1;i<n;i++){if(dOI[i]==null)continue;const up=k[i].c>=k[i-1].c;szen[i]=up?(dOI[i]>0?1:2):(dOI[i]>0?3:4);
+    if(avg[i]!=null){sig[i]=absD[i]>avg[i]*(+c.sigMult||1.5);ext[i]=absD[i]>avg[i]*(+c.extrem||3)}}
+  // Volumen-Delta und CVD
+  const dKey=t=>c.cvdReset==="tag"?Math.floor(t/864e5):c.cvdReset==="woche"?Math.floor((t/864e5+3)/7):0;let acc=0;
+  for(let i=0;i<n;i++){const x=k[i];delta[i]=x.b!=null&&isFinite(x.b)?2*x.b-x.v:x.c>x.o?x.v:x.c<x.o?-x.v:0;
+    if(i>0&&dKey(x.t)!==dKey(k[i-1].t))acc=0;acc+=delta[i];cvd[i]=acc}
+  // Bezugszeitraum
+  const last=n-1,R={oi,dOI,sig,ext,szen,delta,cvd,has};const cal=c.bezug==="tag"||c.bezug==="woche"||c.bezug==="monat";
+  const nStd=Math.min(4900,Math.max(1,Math.round((+c.stunden||24)*36e5/step))),nB=c.bezug==="std"?nStd:Math.max(2,+c.n||20);
+  let oiPct=null,dSum=null,pPct=null;
+  if(cal){const per=t=>{const d=new Date(t);return c.bezug==="tag"?Math.floor(t/864e5):c.bezug==="woche"?Math.floor((t/864e5+3)/7):d.getUTCFullYear()*12+d.getUTCMonth()};
+    let ref=last;while(ref>0&&per(k[ref-1].t)===per(k[last].t))ref--;
+    if(ref>0||per(k[0].t)!==per(k[last].t)||true){const rO=ref>0&&oi[ref-1]!=null?oi[ref-1]:oi[ref],rC=ref>0?k[ref-1].c:k[ref].o;
+      if(rO>0&&oi[last]!=null)oiPct=(oi[last]/rO-1)*100;pPct=(k[last].c/rC-1)*100;dSum=0;for(let i=ref;i<=last;i++)dSum+=delta[i]}}
+  else if(last-nB>=0){if(oi[last-nB]>0&&oi[last]!=null)oiPct=(oi[last]/oi[last-nB]-1)*100;pPct=(k[last].c/k[last-nB].c-1)*100;dSum=0;for(let i=last-nB+1;i<=last;i++)dSum+=delta[i]}
+  R.oiPct=oiPct;R.dSum=dSum;R.pPct=pPct;R.trend=oiPct==null||pPct==null?0:pPct>=0?(oiPct>0?1:2):(oiPct>0?3:4);
+  R.divBaer=(pPct||0)>0&&(dSum||0)<0;R.divBulle=(pPct||0)<0&&(dSum||0)>0;
+  R.bezK=c.bezug==="std"?c.stunden+" h":c.bezug==="tag"?"Tag":c.bezug==="woche"?"Woche":c.bezug==="monat"?"Monat":nB+" K";
+  R.bezL=c.bezug==="std"?`die letzten ${c.stunden} Stunden (= ${nStd} Kerzen auf diesem Zeitrahmen)`:c.bezug==="tag"?"seit Tagesbeginn (00:00 UTC)":c.bezug==="woche"?"seit Wochenbeginn (Montag 00:00 UTC)":c.bezug==="monat"?"seit Monatsbeginn":`die letzten ${nB} Kerzen`;
+  // OI-Lage (Rang) und letztes Extrem-Ereignis
+  const ll=Math.max(20,+c.lageLen||100);R.rang=null;
+  if(oi[last]!=null&&last-ll>=0){let le=0,ok=true;for(let i=last-ll;i<last;i++){if(oi[i]==null){ok=false;break}if(oi[i]<=oi[last])le++}if(ok)R.rang=le/ll*100}
+  R.evBar=null;R.evTyp=0;for(let i=last-1;i>0;i--)if(ext[i]){R.evBar=i;R.evTyp=szen[i];break}
+  BOD.R=R;bodTable()}
+
+function bodTable(){const c=S.cfg.bod,R=BOD.R,el=$("bodTab");if(!R||!c.tab){el.hidden=true;return}el.hidden=false;
+  const cK=c.fKauf,cV=c.fVerk,gr="var(--muted)",rows=[];const row=(a,at,b,col,bt)=>rows.push([a,at,b,col,bt]);
+  const st=BOD.key===bKey()?BOD.st:"lädt",q=st==="ok"?"Binance":st==="lädt"?"lädt …":"keine";
+  row("Quelle","Börse, von der das Open Interest stammt.",q,gr,st==="ok"?`Symbol: ${BOD.sym} (Binance-Terminbörse). Verlauf höchstens 30 Tage zurück.`:st==="tf"?`Auf ${TFLAB[S.tf]} gibt es kein Open Interest (verfügbar: 5m bis 1D). Delta und CVD funktionieren trotzdem.`:st==="lädt"?"Open Interest wird geladen.":"Für diesen Coin liefert die Binance-Terminbörse kein Open Interest (oder sie ist von hier nicht erreichbar). Delta und CVD funktionieren trotzdem.");
+  row("Bezug","Zeitraum, auf den sich OI, Δ, Trend, Div und Fazit beziehen.\nÄndern in den Einstellungen → Bezugszeitraum Tabelle.",R.bezK,gr,"Bezug: "+R.bezL+".");
+  row("OI","Open-Interest-Veränderung, Bezug: "+R.bezL+".",R.oiPct==null?"keine Daten":(R.oiPct>=0?"▲ +":"▼ ")+R.oiPct.toFixed(1).replace(".",",")+" %",R.oiPct==null?gr:R.oiPct>=0?cK:cV,R.oiPct==null?"Für diesen Zeitraum liegt kein Open Interest vor.":R.oiPct>=0?"Neues Geld fließt in den Markt.":"Positionen werden geschlossen, Geld fließt ab.");
+  row("Δ","Summe aus Kauf- minus Verkaufsvolumen, Bezug: "+R.bezL+" (echtes Käufer-/Verkäufer-Volumen von Binance).",R.dSum==null?"–":(R.dSum>=0?"▲ ":"▼ ")+fv(R.dSum),R.dSum==null?gr:R.dSum>=0?cK:cV,(R.dSum||0)>=0?"Käufer waren aggressiver.":"Verkäufer waren aggressiver.");
+  row("Trend","Szenario aus Preis- und OI-Veränderung, Bezug: "+R.bezL+".",SZK[R.trend],szCol(R.trend),SZL[R.trend]);
+  const l=S.kO.length-1;row("Kerze","Szenario der aktuellen Kerze. „!“ = signifikante OI-Veränderung.",SZK[R.szen[l]]+(R.sig[l]?" !":""),szCol(R.szen[l]),SZL[R.szen[l]]);
+  row("Div","Widerspruch zwischen Preis und Volumen-Delta, Bezug: "+R.bezL+".",R.divBaer?"⚠ ▼":R.divBulle?"⚠ ▲":"–",R.divBaer?cV:R.divBulle?cK:gr,R.divBaer?"Preis steigt, aber Verkäufer überwiegen.\nDer Anstieg wird nicht von aggressiven Käufern getragen – Vorsicht.":R.divBulle?"Preis fällt, aber Käufer überwiegen.\nDer Verkaufsdruck wird absorbiert – mögliche Bodenbildung.":"Keine Divergenz: Preis und Delta zeigen in dieselbe Richtung.");
+  if(c.erw){const g=R.rang,gt=g==null?"–":g.toFixed(0)+" %";
+    row("Lage",`Wo das OI im Vergleich zu den letzten ${c.lageLen} Kerzen steht.`,g==null?"–":g>=90?"Hoch "+gt:g<=10?"Tief "+gt:gt,g==null?gr:g>=90?c.fLQ:g<=10?cK:gr,g==null?"Keine OI-Daten.":g>=90?"OI auf Extremniveau: sehr viele gehebelte Positionen.\nDer Markt ist überhitzt – eine Gegenbewegung kann eine Liquidationskaskade auslösen.":g<=10?"OI sehr niedrig: Der Markt ist bereinigt.\nWenig Hebel im Markt – gute Basis für eine neue, saubere Bewegung.":"OI im normalen Bereich.");
+    const al=R.evBar==null?null:l-R.evBar;
+    row("Ereig",`Letztes Extrem-Ereignis beim OI (Faktor ${String(c.extrem).replace(".",",")}× über normal).`,al==null?"–":EVK[R.evTyp]+" · "+al,al==null?gr:szCol(R.evTyp),al==null?EVL[0]:EVL[R.evTyp]+`\n\nVor ${al} Kerzen.`);
+    let ft="–",fp="Kein klares Bild.",fc=gr;const ds=R.dSum||0;
+    if(R.trend===1){if(ds>=0){ft="✓ ▲";fp="Anstieg bestätigt: Neues Geld kauft und Käufer sind aggressiv.";fc=cK}else{ft="⚠ ▲";fp="Preis und OI steigen, aber Verkäufer sind aggressiver.\nNeue Positionen werden gegen den Anstieg eröffnet oder Käufer kaufen nur passiv – Anstieg nicht sauber bestätigt.";fc=c.fLQ}}
+    else if(R.trend===3){if(ds<=0){ft="✓ ▼";fp="Abwärtsdruck bestätigt: Neues Geld verkauft und Verkäufer sind aggressiv.";fc=cV}else{ft="⚠ ▼";fp="Preis fällt und OI steigt, aber Käufer sind aggressiver.\nShorts werden in Käufer hinein eröffnet – Squeeze-Gefahr, falls der Preis dreht.";fc=c.fLQ}}
+    else if(R.trend===2){ft="SQ";fp="Anstieg durch eingedeckte Shorts, nicht durch neues Geld.\nOft kurzlebig – auf Bestätigung durch neue Longs warten.";fc=c.fSQ}
+    else if(R.trend===4){ft="Abbau";fp="Positionen werden abgebaut, der Markt bereinigt sich.\nLäuft der Abbau aus, entsteht oft ein Boden.";fc=c.fLQ}
+    if(g!=null&&g>=90&&(R.trend===1||R.trend===3))fp+="\n\nAchtung: OI auf Extremniveau – Liquidationsrisiko erhöht.";
+    row("Fazit","Zusammenfassung aus Trend, Delta und OI-Lage.",ft,fc,fp)}
+  el.innerHTML=rows.map(r=>`<span class="a" data-tip="${esc(r[1])}">${esc(r[0])}</span><span class="b" style="color:${r[3]}" data-tip="${esc(r[4])}">${esc(r[2])}</span>`).join("");
+  const o=c.tabOrt||"ur",off=(+c.tabAbst||0)*(+c.tabSchritt||1.5),s=el.style;s.top=s.bottom=s.left=s.right="";s.transform="";
+  s.fontSize={winzig:"10px",klein:"11.5px",normal:"13px",gross:"15px"}[c.tabGr]||"11.5px";
+  if(o[0]==="o")s.top=`calc(26px + ${off}%)`;else if(o[0]==="u")s.bottom=`calc(4px + ${off}%)`;else{s.top="50%";s.transform="translateY(-50%)"}
+  if(o[1]==="l")s.left=`calc(6px + ${off}%)`;else if(o[1]==="r")s.right=`calc(var(--ax,74px) + 6px + ${off}%)`;else{s.left="calc((100% - var(--ax,74px)) / 2)";s.transform+=" translateX(-50%)"}}
+
+function bodPaint(th){const box=$("bodBox");if(box.hidden||!L||!S.k.length)return;
+  const cvs=$("bodCv"),r=cvs.getBoundingClientRect(),d=devicePixelRatio||1;if(r.width<10||r.height<10)return;
+  if(cvs.width!==Math.round(r.width*d)||cvs.height!==Math.round(r.height*d)){cvs.width=Math.round(r.width*d);cvs.height=Math.round(r.height*d)}
+  const x=cvs.getContext("2d");x.setTransform(d,0,0,d,0,0);const W=r.width,H=r.height,pw=L.pw,cw=L.cw,from=L.from,c=S.cfg.bod,R=BOD.R,n=S.k.length;
+  box.style.setProperty("--ax",(W-pw)+"px");
+  x.fillStyle=th.bg;x.fillRect(0,0,W,H);x.fillStyle=th.axis;x.fillRect(pw,0,W-pw,H);
+  document.querySelectorAll("#bodSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===c.modus));
+  const info=$("bodInfo");if(!R){info.textContent="";return}
+  const m=c.modus,ser=m==="doi"?R.dOI:m==="oi"?R.oi:m==="delta"?R.delta:R.cvd,col=m==="doi"||m==="delta";
+  const i0=Math.max(0,Math.floor(from)),i1=Math.min(n-1,Math.ceil(from+pw/cw));let lo=Infinity,hi=-Infinity;
+  for(let i=i0;i<=i1;i++){const v=ser[i];if(v==null)continue;if(v<lo)lo=v;if(v>hi)hi=v}
+  const ci=L.ci!=null&&L.ci>=0&&L.ci<n?L.ci:n-1;
+  info.innerHTML=R.szen[ci]?`<b style="color:${szCol(R.szen[ci])}">${SZK[R.szen[ci]]}${R.sig[ci]?" !":""}</b> ΔOI ${fv(R.dOI[ci],1)} · OI ${fv(R.oi[ci])} · Delta <span style="color:${R.delta[ci]>=0?c.fKauf:c.fVerk}">${fv(R.delta[ci],1)}</span>`
+    :`Delta <span style="color:${R.delta[ci]>=0?c.fKauf:c.fVerk}">${fv(R.delta[ci],1)}</span> · CVD ${fv(R.cvd[ci])}`;
+  x.font='500 10px "JetBrains Mono",ui-monospace,monospace';x.textBaseline="middle";
+  if(!isFinite(lo)){x.fillStyle=th.txt;x.textAlign="center";const st=BOD.key===bKey()?BOD.st:"lädt";
+    x.fillText(st==="lädt"?"Open Interest wird geladen …":st==="tf"?`Kein Open Interest auf ${TFLAB[S.tf]} (verfügbar 5m bis 1D) – Volumen-Delta und CVD gehen trotzdem.`:"Kein Open Interest für diesen Bereich (höchstens 30 Tage zurück) – Volumen-Delta und CVD gehen trotzdem.",pw/2,H/2+8);return}
+  if(col){lo=Math.min(lo,0);hi=Math.max(hi,0)}const pad=(hi-lo)*0.12||Math.abs(hi)*0.01||1;lo-=col&&lo===0?0:pad;hi+=col&&hi===0?0:pad;
+  const T=24,B=H-5,Y=v=>B-(v-lo)/(hi-lo)*(B-T),X=i=>(i-from+0.5)*cw;
+  x.strokeStyle=th.grid;x.lineWidth=1;x.fillStyle=th.txt;x.textAlign="left";
+  for(let g=0;g<=2;g++){const v=lo+(hi-lo)*(g+0.5)/3,y=Math.round(Y(v))+.5;x.beginPath();x.moveTo(0,y);x.lineTo(pw,y);x.stroke();x.fillText(fv(v),pw+6,y)}
+  x.save();x.beginPath();x.rect(0,0,pw,H);x.clip();
+  if(col){const bw=Math.max(1,cw*0.7),y0=Y(0);
+    for(let i=i0;i<=i1;i++){const v=ser[i];if(v==null)continue;x.fillStyle=m==="doi"?(c.grau&&!R.sig[i]?"rgba(128,128,128,.35)":szCol(R.szen[i])):(v>=0?c.fKauf:c.fVerk);
+      const y=Y(v);x.fillRect(X(i)-bw/2,Math.min(y,y0),bw,Math.max(1,Math.abs(y-y0)))}}
+  else{x.lineWidth=2;x.lineJoin="round";for(let i=Math.max(1,i0);i<=i1;i++){const v=ser[i],p=ser[i-1];if(v==null||p==null)continue;
+      x.strokeStyle=m==="oi"?szCol(R.szen[i]):(v>=p?c.fKauf:c.fVerk);x.beginPath();x.moveTo(X(i-1),Y(p));x.lineTo(X(i),Y(v));x.stroke()}}
+  if(m!=="oi"){x.strokeStyle="rgba(128,128,128,.5)";x.lineWidth=1;const y=Math.round(Y(0))+.5;x.beginPath();x.moveTo(0,y);x.lineTo(pw,y);x.stroke()}
+  if(S.cross&&S.cross.x<pw){x.strokeStyle=th.cross;x.setLineDash([4,4]);x.beginPath();x.moveTo(S.cross.x+.5,0);x.lineTo(S.cross.x+.5,H);x.stroke();x.setLineDash([])}
+  x.restore();
+  let li=n-1;while(li>i0&&ser[li]==null)li--;const lv=ser[li];if(lv!=null&&li<=i1){const y=Y(lv),t=fv(lv);x.fillStyle=m==="oi"||m==="doi"?szCol(R.szen[li]):(m==="delta"?lv>=0:lv>=(ser[li-1]??lv))?c.fKauf:c.fVerk;
+    x.fillRect(pw+1,y-7,W-pw-2,14);x.fillStyle="#111";x.textAlign="left";x.fillText(t,pw+6,y)}}
+
+// Hauptchart: Kerzen einfärben und Info-Marker (wie barcolor / label im Pine-Code)
+function bodMain(th){const c=S.cfg.bod,R=BOD.R;if(!c.on||!R||!L||(!c.kerzen&&!c.marker))return;const k=S.k,n=k.length,cw=L.cw,bw=Math.max(1,cw*0.7);
+  ctx.save();ctx.beginPath();ctx.rect(0,0,L.pw,L.mainH);ctx.clip();
+  for(let i=Math.max(1,L.i0);i<=Math.min(n-1,L.i1);i++){const s=R.szen[i];if(!s)continue;const x=L.X(i),q=k[i],col=szCol(s);
+    if(c.kerzen&&R.sig[i]){ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(Math.round(x)+.5,L.Y(q.h));ctx.lineTo(Math.round(x)+.5,L.Y(q.l));ctx.stroke();
+      const a=L.Y(Math.max(q.o,q.c)),b=L.Y(Math.min(q.o,q.c));ctx.fillRect(x-bw/2,a,bw,Math.max(1,b-a))}
+    if(c.marker&&i<n-1&&(R.sig[i]||!c.markerSig)){const up=s<=2,y=up?L.Y(q.l)+7:L.Y(q.h)-7,z=4;ctx.fillStyle=col;ctx.beginPath();
+      if(up){ctx.moveTo(x,y);ctx.lineTo(x-z,y+z*1.6);ctx.lineTo(x+z,y+z*1.6)}else{ctx.moveTo(x,y);ctx.lineTo(x-z,y-z*1.6);ctx.lineTo(x+z,y-z*1.6)}ctx.fill()}}
+  ctx.restore()}
+
+$("bodSeg").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;S.cfg.bod.modus=b.dataset.m;save();paint();if(!$("side").hidden&&sideM==="ind"){const sc=$("side").scrollTop;renderDlg();$("side").scrollTop=sc}});
+$("bodBox").addEventListener("click",e=>{const t=e.target.closest("[data-tip]"),tip=$("bodTip");if(!t){tip.hidden=true;return}
+  tip.textContent=t.dataset.tip;tip.hidden=false});
+{const rc0=recompute;recompute=function(){bodCalc();rc0()}}
+if(window.ResizeObserver)new ResizeObserver(()=>paint()).observe($("bodBox"));
+bodCalc();
 </script>
 </body>
 </html>
