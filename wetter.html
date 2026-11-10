@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bayazit Wetter</title>
 <link rel="icon" type="image/svg+xml" href="icons/wetter.svg">
+<link rel="apple-touch-icon" href="icons/wetter-180.png">
+<link rel="manifest" href="wetter.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Wetter">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0d2a4a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -90,6 +94,12 @@
   .legende i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:0}
   .legende .verlauf{display:inline-block;width:56px;height:9px;border-radius:5px;background:linear-gradient(90deg,var(--sonne),rgba(255,255,255,.12));margin:0 5px;vertical-align:0}
 
+  .leiste{display:grid;grid-template-columns:1fr auto 1fr}
+  .links{display:flex;gap:8px}.rechts{display:flex;gap:8px;justify-content:flex-end}
+  .sicher{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:5px;vertical-align:1px}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;transition:.25s;
+    background:#fff;color:#0d2a4a;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.3);pointer-events:none;z-index:9}
+  #toast.zeigen{opacity:1;transform:translateX(-50%) translateY(0)}
   #status{text-align:center;color:var(--leise);padding:60px 0}
   footer{text-align:center;color:var(--leise);font-size:12px;padding:6px 0}
   footer a{color:var(--leise)}
@@ -99,9 +109,9 @@
 <body>
 <main>
   <div class="leiste">
-    <button class="rund" id="ortBtn" title="Mein Standort">◎</button>
+    <div class="links"><button class="rund" id="ortBtn" title="Mein Standort">◎</button><button class="rund" id="sucheBtn" title="Ort suchen">🔍</button></div>
     <div class="ort" id="ortName" title="Doppeltipp: zurück zu Ergolding"><span>📍</span>Ergolding</div>
-    <button class="rund" id="sucheBtn" title="Ort suchen">🔍</button>
+    <div class="rechts"><button class="rund" id="teilenBtn" title="Teilen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button></div>
   </div>
   <div id="suche"><input id="sucheFeld" placeholder="Ort suchen, z. B. Landshut" autocomplete="off"><div id="treffer"></div></div>
 
@@ -128,17 +138,24 @@
         <span><i style="background:var(--max)"></i>Max (°C)</span>
         <span><i style="background:var(--min)"></i>Min (°C)</span>
         <span>💧 Regen</span>
+        <span><i style="background:rgba(255,255,255,.35);border-radius:2px;width:14px"></i>Spanne der Wettermodelle</span>
+        <span>┄ unsicher (ab Tag 8)</span>
         <span>☀ viel<span class="verlauf"></span>wenig</span>
       </div>
     </div>
   </div>
+  <div class="legende" style="justify-content:center;margin:0 0 10px">Vorhersage-Sicherheit:
+    <span><i style="background:#5fd38d"></i>hoch</span><span><i style="background:#ffd84d"></i>mittel</span><span><i style="background:#ff7a6b"></i>gering</span></div>
   <footer>Daten: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (u. a. DWD) · <span id="stand"></span></footer>
 </main>
+<div id="toast"></div>
 
 <script>
 const STANDARD = {name:"Ergolding", lat:48.5786, lon:12.2077};
-let ort = STANDARD, daten = null, gewaehlt = 0, anzahl = 7;
+let ort = STANDARD, daten = null, gewaehlt = 0, anzahl = 7, spanne = null;
 try { const s = JSON.parse(localStorage.getItem("wetterOrt")); if (s && s.lat) ort = s; } catch(e){}
+// geteilter Link: ?ort=...&lat=...&lon=...
+try { const q = new URLSearchParams(location.search); if(q.get("lat")&&q.get("lon")) ort = {name:q.get("ort")||"Ort", lat:+q.get("lat"), lon:+q.get("lon")}; } catch(e){}
 try { const n = +localStorage.getItem("wetterTage"); if ([3,5,7,14].includes(n)) anzahl = n; } catch(e){}
 
 const TAGE = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
@@ -193,7 +210,7 @@ async function laden(){
     "&timezone=Europe%2FBerlin&forecast_days=14";
   try{
     const r = await fetch(url); if(!r.ok) throw new Error(r.status);
-    daten = await r.json(); if(gewaehlt>=anzahl) gewaehlt=0; zeigen();
+    daten = await r.json(); if(gewaehlt>=anzahl) gewaehlt=0; zeigen(); ladeSpanne();
   }catch(e){ if(!daten){ st.hidden=false; st.textContent = "Wetter konnte nicht geladen werden. Bitte später nochmal versuchen."; } }
 }
 
@@ -264,7 +281,7 @@ function tageZeigen(){
   let html = "";
   for(let i=0;i<n;i++){
     html += `<div class="tag ${i===gewaehlt?"aktiv":""}" data-i="${i}">
-      <div class="name">${tagName(i)}<small>${datumKurz(i)}</small></div>
+      <div class="name">${tagName(i)}<small>${datumKurz(i)}<span class="sicher" style="background:${SICHER[sicherheit(i)][0]}" title="${sicherText(i)}"></span></small></div>
       <div title="${text(d.weather_code[i])}">${symbol(d.weather_code[i],false)}</div>
       <div class="rg">💧${d.precipitation_probability_max[i]??"–"}%<b>☀ ${Math.round(d.sunshine_duration[i]/3600)} h</b></div>
       <div class="spanne"><span class="mn">${runde(d.temperature_2m_min[i])}°</span>
@@ -277,6 +294,44 @@ function tageZeigen(){
     gewaehlt = +el.dataset.i; tageZeigen(); abschnitteZeigen();
     document.getElementById("abschnitte").scrollIntoView({behavior:"smooth",block:"center"});
   });
+}
+
+/* ---------- Unsicherheit: 3 Wettermodelle vergleichen (DWD, Europa, USA) ---------- */
+const MODELLE = ["icon_seamless","ecmwf_ifs025","gfs_seamless"];
+async function ladeSpanne(){
+  const tage = daten.daily.time, ergebnis = [];
+  await Promise.all(MODELLE.map(async m=>{
+    try{
+      const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude="+ort.lat+"&longitude="+ort.lon+
+        "&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FBerlin&forecast_days=14&models="+m);
+      if(!r.ok) return; const j = await r.json(); const dd = j.daily; if(!dd) return;
+      const k = pre => Object.keys(dd).find(x=>x.startsWith(pre));
+      const mxK = k("temperature_2m_max"), mnK = k("temperature_2m_min");
+      ergebnis.push(tage.map(t=>{ const i = dd.time.indexOf(t); return i<0?[null,null]:[dd[mxK][i],dd[mnK][i]]; }));
+    }catch(e){}
+  }));
+  if(ergebnis.length<2) return;
+  spanne = tage.map((t,i)=>{
+    const mx = ergebnis.map(e=>e[i][0]).concat(daten.daily.temperature_2m_max[i]).filter(v=>v!=null);
+    const mn = ergebnis.map(e=>e[i][1]).concat(daten.daily.temperature_2m_min[i]).filter(v=>v!=null);
+    return {maxLo:Math.min(...mx), maxHi:Math.max(...mx), minLo:Math.min(...mn), minHi:Math.max(...mn), modelle:Math.min(mx.length,mn.length)};
+  });
+  tageZeigen(); trendZeigen();
+}
+// 0 = hoch, 1 = mittel, 2 = gering
+function sicherheit(i){
+  let st = i<=2 ? 0 : i<=6 ? 1 : 2;
+  if(spanne && spanne[i] && spanne[i].modelle>=3){
+    const sp = Math.max(spanne[i].maxHi-spanne[i].maxLo, spanne[i].minHi-spanne[i].minLo);
+    st = Math.max(st, sp>=5?2:sp>=2.5?1:0);
+  }
+  return st;
+}
+const SICHER = [["#5fd38d","hoch"],["#ffd84d","mittel"],["#ff7a6b","gering"]];
+function sicherText(i){
+  let t = "Vorhersage-Sicherheit: " + SICHER[sicherheit(i)][1];
+  if(spanne && spanne[i] && spanne[i].modelle>=2) t += ` – Modelle: Max ${runde(spanne[i].maxLo)}…${runde(spanne[i].maxHi)}°, Min ${runde(spanne[i].minLo)}…${runde(spanne[i].minHi)}°`;
+  return t;
 }
 
 /* ---------- Trend-Diagramm ---------- */
@@ -296,7 +351,8 @@ function trendZeigen(){
   const W = Math.max(svg.clientWidth || 600, 280), spalte = W/n;
   const oben = 30, diaH = 190, unten = oben+diaH, bandY = unten+14, bandH = 30, H = bandY+bandH+2;
   const mx = d.temperature_2m_max.slice(0,n), mn = d.temperature_2m_min.slice(0,n);
-  const hi = Math.max(...mx), lo = Math.min(...mn);
+  const sp = spanne ? spanne.slice(0,n) : null;
+  const hi = Math.max(...mx, ...(sp?sp.map(s=>s.maxHi):[])), lo = Math.min(...mn, ...(sp?sp.map(s=>s.minLo):[]));
   const y = t => oben + 22 + (hi-t)/((hi-lo)||1)*(diaH-56);
   const x = i => spalte*i + spalte/2;
   const fs = n>10 ? 12 : 14;
@@ -308,14 +364,23 @@ function trendZeigen(){
   }
   if(lo<0 && hi>0) g += `<line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="rgba(255,255,255,.18)" stroke-dasharray="4 4"/><text x="4" y="${y(0)-4}" font-size="10" fill="rgba(242,246,250,.5)">0°</text>`;
   const pMax = mx.map((t,i)=>[x(i),y(t)]), pMin = mn.map((t,i)=>[x(i),y(t)]);
-  // Fläche zwischen Min und Max
-  const rueck = kurve([...pMin].reverse()).replace(/^M[^C]*/,"");
-  g += `<path d="${kurve(pMax)} L${pMin[n-1][0]},${pMin[n-1][1]} ${rueck} Z" fill="url(#flaeche)" opacity=".28"/>`;
-  g += `<path d="${kurve(pMax)}" fill="none" stroke="var(--max)" stroke-width="2.5" stroke-linecap="round"/>`;
-  g += `<path d="${kurve(pMin)}" fill="none" stroke="var(--min)" stroke-width="2.5" stroke-linecap="round"/>`;
+  const band = (oberP, unterP) => `${kurve(oberP)} L${unterP[unterP.length-1][0]},${unterP[unterP.length-1][1]} ${kurve([...unterP].reverse()).replace(/^M[^C]*/,"")} Z`;
+  if(sp){
+    // Spanne der Wettermodelle als Schatten
+    g += `<path d="${band(sp.map((s,i)=>[x(i),y(s.maxHi)]), sp.map((s,i)=>[x(i),y(s.maxLo)]))}" fill="var(--max)" opacity=".22"/>`;
+    g += `<path d="${band(sp.map((s,i)=>[x(i),y(s.minHi)]), sp.map((s,i)=>[x(i),y(s.minLo)]))}" fill="var(--min)" opacity=".22"/>`;
+  } else {
+    g += `<path d="${band(pMax,pMin)}" fill="url(#flaeche)" opacity=".2"/>`;
+  }
+  // bis Tag 7 durchgezogen, danach gestrichelt
+  const grenze = n>7 ? x(6)+spalte/2 : W;
+  for(const [pp,f] of [[pMax,"var(--max)"],[pMin,"var(--min)"]]){
+    g += `<path d="${kurve(pp)}" fill="none" stroke="${f}" stroke-width="2.5" stroke-linecap="round" clip-path="url(#sicherZone)"/>`;
+    if(n>7) g += `<path d="${kurve(pp)}" fill="none" stroke="${f}" stroke-width="2.5" stroke-dasharray="5 5" opacity=".7" clip-path="url(#unsicherZone)"/>`;
+  }
   for(let i=0;i<n;i++){
-    g += `<circle cx="${pMax[i][0]}" cy="${pMax[i][1]}" r="4" fill="var(--max)" stroke="#0d2a4a" stroke-width="1.5"/>`;
-    g += `<circle cx="${pMin[i][0]}" cy="${pMin[i][1]}" r="4" fill="var(--min)" stroke="#0d2a4a" stroke-width="1.5"/>`;
+    g += `<circle cx="${pMax[i][0]}" cy="${pMax[i][1]}" r="4" opacity="${i>6?.7:1}" fill="var(--max)" stroke="#0d2a4a" stroke-width="1.5"/>`;
+    g += `<circle cx="${pMin[i][0]}" cy="${pMin[i][1]}" r="4" opacity="${i>6?.7:1}" fill="var(--min)" stroke="#0d2a4a" stroke-width="1.5"/>`;
     g += `<text x="${x(i)}" y="${pMax[i][1]-10}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--max)">${runde(mx[i])}°</text>`;
     g += `<text x="${x(i)}" y="${pMin[i][1]+21}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="var(--min)">${runde(mn[i])}°</text>`;
     // Sonnen-Band: je gelber, desto mehr Sonne
@@ -330,7 +395,9 @@ function trendZeigen(){
   }
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("height", H);
-  svg.innerHTML = `<defs><linearGradient id="flaeche" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb15c"/><stop offset="1" stop-color="#7cc7ff"/></linearGradient></defs>` + g;
+  svg.innerHTML = `<defs><linearGradient id="flaeche" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb15c"/><stop offset="1" stop-color="#7cc7ff"/></linearGradient>
+    <clipPath id="sicherZone"><rect x="0" y="0" width="${grenze}" height="${H}"/></clipPath>
+    <clipPath id="unsicherZone"><rect x="${grenze}" y="0" width="${W}" height="${H}"/></clipPath></defs>` + g;
 }
 
 /* ---------- Bedienung ---------- */
@@ -341,7 +408,7 @@ document.querySelectorAll("#wahl button").forEach(b=>b.onclick=()=>{
 });
 let rTimer; window.addEventListener("resize",()=>{ clearTimeout(rTimer); rTimer=setTimeout(()=>daten&&trendZeigen(),150); });
 
-function ortSetzen(o){ ort=o; daten=null; gewaehlt=0; try{localStorage.setItem("wetterOrt",JSON.stringify(o))}catch(e){}
+function ortSetzen(o){ ort=o; daten=null; spanne=null; try{history.replaceState(null,"",location.pathname)}catch(e){} gewaehlt=0; try{localStorage.setItem("wetterOrt",JSON.stringify(o))}catch(e){}
   document.getElementById("suche").classList.remove("offen"); document.getElementById("sucheFeld").value=""; document.getElementById("treffer").innerHTML="";
   document.getElementById("inhalt").hidden=true; laden(); }
 document.getElementById("sucheBtn").onclick = ()=>{ const s=document.getElementById("suche"); s.classList.toggle("offen"); if(s.classList.contains("offen")) document.getElementById("sucheFeld").focus(); };
@@ -364,6 +431,24 @@ document.getElementById("ortBtn").onclick = ()=>{
 };
 // Doppeltipp auf den Ortsnamen → zurück zu Ergolding
 document.getElementById("ortName").ondblclick = ()=>ortSetzen(STANDARD);
+
+/* ---------- Teilen ---------- */
+function toast(t){ const el=document.getElementById("toast"); el.textContent=t; el.classList.add("zeigen"); setTimeout(()=>el.classList.remove("zeigen"),2200); }
+document.getElementById("teilenBtn").onclick = async ()=>{
+  const link = location.origin + location.pathname + "?ort=" + encodeURIComponent(ort.name) + "&lat=" + ort.lat + "&lon=" + ort.lon;
+  let text = "Wetter " + ort.name;
+  if(daten){
+    const c = daten.current, d = daten.daily;
+    text += `: jetzt ${runde(c.temperature_2m)}° (${text_(c.weather_code)}), heute ${runde(d.temperature_2m_max[0])}°/${runde(d.temperature_2m_min[0])}°, Regen ${d.precipitation_probability_max[0]??0} %`;
+    text += `\nMorgen ${runde(d.temperature_2m_max[1])}°/${runde(d.temperature_2m_min[1])}°, ${text_(d.weather_code[1])}`;
+  }
+  if(navigator.share){
+    try{ await navigator.share({title:"Bayazit Wetter", text, url:link}); }catch(e){}
+  }else{
+    try{ await navigator.clipboard.writeText(text+"\n"+link); toast("Link kopiert ✓"); }catch(e){ prompt("Link kopieren:", link); }
+  }
+};
+function text_(c){ return text(c); }
 
 laden();
 setInterval(laden, 30*60*1000);
