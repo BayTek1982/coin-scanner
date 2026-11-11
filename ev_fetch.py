@@ -72,8 +72,51 @@ def earnings(t):
         except Exception:
             pass
     if not days:
+        # nächster Termin noch nicht angekündigt: letzten Termin + ca. 1 Quartal schätzen
+        past = []
+        for d in ds:
+            try:
+                d = d.date() if hasattr(d, "date") and callable(d.date) else d
+                if isinstance(d, dt.date) and TODAY - dt.timedelta(days=120) <= d < TODAY:
+                    past.append(d)
+            except Exception:
+                pass
+        if not past:
+            return None
+        est = max(past) + dt.timedelta(days=91)
+        while est < TODAY:
+            est += dt.timedelta(days=91)
+        return {"d": est.isoformat(), "r": True}
+    return {"d": min(days).isoformat(), "r": len(ds) > 1}   # r = noch nicht bestätigt (Zeitraum/Schätzung)
+
+
+def _ncdf(x):
+    return 0.5 * (1 + math.erf(x / math.sqrt(2)))
+
+
+def bs_price(S, K, T, r, v, call):
+    d1 = (math.log(S / K) + (r + v * v / 2) * T) / (v * math.sqrt(T))
+    d2 = d1 - v * math.sqrt(T)
+    if call:
+        return S * _ncdf(d1) - K * math.exp(-r * T) * _ncdf(d2)
+    return K * math.exp(-r * T) * _ncdf(-d2) - S * _ncdf(-d1)
+
+
+def bs_iv(price, S, K, T, call, r=0.04):
+    """Implizite Volatilität per Bisektion aus dem Optionspreis."""
+    intr = max(0.0, S - K * math.exp(-r * T)) if call else max(0.0, K * math.exp(-r * T) - S)
+    if not price or price <= intr + 1e-6:
         return None
-    return {"d": min(days).isoformat(), "r": len(ds) > 1}   # r = noch nicht bestätigt (Zeitraum)
+    lo, hi = 0.01, 5.0
+    if bs_price(S, K, T, r, hi, call) < price:
+        return None
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if bs_price(S, K, T, r, mid, call) > price:
+            hi = mid
+        else:
+            lo = mid
+    return (lo + hi) / 2
 
 
 def atm_iv(t):
@@ -106,17 +149,21 @@ def atm_iv(t):
             spot = None
     if not spot or not math.isfinite(spot):
         return None
+    T = max(best[2], 1) / 365.0
     ivs = []
-    for df in (ch.calls, ch.puts):
+    for df, call in ((ch.calls, True), (ch.puts, False)):
         try:
-            x = df[(df["impliedVolatility"] > 0.03) & (df["impliedVolatility"] < 5)]
-            x = x[(x["bid"].fillna(0) > 0) | (x["openInterest"].fillna(0) > 0)]
-            x = x.assign(dist=(x["strike"] - spot).abs()).sort_values("dist").head(2)
-            ivs += [float(v) for v in x["impliedVolatility"]]
+            x = df.assign(dist=(df["strike"] - spot).abs()).sort_values("dist").head(2)
+            for _, o in x.iterrows():
+                bid, ask = float(o.get("bid") or 0), float(o.get("ask") or 0)
+                if bid > 0 and ask >= bid and (ask - bid) <= 0.5 * ask:    # nur echte, enge Kurse
+                    v = bs_iv((bid + ask) / 2, spot, float(o["strike"]), T, call)
+                    if v and 0.03 < v < 4:
+                        ivs.append(v)
         except Exception:
             pass
     if len(ivs) < 2:
-        return None
+        return None       # z. B. Börse zu (keine Geld/Brief-Kurse): lieber kein Wert als ein falscher
     return {"iv": round(sum(ivs) / len(ivs), 4), "dte": best[2]}
 
 

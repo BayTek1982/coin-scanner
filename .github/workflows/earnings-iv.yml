@@ -1,8 +1,8 @@
 name: Earnings und IV Aktien
 on:
   schedule:
-    # 1x täglich nach US-Börsenschluss (Mo–Fr)
-    - cron: "43 21 * * 1-5"
+    # 1x täglich während der US-Börsenzeit (Mo–Fr, ca. 20:43 deutscher Zeit), damit die Optionskurse echt sind
+    - cron: "43 19 * * 1-5"
   workflow_dispatch:
 permissions:
   contents: write
