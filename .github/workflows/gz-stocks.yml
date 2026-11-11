@@ -33,3 +33,20 @@ jobs:
           git add .
           git commit -q -m "Golden Zone Aktien $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gz-data
+      # Earnings + IV: 1x täglich im Lauf um ca. 19 Uhr UTC (US-Börse offen) oder beim Start von Hand
+      - id: hr
+        run: echo "h=$(date -u +%H)" >> "$GITHUB_OUTPUT"
+      - if: steps.hr.outputs.h == '19' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git clone -q --depth 1 --branch ev-data "https://github.com/${{ github.repository }}.git" prev || mkdir -p prev
+          python ev_fetch.py prev ev_out
+          cd ev_out
+          git init -q
+          git config user.name "kurs-bot"
+          git config user.email "kurs-bot@users.noreply.github.com"
+          git checkout -q -b ev-data
+          git add .
+          git commit -q -m "Earnings/IV $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" ev-data
