@@ -33,7 +33,7 @@ const DEF={
   rsi:{on:true,len:14,hi:80,lo:20,div:true,col:"#b388ff",cDivUp:"#00e5ff",cDivDn:"#ff4081"},
   macd:{on:false,f:12,s:26,sig:9,cM:"#5b9bff",cS:"#ff9800"},
   risk:{on:false,table:true},
-  heat:{on:false},
+  heat:{on:false,len:20,table:true,tabOrt:"or",tabGr:"klein",cBg:"#000000",cTxt:"#ffffff",kerzen:false},
   bod:{on:false,modus:"oi",cvdReset:"nie",kerzen:false,grau:true,marker:false,markerSig:true,sigLen:20,sigMult:1.5,bezug:"k",n:20,stunden:24,extrem:3,lageLen:100,tab:true,erw:true,tabOrt:"ur",tabGr:"klein",tabAbst:0,tabSchritt:1.5,
     fL:"#4caf50",fSQ:"#ff9800",fS:"#ffeb3b",fLQ:"#e91e63",fKauf:"#4caf50",fVerk:"#f23645"}
 };
@@ -165,7 +165,9 @@ const THEME={dark:{bg:"#0e131b",grid:"rgba(255,255,255,.06)",txt:"#8d99ab",fg:"#
 const rkCol=r=>`hsl(${Math.round((1-Math.max(0,Math.min(1,r)))*120)},75%,${r>.4&&r<.65?42:48}%)`;
 const BUB=[[.5,"#1d2bd6"],[.75,"#2f6bff"],[1,"#18c7e6"],[1.25,"#22c55e"],[1.5,"#e6d200"],[1.75,"#f59e0b"],[2,"#f2591a"],[Infinity,"#e11d2e"]];
 const heatIdx=(v,th)=>{if(th){const k=th.findIndex(t=>v<t);return k<0?7:k}return BUB.findIndex(b=>v<b[0])};
-const heatCol=(v,th)=>BUB[heatIdx(v,th)][1];
+// Farben wie im Pine-Indikator „Bayazit Hitze“ (für den Live-Chart umschaltbar)
+const BUBTV=["#00008b","#003cff","#00dcff","#00e600","#ffeb00","#ffaa00","#ff5a00","#e60000"];let PALTV=false;
+const heatCol=(v,th)=>PALTV?BUBTV[heatIdx(v,th)]:BUB[heatIdx(v,th)][1];
 const heatTxt=(v,th)=>["Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Kalt (unter dem Schnitt)","Normal","Warm","Heiß","Sehr heiß","Überhitzt"][heatIdx(v,th)];
 const hexRgb=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||"");if(!m)return null;const n=parseInt(m[1],16);return[n>>16&255,n>>8&255,n&255]};
 const ra=(h,a)=>{const c=hexRgb(h);return c?`rgba(${c[0]},${c[1]},${c[2]},${a})`:h};
@@ -330,11 +332,11 @@ function draw(ctx,W,H,S){const th=S.th||THEME.dark,k=S.k,I=S.I||{},cfg=S.cfg,tf=
       axQ.push({y:Yk(1),t:"1,0"},{y:Yk(0.5),t:"0,5"},{y:Yk(0),t:"0,0"});if(rn!=null)subTags.push({y:Yk(rn),col:rkCol(rn),t:nf(rn,3)})}
     else if(s==="heat"){const h=I.heat;let lo2=0.8,hi2=1.25;for(let i=i0;i<=i1;i++){const v=h[i];if(v!=null){if(v<lo2)lo2=v;if(v>hi2)hi2=v}}lo2=Math.min(lo2,0.95);const sp=hi2-lo2;lo2-=sp*0.04;hi2+=sp*0.06;
       const Yh=v=>pT+(hi2-v)/(hi2-lo2)*(pB-pT),y1=Yh(1);
-      const lv=I.heatTh?[I.heatTh[4],I.heatTh[6]]:[1.5,2];lv.forEach(v=>{if(v<hi2)line(0,Yh(v),pw,Yh(v),"rgba(255,107,94,.5)",1,[4,3])});
+      const lv=I.heatTh?[I.heatTh[4],I.heatTh[6]]:[1.5,2];lv.forEach(v=>{if(v<hi2)line(0,Yh(v),pw,Yh(v),"rgba(255,107,94,.5)",1,[4,3])});if(!I.heatTh&&lo2<0.75)line(0,Yh(0.75),pw,Yh(0.75),"rgba(0,188,212,.5)",1,[2,3]);
       for(let i=i0;i<=i1;i++){const v=h[i];if(v==null)continue;const y=Yh(v);ctx.fillStyle=heatCol(v,I.heatTh);ctx.fillRect(X(i)-cw*0.38,Math.min(y,y1),Math.max(1,cw*0.76),Math.max(1,Math.abs(y-y1)))}
       line(0,y1,pw,y1,th.fg,1);const hn=I.heatNow!=null?I.heatNow:h[last];
       font(10,1);ctx.textAlign="left";ctx.fillStyle=th.fg;
-      ctx.fillText(`Hitze ${hn!=null?nf(hn,2):"–"}${I.heatAvg?` · 20-Wochen-Schnitt ${fmt(I.heatAvg)}`:""}${hn!=null?" · "+heatTxt(hn,I.heatTh):""}`,6,pT+8);
+      ctx.fillText(`Hitze ${hn!=null?nf(hn,2):"–"}${I.heatAvg?` · ${Math.round(+cfg.heat.len||20)}-Wochen-Schnitt ${fmt(I.heatAvg)}`:""}${hn!=null?" · "+heatTxt(hn,I.heatTh):""}`,6,pT+8);
       axQ.push({y:y1,t:"1,00"});lv.forEach(v=>{if(v<hi2)axQ.push({y:Yh(v),t:nf(v,2)})});if(hn!=null)subTags.push({y:Yh(hn),col:heatCol(hn,I.heatTh),t:nf(hn,2)})}
     ctx.restore();top+=subH});
 
@@ -443,6 +445,6 @@ function drawDrawings(ctx,L,k,tf,list,sel,th){if(!L||!list||!list.length)return;
     if(sel===d.id){dwHandles(d,L,k,tf).forEach(h=>{ctx.fillStyle=th.bg;ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.arc(h.x,h.y,5,0,7);ctx.fill();ctx.stroke()})}});
   ctx.restore()}
 
-return{dfLevels,DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile,rkCol,heatCol,heatTxt,tIdx,idxT,drawDrawings,dwHandles,dwHit,DFIB};
+return{heatPal:t=>{PALTV=!!t},dfLevels,DEF,PIV,THEME,withDefaults,compute,draw,summary,fmt,tlab,vprofile,rkCol,heatCol,heatTxt,tIdx,idxT,drawDrawings,dwHandles,dwHit,DFIB};
 })();
 if(typeof module!=="undefined")module.exports=CC;

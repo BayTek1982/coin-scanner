@@ -115,6 +115,8 @@ html,body{height:100%;overflow:hidden}
 .bodH .seg{pointer-events:auto;padding:2px;border-radius:7px;flex:none}.bodH .seg button{font-size:.68rem;padding:2px 7px;border-radius:5px}
 #bodTab{position:absolute;display:grid;grid-template-columns:auto auto;gap:1px;font-family:var(--f-num);font-weight:600;line-height:1.25;z-index:3;cursor:help}
 #bodTab span{padding:1px 7px;background:rgba(19,23,34,.92);white-space:nowrap}#bodTab .a{color:#d6d9df;background:rgba(30,34,45,.95)}
+#heatTab{position:absolute;display:grid;grid-template-columns:auto auto;gap:1px;font-family:var(--f-num);font-weight:600;line-height:1.3;z-index:3;pointer-events:none;white-space:nowrap}
+#heatTab>*{padding:1px 8px}
 #bodTip{position:absolute;left:8px;bottom:6px;max-width:min(420px,calc(100% - var(--ax,74px) - 16px));background:var(--fg);color:var(--bg);font-size:.78rem;line-height:1.4;padding:7px 10px;border-radius:8px;white-space:pre-line;z-index:5;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 </style>
 </head>
@@ -141,6 +143,7 @@ html,body{height:100%;overflow:hidden}
     <div class="ov"><div class="t" id="ovT">–</div><div class="o" id="ovO"></div><div class="lg" id="ovL"></div></div>
     <button class="autob" id="autoB" hidden title="Preisachse wieder automatisch">Auto</button>
     <div class="tools" id="tools"></div>
+    <div id="heatTab" hidden></div>
     <div class="ebar" id="ebar" hidden></div>
     <div class="loading" id="loading">Lädt …</div>
   </div>
@@ -156,7 +159,7 @@ html,body{height:100%;overflow:hidden}
 </div>
 
 <script src="gz-core.js?v=3"></script>
-<script src="chart-core.js?v=8"></script>
+<script src="chart-core.js?v=9"></script>
 <script>
 "use strict";
 const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
@@ -222,7 +225,7 @@ function buildExt(L){const k=S.k,n=k.length;if(!n||!L.e.length)return null;const
   const p=S.kO[n-1].c,F=S.F,ext={heatTh:L.th};
   if(L.R){ext.riskNow=rkAt(L.R,p);risk[n-1]=ext.riskNow}
   if(L.wc){const wk=wkDay(dayOf(Date.now()));const done=L.wc.filter(w=>w[0]<wk).slice(-19);if(done.length===19){const s=done.reduce((a,w)=>a+w[1],0);ext.heatAvg=(s+p)/20*F;ext.heatNow=p*F/ext.heatAvg;heat[n-1]=ext.heatNow}}
-  if(risk.some(v=>v!=null))ext.risk=risk;if(heat.some(v=>v!=null))ext.heat=heat;
+  if(risk.some(v=>v!=null))ext.risk=risk;if(heat.some(v=>v!=null))ext.heat=heat;heatCalc(ext);
   if(L.R&&ext.riskNow!=null){const rs=e.map(x=>x.r).filter(v=>v!=null),tot=rs.length||1,rows=[];
     for(let q=0;q<=10;q++){const r=q/10,z=rs.filter(v=>q===10?v>=0.995:v>=r&&v<r+0.1).length/tot*100;rows.push({r,p:rkPrice(L.R,r)*F,z})}
     const cur=ext.riskNow,below=rows.filter(w=>w.r<=cur).slice(-3),above=rows.filter(w=>w.r>cur).slice(0,2);
@@ -268,7 +271,7 @@ function paint(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const 
   if(cv.width!==Math.round(r.width*d)||cv.height!==Math.round(r.height*d)){cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d)}
   ctx.setTransform(d,0,0,d,0,0);if(!S.view&&S.k.length)resetView();
   const th=CC.THEME[dark()?"dark":"light"];L=CC.draw(ctx,r.width,r.height,{k:S.k,I:S.I,cfg:S.cfg,tf:S.tf,view:S.view||{from:0,to:1},cross:S.cross,th});
-  if(L&&S.k.length)CC.drawDrawings(ctx,L,S.k,S.tf,dispDw(),S.sel,th);if(L&&S.k.length){bodMain(th);bodPaint(th)}renderEbar();ohlc();$("autoB").hidden=!(S.view&&S.view.man)})}
+  if(L&&S.k.length)CC.drawDrawings(ctx,L,S.k,S.tf,dispDw(),S.sel,th);if(L&&S.k.length){bodMain(th);bodPaint(th)}heatPaint();renderEbar();ohlc();$("autoB").hidden=!(S.view&&S.view.man)})}
 function ohlc(){const k=S.k;if(!k.length){$("ovO").innerHTML="";return}const i=L&&L.ci!=null?L.ci:k.length-1,x=k[i],p=i>0?k[i-1].c:x.o,ch=(x.c/p-1)*100;
   $("ovO").innerHTML=`O <b>${CC.fmt(x.o)}</b> H <b>${CC.fmt(x.h)}</b> L <b>${CC.fmt(x.l)}</b> C <b style="color:${ch>=0?"var(--up)":"var(--down)"}">${CC.fmt(x.c)} (${ch>=0?"+":""}${ch.toFixed(2).replace(".",",")} %)</b>`}
 function legendItems(){const c=S.cfg,l=[];const add=(on,t,col)=>{if(on)l.push({t,col})};
@@ -471,13 +474,16 @@ ALL.bod={k:"bod",t:"OI & Delta Monitor",d:"Open Interest, Volumen-Delta und CVD 
    {k:"tabAbst",t:"Abstand vom Rand",type:"num",min:0,max:6},{k:"tabSchritt",t:"Schrittweite Abstand (%)",type:"num",min:0.5,max:10,step:0.5},
    COL("fL","Neue Longs (Preis ↑ OI ↑)"),COL("fSQ","Short Squeeze (Preis ↑ OI ↓)"),COL("fS","Neue Shorts (Preis ↓ OI ↑)"),COL("fLQ","Long-Abbau (Preis ↓ OI ↓)"),COL("fKauf","Delta Käufer"),COL("fVerk","Delta Verkäufer")],
   i:"Zeigt, ob neues Geld in den Markt kommt (Open Interest) und welche Seite drückt (Volumen-Delta). L+ = neue Longs, SQ = Short Squeeze, S+ = neue Shorts, L− = Long-Abbau. Tippe in der Tabelle auf ein Kürzel oder einen Wert für die Erklärung. Open Interest kommt von der Binance-Terminbörse (5m bis 1D, höchstens 30 Tage zurück). Das Delta ist hier das echte Käufer-/Verkäufer-Volumen und deshalb genauer als die Schätzung in TradingView – die Zahlen weichen etwas ab."};
+ ALL.heat.d="Kurs ÷ Wochen-Schnitt, Farben wie in TradingView";ALL.heat.p=[{k:"len",t:"Länge Durchschnitt (Wochen)",type:"num",min:1,max:100},{k:"table",t:"Info-Tabelle anzeigen",type:"chk"},
+   {k:"tabOrt",t:"Position",type:"sel",o:[["or","Oben rechts"],["om","Oben Mitte"],["ol","Oben links"],["mr","Mitte rechts"],["ml","Mitte links"],["ur","Unten rechts"],["um","Unten Mitte"],["ul","Unten links"]]},
+   {k:"tabGr",t:"Schriftgröße",type:"sel",o:[["winzig","Winzig"],["klein","Klein"],["normal","Normal"],["gross","Groß"],["riesig","Riesig"]]},COL("cBg","Hintergrund"),COL("cTxt","Schrift"),{k:"kerzen",t:"Kerzen im Chart einfärben",type:"chk"}];
  const G=[
   ["Bayazit Strategie Indikator v2.26","Dynamische Fibonacci, drei Durchschnitts-Linien, VWAP, Volumenprofil, LSOB.",["dfib","ma1","ma2","ma3","vwap","vp","lsob"]],
   ["Bayazit Wellen Indikator V2.30","SK-System 0-A-B-C mit Einstiegen, RSI mit Divergenzen, RSI-Kerzenfarbe, Liquiditäts-Sweep.",["sk","rsi","rsic","liq"]],
   ["Bayazit Pattern Scanner V2.5","Automatische Trendlinien und S/R-Zonen.",["tl","sr"]],
   ["Bayazit Fibonacci Trend V2.3","Fibonacci in Trendrichtung, Marktstruktur (HH/HL, BOS/CHoCH), FVG, Orderblöcke, Golden Zone.",["fib","ms","fvg","ob","gz"]],
   ["Bayazit Risiko-Indikator (0 bis 1)","",["risk"]],
-  ["Bayazit Blasen-Risiko (Kurs / 20-Wochen-Schnitt)","",["heat"]],
+  ["Bayazit Hitze (Kurs / 20-Wochen-Schnitt)","Früher „Blasen-Risiko“. Säulen ab 1,0, Farbzonen, Tabelle, Kerzen einfärben. Ohne Alarme.",["heat"]],
   ["Bayazit OI & Delta Monitor V1.8","Open Interest, ΔOI, Volumen-Delta, CVD und die Tabelle mit Fazit. Ohne Alarme.",["bod"]]];
  const neu=G.map(([g,note,ks])=>({g,note,own:1,items:ks.map(k=>ALL[k])}));
  neu.push({g:"Standard",items:["vol","bb","macd","boxes"].map(k=>ALL[k])});
@@ -725,9 +731,35 @@ function bodMain(th){const c=S.cfg.bod,R=BOD.R;if(!c.on||!R||!L||(!c.kerzen&&!c.
 $("bodSeg").addEventListener("click",e=>{const b=e.target.closest("[data-m]");if(!b)return;S.cfg.bod.modus=b.dataset.m;save();paint();if(!$("side").hidden&&sideM==="ind"){const sc=$("side").scrollTop;renderDlg();$("side").scrollTop=sc}});
 $("bodBox").addEventListener("click",e=>{const t=e.target.closest("[data-tip]"),tip=$("bodTip");if(!t){tip.hidden=true;return}
   tip.textContent=t.dataset.tip;tip.hidden=false});
-{const rc0=recompute;recompute=function(){bodCalc();rc0()}}
+{const rc0=recompute;recompute=function(){bodCalc();if(S.cfg.heat.on&&S.ext)heatCalc(S.ext);rc0()}}
 if(window.ResizeObserver)new ResizeObserver(()=>paint()).observe($("bodBox"));
 bodCalc();
+
+// ════════════════════════════════════════════════════════════════
+//  Bayazit Hitze (Kurs / 20-Wochen-Schnitt) – Nachbau aus dem Pine-Code
+//  Je Kerze: Schlusskurs ÷ Durchschnitt aus (Länge−1) abgeschlossenen Wochen + aktueller Kurs
+// ════════════════════════════════════════════════════════════════
+CC.heatPal(true);
+const HP={wc:null,pre:null};
+function heatCalc(ext){const Ld=LONG[S.mkt+":"+S.sym];if(!ext||!Ld||!Ld.wc||!Ld.wc.length)return;const k=S.kO,n=k.length,len=Math.max(1,Math.round(+S.cfg.heat.len||20)),wc=Ld.wc;
+  if(HP.wc!==wc){HP.wc=wc;HP.pre=[0];for(const w of wc)HP.pre.push(HP.pre[HP.pre.length-1]+w[1])}
+  const pre=HP.pre,heat=new Array(n).fill(null);let j=0,any=false;
+  for(let i=0;i<n;i++){const w=wkDay(dayOf(k[i].t));while(j<wc.length&&wc[j][0]<w)j++;
+    if(j>=len-1){const c=k[i].c,avg=(pre[j]-pre[j-(len-1)]+c)/len;heat[i]=c/avg;any=true;if(i===n-1){ext.heatAvg=avg*S.F;ext.heatNow=c/avg}}}
+  if(any)ext.heat=heat;else delete ext.heat}
+function heatPaint(){const c=S.cfg.heat,el=$("heatTab"),I=S.I||{},p=L&&L.panes&&L.panes.find(q=>q.s==="heat"),n=S.k.length;
+  const v=I.heat?(I.heatNow!=null?I.heatNow:I.heat[n-1]):null;
+  if(!c.on||!p||v==null||c.table===false)el.hidden=true;
+  else{el.hidden=false;const col=CC.heatCol(v,I.heatTh),s=el.style,o=c.tabOrt||"or";
+    el.innerHTML=`<span>Hitze</span><b style="color:${col}">${v.toFixed(2).replace(".",",")}</b><span>${Math.round(+c.len||20)}-Wochen-Schnitt</span><b>${I.heatAvg?CC.fmt(I.heatAvg):"–"}</b><span>Bereich</span><b style="color:${col}">${esc(CC.heatTxt(v,I.heatTh))}</b>`;
+    [...el.children].forEach(x=>{x.style.background=c.cBg+"cc";if(!x.style.color)x.style.color=c.cTxt});
+    s.fontSize={winzig:"10px",klein:"11.5px",normal:"13px",gross:"15px",riesig:"18px"}[c.tabGr]||"11.5px";
+    const ty=o[0]==="o"?[p.top+5,"0"]:o[0]==="u"?[p.top+p.h-5,"-100%"]:[p.top+p.h/2,"-50%"],tx=o[1]==="l"?[6,"0"]:o[1]==="r"?[L.pw-6,"-100%"]:[L.pw/2,"-50%"];
+    s.top=ty[0]+"px";s.left=tx[0]+"px";s.transform=`translate(${tx[1]},${ty[1]})`}
+  if(c.on&&c.kerzen&&I.heat&&L){const k=S.k,bw=Math.max(1,L.cw*0.7);ctx.save();ctx.beginPath();ctx.rect(0,0,L.pw,L.mainH);ctx.clip();
+    for(let i=Math.max(0,L.i0);i<=Math.min(n-1,L.i1);i++){const h=I.heat[i];if(h==null)continue;const x=L.X(i),q=k[i],col=CC.heatCol(h,I.heatTh);ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(Math.round(x)+.5,L.Y(q.h));ctx.lineTo(Math.round(x)+.5,L.Y(q.l));ctx.stroke();const a=L.Y(Math.max(q.o,q.c)),b=L.Y(Math.min(q.o,q.c));ctx.fillRect(x-bw/2,a,bw,Math.max(1,b-a))}
+    ctx.restore()}}
 </script>
 </body>
 </html>
