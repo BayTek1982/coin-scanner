@@ -1,7 +1,7 @@
 name: Markt Tagesverlauf
 on:
   schedule:
-    - cron: "3-59/15 6-21 * * 1-5"
+    - cron: "3-59/15 6-23 * * 1-5"
   workflow_dispatch:
 permissions:
   contents: write
