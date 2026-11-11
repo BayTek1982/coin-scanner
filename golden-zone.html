@@ -244,6 +244,21 @@ const UNIT=()=>isStk()?"Werte":"Coins";
 const TFI={"1h":0,"4h":1,"1d":2,"1w":3};
 function dirOf(c,tf,mode){if(c.bd)return(c.bd[mode]||[])[TFI[tf]]||0;const d=c.d[tf];const a=d?(mode==="std"?d.std:d.sk):null;return a?a.dir||0:0}
 const RAW="https://raw.githubusercontent.com/BayTek1982/coin-scanner/gz-data/";
+const RAWEV="https://raw.githubusercontent.com/BayTek1982/coin-scanner/ev-data/ev.json";
+// Earnings + IV/IVP (1x täglich von GitHub, nur Aktien)
+async function loadEv(){if(S.ev)return;try{const j=await getJSON(RAWEV+"?t="+Math.floor(Date.now()/36e5),20000);S.ev=j.s||{};S.evUpd=j.updated;render()}catch(e){S.ev=null}}
+function evInfo(c){const x=S.ev&&c.y?S.ev[c.y]:null;if(!x)return null;let ed=null;
+  if(x.e&&x.e.d){const t=new Date(x.e.d+"T12:00:00"),n=new Date();n.setHours(12,0,0,0);ed={t,days:Math.round((t-n)/864e5),est:x.e.r}}return{ed,iv:x.iv,ivp:x.ivp,n:x.n||0}}
+const pctDe=v=>(v*100).toFixed(1).replace(".",",")+" %";
+function evDays(d){return d<=0?(d===0?"heute":"gestern"):d===1?"morgen":`in ${d} Tagen`}
+function evBadges(c,full){if(!isStk())return"";const e=evInfo(c);if(!e)return full?'<span class="bd grey">Earnings: kein Termin bekannt</span>':"";let h="";
+  if(e.ed&&(full||e.ed.days<=21)){const cl=e.ed.days<=7?"near":"grey";const dt=e.ed.t.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:full?"numeric":undefined});
+    h+=`<span class="bd ${cl}" title="${e.ed.est?"Termin noch nicht bestätigt (Zeitraum)":"Termin laut Yahoo Finance"}">Earnings ${dt}${e.ed.est?" (ca.)":""} · ${evDays(e.ed.days)}</span>`}
+  else if(full)h+='<span class="bd grey">Earnings: kein Termin bekannt</span>';
+  if(e.ivp!=null)h+=`<span class="bd ${e.ivp>=80?"near":"grey"}" title="IV-Perzentil: an ${e.ivp} % der Tage der letzten ${e.n} Handelstage war die implizite Volatilität niedriger als heute">IVP ${e.ivp} %</span>`;
+  else if(full&&e.iv!=null)h+=`<span class="bd grey" title="Das IVP braucht eine Historie. Sie wird seit 11.11.2026 täglich gesammelt.">IVP sammelt (${e.n}/20 Tage)</span>`;
+  if(full&&e.iv!=null)h+=`<span class="bd grey" title="Implizite Volatilität: erwartete Jahresschwankung aus den Optionspreisen (At-the-Money, ca. 30 Tage)">IV ${pctDe(e.iv)}</span>`;
+  return h}
 const safeY=y=>y.replace(/[^A-Za-z0-9.\-]/g,"_");
 const shortSym=y=>/^\^|=F$|\.NYB$/.test(y)?y:y.replace(/\.[A-Z]{1,2}$/,"");
 const YEX={HK:"HKEX",T:"TSE",KS:"KRX",DE:"XETR",PA:"EURONEXT",AS:"EURONEXT",BR:"EURONEXT",MI:"MIL",MC:"BME",HE:"OMXHEX",L:"LSE",SW:"SIX"};
@@ -294,7 +309,7 @@ async function loadTf(tf,force){if(S.loaded[tf]&&!force)return;S.loaded[tf]="bus
   await pool(S.coins,async c=>{const r=await candles(c,tf);if(!r){c.d[tf]=null;return}
     const L=TFS[tf].L;c.src=c.src||r.src;c.d[tf]={k:r.k,std:analyzeStd(r.k,L),sk:analyzeSK(r.k,L)}},8,(d,n)=>{if(tf===S.tf){prog(d/n);if(d-last>=10||d===n){last=d;render()}}});
   S.loaded[tf]=true;if(tf===S.tf)prog(null);render()}
-async function loadStocks(tf,force){if(S.stk[tf]&&!force)return;prog(0.3);
+async function loadStocks(tf,force){loadEv();if(S.stk[tf]&&!force)return;prog(0.3);
   try{const j=await getJSON(RAW+`gz_${tf}.json?t=${Math.floor(Date.now()/3e5)}`,40000);S.groups=j.groups||{};S.stkUpd=j.updated;
     S.stk[tf]=(j.items||[]).map((x,i)=>{const n=x.len||0,m=x.m||[];const k=new Array(n);for(let q=0;q<m.length;q++)k[n-m.length+q]={c:m[q]};
       return{id:x.y,y:x.y,sym:shortSym(x.y),name:x.n,g:x.g||[],cur:x.c,ch:x.ch,r:i+1,bd:x.bd,d:{[tf]:n?{k,std:x.a,sk:x.s}:null}}});
@@ -435,7 +450,7 @@ function card(c,st){CUR=c.cur??"$";const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length
     <div class="ctop">${c.img?`<img src="${esc(c.img)}" alt="" loading="lazy">`:`<span class="ini">${esc(c.sym.replace(/^\^/,"").slice(0,3))}</span>`}<div class="nm"><b>${esc(c.sym)}</b><small>${esc(c.name)}</small></div>
       <div class="pr"><b>${fP(p)}</b><small style="color:${(c.ch??0)>=0?"var(--up)":"var(--down)"}">${fPct(c.ch)}</small></div>
       <button class="star${on?" on":""}" data-star="${esc(c.id)}" aria-label="${esc(c.sym)} zur Watchlist">${on?"★":"☆"}</button></div>
-    <div class="badges">${dirB}${catB}</div><div class="tfs">${tfBadges(c)}</div>${last}${futLine(c,a)}
+    <div class="badges">${dirB}${catB}${evBadges(c,false)}</div><div class="tfs">${tfBadges(c)}</div>${last}${futLine(c,a)}
     ${svgChart(k,a,S.mode,false)}<div class="dist">${boxes}</div></article>`}
 
 async function openCoin(id){const c=LIST().find(x=>x.id===id);if(!c)return;CUR=c.cur??"$";let d=c.d[S.tf];
@@ -459,6 +474,7 @@ async function openCoin(id){const c=LIST().find(x=>x.id===id);if(!c)return;CUR=c
   rows.sort((x,y)=>y[1]-x[1]);let put=false;const tr=[];
   rows.forEach(([n,v])=>{if(!put&&p>=v){tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);put=true}tr.push(`<tr><td>${n}</td><td>${fP(v)}</td><td>${dist(v,p)}</td></tr>`)});
   if(!put)tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);
+  if(isStk()){const eb=evBadges(c,true);if(eb)info+=`<div class="badges" style="margin:0 0 8px">${eb}</div>`}
   const big=!isStk()||!!d.full;$("dBody").innerHTML=info+(a&&a.dir?svgChart(d.k,a,S.mode,big):svgChart(d.k,null,S.mode,big))+(rows.length?`<table class="ltab"><tbody>${tr.join("")}</tbody></table>`:"");
   if(!isStk()&&S.fut[c.sym]&&a&&a.dir){const x=S.fut[c.sym],f=FUT.forDir(x,a.dir);
     $("dBody").insertAdjacentHTML("beforeend",`<div class="fut ${f.cls}" style="margin-top:12px;font-size:.85rem;padding:10px 12px"><span>Futures 1H: Crowd ${x.crowd.toFixed(1).replace(".",",")} % long · Top-Position ${x.topPos!=null?x.topPos.toFixed(1).replace(".",","):"–"} % · Funding ${fPct(x.fundAPR)} p. a. · OI ${fPct(x.oiD)} (24h) · ${x.lage.t}</span><b>${f.t}</b></div><p class="hint" style="margin-top:6px"><a href="futures.html" style="color:var(--gold)">Alle Futures-Werte und Lagebild →</a></p>`)}
