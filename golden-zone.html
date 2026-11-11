@@ -253,11 +253,11 @@ const pctDe=v=>(v*100).toFixed(1).replace(".",",")+" %";
 function evDays(d){return d<=0?(d===0?"heute":"gestern"):d===1?"morgen":`in ${d} Tagen`}
 function evBadges(c,full){if(!isStk())return"";const e=evInfo(c);if(!e)return full?'<span class="bd grey">Earnings: kein Termin bekannt</span>':"";let h="";
   if(e.ed&&(full||e.ed.days<=21)){const cl=e.ed.days<=7?"near":"grey";const dt=e.ed.t.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:full?"numeric":undefined});
-    h+=`<span class="bd ${cl}" title="${e.ed.est?"Termin noch nicht bestätigt (Zeitraum)":"Termin laut Yahoo Finance"}">Earnings ${dt}${e.ed.est?" (ca.)":""} · ${evDays(e.ed.days)}</span>`}
+    h+=`<span class="bd ${cl}" data-it="${e.ed.est?"Termin noch nicht bestätigt (Zeitraum)":"Termin laut Yahoo Finance"}">Earnings ${dt}${e.ed.est?" (ca.)":""} · ${evDays(e.ed.days)}</span>`}
   else if(full)h+='<span class="bd grey">Earnings: kein Termin bekannt</span>';
-  if(e.ivp!=null)h+=`<span class="bd ${e.ivp>=80?"near":"grey"}" title="IV-Perzentil: an ${e.ivp} % der Tage der letzten ${e.n} Handelstage war die implizite Volatilität niedriger als heute">IVP ${e.ivp} %</span>`;
-  else if(full&&e.iv!=null)h+=`<span class="bd grey" title="Das IVP braucht eine Historie. Sie wird seit 11.11.2026 täglich gesammelt.">IVP sammelt (${e.n}/20 Tage)</span>`;
-  if(full&&e.iv!=null)h+=`<span class="bd grey" title="Implizite Volatilität: erwartete Jahresschwankung aus den Optionspreisen (At-the-Money, ca. 30 Tage)">IV ${pctDe(e.iv)}</span>`;
+  if(e.ivp!=null)h+=`<span class="bd ${e.ivp>=80?"near":"grey"}" data-it="IV-Perzentil: an ${e.ivp} % der Tage der letzten ${e.n} Handelstage war die implizite Volatilität niedriger als heute">IVP ${e.ivp} %</span>`;
+  else if(full&&e.iv!=null)h+=`<span class="bd grey" data-it="Das IVP braucht eine Historie. Sie wird seit 11.11.2026 täglich gesammelt.">IVP sammelt (${e.n}/20 Tage)</span>`;
+  if(full&&e.iv!=null)h+=`<span class="bd grey" data-it="Implizite Volatilität: erwartete Jahresschwankung aus den Optionspreisen (At-the-Money, ca. 30 Tage)">IV ${pctDe(e.iv)}</span>`;
   return h}
 const safeY=y=>y.replace(/[^A-Za-z0-9.\-]/g,"_");
 const shortSym=y=>/^\^|=F$|\.NYB$/.test(y)?y:y.replace(/\.[A-Z]{1,2}$/,"");
@@ -499,5 +499,6 @@ document.addEventListener("click",e=>{const s=e.target.closest("[data-star]");if
   const o=e.target.closest("[data-open]");if(o&&!e.target.closest("dialog"))openCoin(o.dataset.open)});
 render();loadAll(false);
 </script>
+<script src="info.js?v=1"></script>
 </body>
 </html>
