@@ -33,14 +33,18 @@ jobs:
           git add .
           git commit -q -m "Golden Zone Aktien $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gz-data
-      # Earnings + IV: 1x täglich im Lauf um ca. 19 Uhr UTC (US-Börse offen) oder beim Start von Hand
+      # Earnings + IV: 1x täglich im ersten Lauf zwischen 17 und 19 Uhr UTC (US-Börse sicher offen,
+      # auch wenn GitHub den Lauf verspätet startet), der für heute noch keine IV-Werte hat; oder von Hand
       - id: hr
         run: echo "h=$(date -u +%H)" >> "$GITHUB_OUTPUT"
-      - if: steps.hr.outputs.h == '19' || github.event_name == 'workflow_dispatch'
+      - if: steps.hr.outputs.h == '17' || steps.hr.outputs.h == '18' || steps.hr.outputs.h == '19' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: |
           cd "$GITHUB_WORKSPACE"
           git clone -q --depth 1 --branch ev-data "https://github.com/${{ github.repository }}.git" prev || mkdir -p prev
+          if python -c "import json,sys,datetime as d;j=json.load(open('prev/ev.json'));t=d.datetime.utcnow().strftime('%Y-%m-%d');sys.exit(0 if j.get('updated','')[:10]==t and sum('iv' in v for v in j['s'].values())>100 else 1)" 2>/dev/null; then
+            echo "IV für heute schon vorhanden"; exit 0
+          fi
           python ev_fetch.py prev ev_out
           cd ev_out
           git init -q
