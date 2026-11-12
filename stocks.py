@@ -265,6 +265,31 @@ def world():
                       f, ensure_ascii=False, separators=(",", ":"))
 
 
+IM = [  # Intermarket für den Live-Chart (Strategie Indikator): Tagesschlusskurse
+    ("spx", "^GSPC"), ("ndx", "^NDX"), ("gold", "GC=F"), ("silber", "SI=F"), ("anleihen", "TLT"), ("dollar", "DX-Y.NYB"), ("oel", "CL=F"),
+]
+
+
+def intermarket():
+    df = yf.download([y for _, y in IM], period="70d", interval="1d", group_by="ticker",
+                     auto_adjust=False, threads=True, progress=False)
+    out = {}
+    for k, y in IM:
+        try:
+            c = df[y]["Close"].dropna()
+        except Exception:
+            continue
+        if len(c) < 2:
+            continue
+        out[k] = [[d.strftime("%Y-%m-%d"), num(v, 4)] for d, v in zip(c.index[-45:], c.iloc[-45:].tolist())]
+    print("Intermarket:", len(out))
+    if len(out) >= 4:
+        os.makedirs("data", exist_ok=True)
+        with open("data/intermarket.json", "w", encoding="utf-8") as f:
+            json.dump({"updated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"), "s": out},
+                      f, ensure_ascii=False, separators=(",", ":"))
+
+
 def etf_flows():
     """Tägliche Netto-Zuflüsse der US-Bitcoin-Spot-ETFs (Mio. $) von SoSoValue.
     Braucht den kostenlosen API-Schlüssel als GitHub-Secret SOSO_API_KEY."""
@@ -453,7 +478,7 @@ def perps():
 
 if __name__ == "__main__":
     main()
-    for fn in (world, macro, perps):
+    for fn in (world, intermarket, macro, perps):
         try:
             fn()
         except Exception as e:
