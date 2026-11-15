@@ -1133,13 +1133,14 @@ const clamp=v=>Math.max(0,Math.min(100,v));
 const FG_C=[
  {k:"fund",side:"L",n:"Funding",w:1,info:"Durchschnittliche Funding Rate von BTC und ETH auf Binance. Hoch = Longs zahlen viel, der Markt ist gierig gehebelt. Normal sind etwa 0,01 % je 8 Std. (= 50 Punkte).",
   sc:v=>clamp(50+(v-0.01)/0.02*50),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:4})+" %"},
- {k:"oi",side:"L",n:"Open-Interest-Änderung",w:1,info:"Veränderung des offenen BTC-Futures-Bestands in 24 Std. Stark steigend = viel neuer Hebel (Gier), stark fallend = Hebel wird abgebaut (Angst). ±10 % = 0 bzw. 100 Punkte.",
-  sc:v=>clamp(50+v*5),fmt:v=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:1})+" %"},
+ {k:"oi",side:"L",n:"Open-Interest-Änderung",w:1,info:"Veränderung des offenen BTC-Futures-Bestands (Binance), je zur Hälfte über 24 Std. und über 7 Tage – so bleibt ein Absturz ein paar Tage sichtbar. Stark steigend = viel neuer Hebel (Gier), stark fallend = Hebel wird abgebaut (Angst). 24 Std.: ±10 % = 0 bzw. 100 Punkte, 7 Tage: ±20 % = 0 bzw. 100 Punkte.",
+  sc:(v,o)=>o&&o.v7!=null?clamp(0.5*clamp(50+v*5)+0.5*clamp(50+o.v7*2.5)):clamp(50+v*5),
+  fmt:(v,x)=>(v>=0?"+":"")+v.toLocaleString("de-DE",{maximumFractionDigits:1})+" %"+(x?" · "+x:"")},
  {k:"ls",side:"L",n:"Long/Short",w:1,info:"Verhältnis der Binance-Konten mit Long- zu Short-Positionen bei BTC. Viele Longs = Gier. 0,8 = 0 Punkte, 2,6 = 100 Punkte.",
   sc:v=>clamp((v-0.8)/1.8*100),fmt:v=>v.toLocaleString("de-DE",{maximumFractionDigits:2})},
- {k:"liq",side:"L",n:"Liquidationen",w:0.5,info:"Anteil liquidierter Shorts an allen Liquidationen auf Binance Futures seit dem Öffnen dieser Seite. Viele Short-Liquidationen = Kurs steigt (Gier), viele Long-Liquidationen = Kurs fällt (Angst). Zählt ab 50 Tsd. $ Summe, nur für heute.",
-  sc:v=>clamp(v),fmt:(v,x)=>x},
- {k:"rsi",side:"L",n:"RSI und Volatilität",w:1.5,info:"RSI(14) von Bitcoin im Tageschart (70 % Anteil) plus Schwankung der letzten 30 gegenüber 90 Tagen (30 %). Hoher RSI = Gier, stark steigende Schwankung = Angst.",
+ {k:"liq",side:"L",n:"Liquidationen",w:1,info:"Liquidationen der letzten 24 Std. bei BTC- und ETH-Perpetuals auf OKX (öffentliche Schnittstelle). Gezählt wird der Anteil liquidierter Shorts. Viele Short-Liquidationen = Kurs steigt (Gier), viele Long-Liquidationen = Kurs fällt (Angst). 10 % Shorts = 0 Punkte, 50 % = 50, 90 % = 100. Falls OKX nicht antwortet: Binance-Liquidationen seit dem Öffnen der Seite (ab 50 Tsd. $).",
+  sc:v=>clamp((v-10)/80*100),fmt:(v,x)=>x},
+ {k:"rsi",side:"L",n:"RSI und Volatilität",w:1.5,info:"RSI(14) von Bitcoin im Tageschart (70 % Anteil) plus Schwankung der letzten 30 gegenüber 90 Tagen (30 %). RSI 30 oder darunter (überverkauft) = 0 Punkte, 50 = 50, 70 oder darüber (überkauft) = 100. Stark steigende Schwankung = Angst.",
   sc:v=>v,fmt:(v,x)=>x},
  {k:"etf",side:"R",n:"ETF-Flows",w:1,info:"Summe der Zu- und Abflüsse der US-Bitcoin-ETFs der letzten 7 Tage (SoSoValue). +1 Mrd. $ = 100 Punkte, −1 Mrd. $ = 0 Punkte.",
   sc:v=>clamp(50+v/20),fmt:v=>(v>=0?"+":"−")+Math.abs(v).toLocaleString("de-DE",{maximumFractionDigits:0})+" Mio. $"},
@@ -1157,35 +1158,49 @@ const dkey=t=>new Date(t).toISOString().slice(0,10);
 function rsi14(c){if(c.length<16)return null;let g=0,l=0;for(let i=1;i<=14;i++){const d=c[i]-c[i-1];d>0?g+=d:l-=d}g/=14;l/=14;
   for(let i=15;i<c.length;i++){const d=c[i]-c[i-1];g=(g*13+Math.max(d,0))/14;l=(l*13+Math.max(-d,0))/14}return l===0?100:100-100/(1+g/l)}
 function sd(a){const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)}
+// Liquidationen der letzten 24 Std. von OKX (BTC + ETH Perpetuals), blätternd über "after"
+async function liq24h(){const since=Date.now()-864e5,U=[["BTC-USDT",0.01],["ETH-USDT",0.1]];let L=0,S=0,oldest=Date.now();
+  for(const[u,ct]of U){let after="",last=Infinity;
+    for(let pg=0;pg<10;pg++){let j;try{j=await getJSON(`https://www.okx.com/api/v5/public/liquidation-orders?instType=SWAP&uly=${u}&state=filled&limit=100${after?"&after="+after:""}`,10000)}catch(e){break}
+      const det=((j&&j.data)||[]).flatMap(x=>x.details||[]);if(!det.length)break;let mn=Infinity;
+      for(const d of det){const ts=+d.ts;if(ts<mn)mn=ts;if(ts<since||ts>=last)continue;const usd=+d.sz*ct*+d.bkPx;if(!(usd>0))continue;
+        const isLong=d.posSide==="long"||(d.posSide!=="short"&&d.side==="sell");isLong?L+=usd:S+=usd}
+      if(mn<oldest)oldest=mn;if(mn<since||mn>=last)break;last=mn;after=String(mn)}}
+  if(L+S<=0)throw 0;return{L,S,h:(Date.now()-Math.max(oldest,since))/36e5}}
 async function loadFG(){
   const F="https://fapi.binance.com";
   const q=[getJSON(F+"/fapi/v1/fundingRate?symbol=BTCUSDT&limit=40"),getJSON(F+"/fapi/v1/fundingRate?symbol=ETHUSDT&limit=40"),
-    getJSON(F+"/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=12"),getJSON(F+"/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=25"),
+    getJSON(F+"/futures/data/openInterestHist?symbol=BTCUSDT&period=1d&limit=20"),getJSON(F+"/futures/data/openInterestHist?symbol=BTCUSDT&period=1h&limit=25"),
     getJSON(F+"/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1d&limit=12"),getJSON(F+"/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1h&limit=1"),
     getJSON("https://data-api.binance.vision/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=130"),
     getJSON("https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=86400"),
     getJSON("https://stablecoins.llama.fi/stablecoincharts/all"),
     fetch("data/macro.json?t="+Date.now()).then(r=>{if(!r.ok)throw 0;return r.json()})];
+  const lq=liq24h().catch(()=>null);
   const r=await Promise.allSettled(q),v=i=>r[i].status==="fulfilled"&&(i===9||Array.isArray(r[i].value))?r[i].value:null;
   FG={fb:v(0)||[],fe:v(1)||[],oiD:v(2)||[],oiH:v(3)||[],lsD:v(4)||[],lsH:v(5)||[],kl:v(6)||[],cb:v(7)||[],
-    at:Date.now(),st:(v(8)||[]).map(x=>[dkey(+x.date*1000),+(x.totalCirculatingUSD?.peggedUSD||x.totalCirculating?.peggedUSD||0)]).filter(x=>x[1]>0),mac:v(9)||{}};
-  renderFG()}
+    liq24:FG&&FG.liq24||null,at:Date.now(),st:(v(8)||[]).map(x=>[dkey(+x.date*1000),+(x.totalCirculatingUSD?.peggedUSD||x.totalCirculating?.peggedUSD||0)]).filter(x=>x[1]>0),mac:v(9)||{}};
+  renderFG();lq.then(x=>{if(x&&FG){FG.liq24=x;renderFG()}})}
 function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)-dayMs);
   // Funding
   const fr=[...X.fb,...X.fe].filter(x=>dkey(x.fundingTime)===D).map(x=>+x.fundingRate*100);
   if(fr.length)out.fund={v:fr.reduce((a,b)=>a+b,0)/fr.length};
   // Open Interest
-  if(today&&X.oiH.length>1){const a=X.oiH;out.oi={v:(+a[a.length-1].sumOpenInterestValue/+a[0].sumOpenInterestValue-1)*100}}
-  else{const m=new Map(X.oiD.map(x=>[dkey(x.timestamp),+x.sumOpenInterestValue]));if(m.has(D)&&m.has(prev(D)))out.oi={v:(m.get(D)/m.get(prev(D))-1)*100}}
+  {const m=new Map(X.oiD.map(x=>[dkey(x.timestamp),+x.sumOpenInterestValue])),d7=dkey(Date.parse(D)-7*dayMs);
+   if(today&&X.oiH.length>1){const a=X.oiH,now=+a[a.length-1].sumOpenInterestValue;out.oi={v:(now/+a[0].sumOpenInterestValue-1)*100};if(m.has(d7))out.oi.v7=(now/m.get(d7)-1)*100}
+   else if(m.has(D)&&m.has(prev(D))){out.oi={v:(m.get(D)/m.get(prev(D))-1)*100};if(m.has(d7))out.oi.v7=(m.get(D)/m.get(d7)-1)*100}
+   if(out.oi&&out.oi.v7!=null)out.oi.x="7T "+(out.oi.v7>=0?"+":"")+out.oi.v7.toLocaleString("de-DE",{maximumFractionDigits:1})+" %"}
   // Long/Short
   const ls=today&&X.lsH.length?X.lsH[X.lsH.length-1]:X.lsD.find(x=>dkey(x.timestamp)===D);if(ls)out.ls={v:+ls.longShortRatio};
   // Liquidationen (nur heute)
-  if(today&&liqLong+liqShort>=5e4)out.liq={v:liqShort/(liqLong+liqShort)*100,x:`L ${fmtB(liqLong)} / S ${fmtB(liqShort)} $`};
+  const L24=X.liq24;
+  if(today&&L24&&L24.L+L24.S>=5e4)out.liq={v:L24.S/(L24.L+L24.S)*100,x:`L ${fmtB(L24.L)} / S ${fmtB(L24.S)} $ · ${L24.h>=23?"24 Std.":Math.max(1,Math.round(L24.h))+" Std."} OKX`};
+  else if(today&&liqLong+liqShort>=5e4)out.liq={v:liqShort/(liqLong+liqShort)*100,x:`L ${fmtB(liqLong)} / S ${fmtB(liqShort)} $`};
   else if(today&&liqLong+liqShort>0)out._liqWait=fmtB(liqLong+liqShort);
   // RSI und Volatilität
   const cl=X.kl.filter(k=>dkey(k[0])<=D).map(k=>+k[4]);
   if(cl.length>40){const rs=rsi14(cl),ret=cl.slice(1).map((c,i)=>Math.log(c/cl[i])),v30=sd(ret.slice(-30)),v90=sd(ret.slice(-90));
-    const volS=clamp(50-(v30/v90-1)*100);out.rsi={v:clamp(0.7*rs+0.3*volS),x:"RSI "+Math.round(rs)}}
+    const volS=clamp(50-(v30/v90-1)*100),rsS=clamp((rs-30)/40*100);out.rsi={v:clamp(0.7*rsS+0.3*volS),x:"RSI "+Math.round(rs)}}
   // ETF-Flows
   const etf=(X.mac.etf||[]).filter(e=>e[0]<=D&&e[0]>dkey(Date.parse(D)-7*dayMs));if(etf.length)out.etf={v:etf.reduce((a,e)=>a+e[1],0)};
   // Stablecoins
@@ -1198,7 +1213,7 @@ function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)
   const at=(arr,d)=>{const a=(arr||[]).filter(e=>e[0]<=d);return a.length?a[a.length-1][1]:null};
   const vx=at(X.mac.vix,D);if(vx!=null)out.vix={v:vx};
   const d0=at(X.mac.dxy,D),d30=at(X.mac.dxy,dkey(Date.parse(D)-30*dayMs));if(d0&&d30){const ch=(d0/d30-1)*100;out.dxy={v:ch,x:`${d0.toLocaleString("de-DE",{maximumFractionDigits:1})} · ${ch>=0?"+":""}${ch.toLocaleString("de-DE",{maximumFractionDigits:1})} %`}}
-  let ws=0,sum=0;FG_C.forEach(c=>{const o=out[c.k];if(!o)return;o.s=Math.round(c.sc(o.v));sum+=o.s*c.w;ws+=c.w});
+  let ws=0,sum=0;FG_C.forEach(c=>{const o=out[c.k];if(!o)return;o.s=Math.round(c.sc(o.v,o));sum+=o.s*c.w;ws+=c.w});
   return{comp:out,idx:ws?Math.round(sum/ws):null,n:Object.keys(out).filter(k=>k[0]!=="_").length}}
 const fgCol=s=>s==null?"var(--chip)":s<25?"#d64545":s<45?"#e8853a":s<56?"#e5c547":s<75?"#9ccf5a":"#2fb36b";
 const fgLab=s=>s==null?"–":s<25?"Extreme Angst":s<45?"Angst":s<56?"Neutral":s<75?"Gier":"Extreme Gier";
