@@ -1158,15 +1158,19 @@ const dkey=t=>new Date(t).toISOString().slice(0,10);
 function rsi14(c){if(c.length<16)return null;let g=0,l=0;for(let i=1;i<=14;i++){const d=c[i]-c[i-1];d>0?g+=d:l-=d}g/=14;l/=14;
   for(let i=15;i<c.length;i++){const d=c[i]-c[i-1];g=(g*13+Math.max(d,0))/14;l=(l*13+Math.max(-d,0))/14}return l===0?100:100-100/(1+g/l)}
 function sd(a){const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)}
-// Liquidationen der letzten 24 Std. von OKX (BTC + ETH Perpetuals), blätternd über "after"
-async function liq24h(){const since=Date.now()-864e5,U=[["BTC-USDT",0.01],["ETH-USDT",0.1]];let L=0,S=0,oldest=Date.now();
-  for(const[u,ct]of U){let after="",last=Infinity;
-    for(let pg=0;pg<10;pg++){let j;try{j=await getJSON(`https://www.okx.com/api/v5/public/liquidation-orders?instType=SWAP&uly=${u}&state=filled&limit=100${after?"&after="+after:""}`,10000)}catch(e){break}
-      const det=((j&&j.data)||[]).flatMap(x=>x.details||[]);if(!det.length)break;let mn=Infinity;
-      for(const d of det){const ts=+d.ts;if(ts<mn)mn=ts;if(ts<since||ts>=last)continue;const usd=+d.sz*ct*+d.bkPx;if(!(usd>0))continue;
-        const isLong=d.posSide==="long"||(d.posSide!=="short"&&d.side==="sell");isLong?L+=usd:S+=usd}
-      if(mn<oldest)oldest=mn;if(mn<since||mn>=last)break;last=mn;after=String(mn)}}
-  if(L+S<=0)throw 0;return{L,S,h:(Date.now()-Math.max(oldest,since))/36e5}}
+// Liquidationen der letzten 24 Std. von OKX (BTC + ETH Perpetuals) als Stichprobe:
+// je Stunde eine Seite (bis 100 Liquidationen) ab Stundenende; deckt die Seite nicht die ganze Stunde ab,
+// wird ihr Dollar-Wert auf die volle Stunde hochgerechnet. 48 Abfragen statt Hunderten.
+async function liq24h(){const now=Date.now(),H=36e5,U=[["BTC-USDT",0.01],["ETH-USDT",0.1]],jobs=[];
+  for(const[u,ct]of U)for(let k=0;k<24;k++)jobs.push({u,ct,end:now-k*H});
+  let L=0,S=0,ok=0;
+  const one=async q=>{let j;try{j=await getJSON(`https://www.okx.com/api/v5/public/liquidation-orders?instType=SWAP&uly=${q.u}&state=filled&limit=100&after=${Math.round(q.end)}`,10000)}catch(e){return}
+    const det=((j&&j.data)||[]).flatMap(x=>x.details||[]);ok++;if(!det.length)return;
+    const start=q.end-H,inH=det.filter(d=>+d.ts>=start&&+d.ts<q.end);if(!inH.length)return;
+    const full=det.length<100||det.some(d=>+d.ts<start),span=full?H:Math.max(18e4,q.end-Math.min(...inH.map(d=>+d.ts))),f=H/span;
+    for(const d of inH){const usd=+d.sz*q.ct*+d.bkPx;if(!(usd>0))continue;const isLong=d.posSide==="long"||(d.posSide!=="short"&&d.side==="sell");isLong?L+=usd*f:S+=usd*f}};
+  for(let i=0;i<jobs.length;i+=8){await Promise.all(jobs.slice(i,i+8).map(one));await new Promise(r=>setTimeout(r,450))}
+  if(ok<jobs.length/2||L+S<=0)throw 0;return{L,S,h:24,est:true}}
 async function loadFG(){
   const F="https://fapi.binance.com";
   const q=[getJSON(F+"/fapi/v1/fundingRate?symbol=BTCUSDT&limit=40"),getJSON(F+"/fapi/v1/fundingRate?symbol=ETHUSDT&limit=40"),
@@ -1194,7 +1198,7 @@ function fgDay(D,today){const X=FG,out={},dayMs=864e5,prev=k=>dkey(Date.parse(k)
   const ls=today&&X.lsH.length?X.lsH[X.lsH.length-1]:X.lsD.find(x=>dkey(x.timestamp)===D);if(ls)out.ls={v:+ls.longShortRatio};
   // Liquidationen (nur heute)
   const L24=X.liq24;
-  if(today&&L24&&L24.L+L24.S>=5e4)out.liq={v:L24.S/(L24.L+L24.S)*100,x:`L ${fmtB(L24.L)} / S ${fmtB(L24.S)} $ · ${L24.h>=23?"24 Std.":Math.max(1,Math.round(L24.h))+" Std."} OKX`};
+  if(today&&L24&&L24.L+L24.S>=5e4)out.liq={v:L24.S/(L24.L+L24.S)*100,x:`L ${fmtB(L24.L)} / S ${fmtB(L24.S)} $ · 24 Std. OKX${L24.est?" (≈)":""}`};
   else if(today&&liqLong+liqShort>=5e4)out.liq={v:liqShort/(liqLong+liqShort)*100,x:`L ${fmtB(liqLong)} / S ${fmtB(liqShort)} $`};
   else if(today&&liqLong+liqShort>0)out._liqWait=fmtB(liqLong+liqShort);
   // RSI und Volatilität
