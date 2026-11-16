@@ -5,7 +5,7 @@
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0e131b">
-<script>try{const t=localStorage.getItem("bcsTheme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script src="theme.js?v=1"></script>
 <meta name="description" content="Krypto-Scanner mit Live-Daten: Marktlage, Kern- und Spielgeld-Liste, eigene Filter, Derivate und TradingView-Watchlist.">
 <title>Bayazit Coin-Scanner</title>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAE2UlEQVR4nKxXXWxURRT+zty7vXcpBQqlLW2xpIrQYqw+GGxJQ8BITRpifBBNTDQCsWjRGPtgrIYoRJ/U1BrU+p9gYlISsRiBB0OiaEWJ2hAhRYpGaEv/fyxt793u3vHMvf2n7c42/ZLdnTt7Zr7vzpk554wJTcgaWC5llUrIh6WkTURIg+QPSe5CtyR0E3CRpFdnWR2nqByjOvNSXOL3lqe6seQqZtnH5kuhAQkMCOAjyxh6g54Z6MNCBMg6JI10rtkPSa+wUSoWABbC5PJQOOP6YdqFiLYAWbNymUP2MW5uxyJASlkfhvs4Pdf7X1wBTnXWBilQz/9sQBxQWgHkcBegPvFlNAnQQ9azbU1Te8U0k9qsNCb/RodcIXTvi7B3N4JSsgF7JYzCPUByxhzWtNED6mVN5upZBchahJwIjjP5emhCZBcBbj/kYCuM28oQKjkIY9398w253SFxTHHdJGAkklXJP0XQBKUX8hIkI3btzKQYhtf6c7yhW8a4JgWoZeHjXIUEYGQXTyM0lIDhTsj+K3HHMtdL8v2MdNU21ZcDOgSiFGggaecRZrOYmeNM1IF37UdQ6q3AknTELtdDC0TLnFFxkFv7SNamLnfccCf7PkljJOzyv3jpl0x2jfTA62z03RFt/Bje3yehBQnXtkYyzEgkvE2PnP2Vs2WC3Lt+DmSG+SjmQ+Te5/eFUtYiaq9A7OKX8ScjWIrb9KR8gJcEOhjfaArRX96C18Ib0E6FkbsNZuFef2OGtr8JjA5ruUNxC04id0ETYs09Y+wj8NrOBm2nD7FLX8E9/hgvq+d3qSOpA8Ut+N0ztaxFCCLj7qDtDgQk9mSKECvyeFmDUy0jg1pTKm6TZWRCwwMia/Pk5kvORGjHYYT4jWXvJf800PJ1wX9q+S9o7AFfKWWa0MQ0///6NgTnAbG2BLQqP+jkYxlrOorob+9C9sWPBeMwOSq082LkxjOc8P/oEKLnqll9zI8HxvoHYW6u5HyQA1p2C09lQBvMLThnt2tYTvjf6/g9IFeIufzWdXC/2Oq/tXJTUtmn0IXiFiTRGM9w6vmXg224KYvHHBbQHEjlldCF4jYF0Sk+POXzGU71v5H/CIy8UsSu/gDv39O842/A4DcXuVsDgT1NSEDA1+OhuENFpjktQ0uDYFNcBVL5Xpiz+5pPQ+TEbnhXv0dcSETszLYUQeV9A/z0+bzGozcQa+Y6JbzKD0LOhwWI/nkkmKf/H8iOP3zSSP2jeuTByM9UnegfQ9uIvup4oSdUcy5zWn2Hn3C8Kyd8QZQUJM/It0+y/y8jQTh2yDugGn7oooqudqlqonkwnv9jrQ3Bc05xUA0lTs6+996hpzs6JwQohKV7gK8Y5+cclLbJ//VaGkAq7Kr8P1YNJQLmOGtFzdfGnycEBCWzU8YGLbMNHD1dCbeuzA+9tDQrqANafkKCaA5b2EkvtIxM8M60cKvT7/SEcUZVLVhE8N2gWxjRIruiq3lqv5hpaD3fed4WIo+PSQMWCxLfhYXYOJN8VgEKtL+1x+5tK+HmXlbegQXzSq5S5VM8V6mac1auuJN8kpbiDpkvS6KKhC6n0vvASo6+Tnu65y0O9GoxjF3PkbFDktjFBAXkX83VFZ3rOb6a8+btJpIX+OGoldR2Uvd6/j8AAAD//2J7pVEAAAAGSURBVAMA62HiqEpMtvQAAAAASUVORK5CYII=">
@@ -20,10 +20,10 @@
   --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;
   --accent:#c77a12;--accent-ink:#fff;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;--warn:#9a6a00;--star:#d39b00;
   --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
-:root[data-theme="dark"]{
+:root.dk{
   --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;
   --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;--star:#f5c542;color-scheme:dark}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+@media (prefers-color-scheme:dark){:root:not(.lt){
   --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;
   --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;--star:#f5c542;color-scheme:dark}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
@@ -151,7 +151,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     </div>
     <div class="status">
       <span class="stand">Stand <b id="stand">–</b></span>
-      <button class="btn ghost" id="themeBtn" type="button" title="Hell / Dunkel umschalten" aria-label="Hell oder dunkel umschalten">◐</button>
+      <button class="btn ghost" id="themeBtn" type="button" style="font-size:17px;min-width:42px;line-height:1" title="Anzeige &amp; Farben: hell/dunkel, Themen, Helligkeit, eigene Farben" aria-label="Anzeige und Farben">◐</button>
       <button class="btn" id="refresh">Aktualisieren</button>
     </div>
   </header>
@@ -946,12 +946,11 @@ async function ensureTokens(){
 }
 function tokensFor(name,sym){if(!tokMap)return[];const tk=sym.includes(":")?null:sym.replace(/[.\-]/g,"");
   const a=(tk&&tokMap.t.get(tk))||tokMap.n.get(name.toLowerCase())||[];const seen=new Set();return a.filter(x=>!seen.has(x.sym)&&seen.add(x.sym))}
-const dark=()=>{const t=document.documentElement.dataset.theme;return t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches};
-// Hell/Dunkel-Knopf: wechselt und merkt sich die Wahl auf diesem Gerät; TradingView-Fenster werden neu geladen
-$("themeBtn").onclick=()=>{const t=dark()?"light":"dark";document.documentElement.dataset.theme=t;try{localStorage.setItem("bcsTheme",t)}catch(e){}
-  if(aktienReady){tvWidget($("tvVix"),"embed-widget-single-quote.js",{symbol:"CAPITALCOM:VIX",width:"100%"});
+const dark=()=>window.BayTheme?BayTheme.isDark():matchMedia("(prefers-color-scheme: dark)").matches;
+// Anzeige & Farben (theme.js): TradingView-Fenster in passender Farbe neu laden
+addEventListener("baytheme",()=>{if(aktienReady){tvWidget($("tvVix"),"embed-widget-single-quote.js",{symbol:"CAPITALCOM:VIX",width:"100%"});
     tvWidget($("tvWorld"),"embed-widget-market-quotes.js",{width:"100%",height:420,showSymbolLogo:true,symbolsGroups:WORLD.map(g=>({name:g.name,symbols:g.symbols.map(([n,d])=>({name:n,displayName:d}))}))});S.heatShown=null;showIndex()}
-  if(typeof renderFG==="function"&&FG)renderFG()};
+  if(typeof renderFG==="function"&&FG)renderFG()});
 function tvWidget(el,file,cfg){el.innerHTML="";const box=document.createElement("div");box.className="tradingview-widget-container";box.style.height="100%";
   const w=document.createElement("div");w.className="tradingview-widget-container__widget";w.style.height="100%";box.appendChild(w);
   const sc=document.createElement("script");sc.src="https://s3.tradingview.com/external-embedding/"+file;sc.async=true;

@@ -10,13 +10,18 @@
 <link rel="icon" type="image/svg+xml" href="icons/gz.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="theme.js?v=1"></script>
 <style>
 :root{
   --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;
   --accent:#c77a12;--accent-ink:#fff;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;--warn:#9a6a00;--star:#d39b00;
   --gold:#d9951c;--goldbg:rgba(217,149,28,.16);--blue:#2f6fd6;--grey:#8d99ab;
   --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{
+:root.dk{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;
+  --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;--star:#f5c542;
+  --gold:#f0a33a;--goldbg:rgba(240,163,58,.18);--blue:#5b9bff;--grey:#6f7b8d;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not(.lt){
   --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;
   --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--warn:#f0c14a;--star:#f5c542;
   --gold:#f0a33a;--goldbg:rgba(240,163,58,.18);--blue:#5b9bff;--grey:#6f7b8d;color-scheme:dark}}
@@ -132,6 +137,7 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
       <div class="sub" id="subtitle">Top 100 Kryptowährungen · Marktstruktur + Fibonacci</div>
     </div>
     <div class="status">
+      <button class="btn ghost" id="themeBtn" type="button" style="font-size:17px;min-width:42px;line-height:1" title="Anzeige &amp; Farben: hell/dunkel, Themen, Helligkeit, eigene Farben" aria-label="Anzeige und Farben">◐</button>
       <button class="btn line" id="howBtn">ⓘ Wie es funktioniert</button>
       <span class="stand">Stand <b id="stand">–</b></span>
       <button class="btn" id="refresh">Aktualisieren</button>

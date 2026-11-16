@@ -9,10 +9,12 @@
 <link rel="icon" type="image/svg+xml" href="icons/bot.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="theme.js?v=1"></script>
 <style>
 :root{--bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;--accent:#c77a12;--accent-ink:#fff;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;--gold:#d9951c;--goldbg:rgba(217,149,28,.16);
   --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--gold:#f0a33a;--goldbg:rgba(240,163,58,.18);color-scheme:dark}}
+:root.dk{--bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--gold:#f0a33a;--goldbg:rgba(240,163,58,.18);color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not(.lt){--bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--gold:#f0a33a;--goldbg:rgba(240,163,58,.18);color-scheme:dark}}
 *{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:1800px;margin:0 auto;padding-block:max(14px,env(safe-area-inset-top)) 40px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));display:grid;gap:12px}
@@ -95,6 +97,7 @@ footer{font-size:.76rem;color:var(--muted)}
       <div class="sub">Dein Coin. Dein Zeitrahmen. Deine Indikatoren.</div>
     </div>
     <div class="bar">
+      <button class="btn ghost" id="themeBtn" type="button" style="font-size:17px;min-width:42px;line-height:1" title="Anzeige &amp; Farben: hell/dunkel, Themen, Helligkeit, eigene Farben" aria-label="Anzeige und Farben">◐</button>
       <button class="btn" id="indBtn">⚙ Indikatoren</button>
       <button class="btn ghost" id="shareBtn" title="Link mit Coin, Zeitrahmen und Indikatoren kopieren">🔗 Link kopieren</button>
       <button class="btn ghost" id="pngBtn" title="Chart als Bild speichern">🖼 Bild</button>
@@ -232,11 +235,15 @@ const tvUrl=()=>`https://www.tradingview.com/chart/?symbol=${encodeURIComponent(
 
 // ---------- Zeichnen ----------
 const cv=$("cv"),ctx=cv.getContext("2d");let L=null,raf=0;
-const dark=()=>matchMedia("(prefers-color-scheme: dark)").matches;
+const dark=()=>window.BayTheme?BayTheme.isDark():matchMedia("(prefers-color-scheme: dark)").matches;
+// Farben aus „Anzeige & Farben" (theme.js) auch auf den Chart übertragen
+function thNow(){const th=Object.assign({},CC.THEME[dark()?"dark":"light"]),v=window.BayTheme?BayTheme.vars():{};
+  if(v.bg)th.bg=v.bg;if(v.panel)th.axis=v.panel;if(v.fg)th.fg=v.fg;if(v.muted)th.txt=v.muted;if(v.up)th.up=th.green=v.up;if(v.down){th.red=v.down;if(th.dn!==th.fg)th.dn=v.down}if(v.accent)th.gold=v.accent;return th}
+addEventListener("baytheme",()=>paint());
 function paint(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;
   if(cv.width!==Math.round(r.width*d)||cv.height!==Math.round(r.height*d)){cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d)}
   ctx.setTransform(d,0,0,d,0,0);if(!S.view&&S.k.length)resetView();
-  const th=CC.THEME[dark()?"dark":"light"];L=CC.draw(ctx,r.width,r.height,{k:S.k,I:S.I,cfg:S.cfg,tf:S.tf,view:S.view||{from:0,to:1},cross:S.cross,th});
+  const th=thNow();L=CC.draw(ctx,r.width,r.height,{k:S.k,I:S.I,cfg:S.cfg,tf:S.tf,view:S.view||{from:0,to:1},cross:S.cross,th});
   if(L&&S.k.length)CC.drawDrawings(ctx,L,S.k,S.tf,dispDw(),S.sel,th);renderEbar();ohlc();$("autoB").hidden=!(S.view&&S.view.man)})}
 function ohlc(){const k=S.k;if(!k.length){$("ovO").innerHTML="";return}const i=L&&L.ci!=null?L.ci:k.length-1,x=k[i],p=i>0?k[i-1].c:x.o,ch=(x.c/p-1)*100;
   $("ovO").innerHTML=`O <b>${CC.fmt(x.o)}</b> H <b>${CC.fmt(x.h)}</b> L <b>${CC.fmt(x.l)}</b> C <b style="color:${ch>=0?"var(--up)":"var(--down)"}">${CC.fmt(x.c)} (${ch>=0?"+":""}${ch.toFixed(2).replace(".",",")} %)</b>`}
@@ -459,7 +466,7 @@ $("shareBtn").onclick=async()=>{const i=btoa(unescape(encodeURIComponent(JSON.st
   const url=`${location.origin}${location.pathname}#m=${S.mkt}&s=${encodeURIComponent(S.sym)}&tf=${S.tf}&i=${i}${dw}`;
   try{await navigator.clipboard.writeText(url);toast("Link kopiert – mit Freunden teilen")}catch(e){prompt("Link kopieren:",url)}};
 $("pngBtn").onclick=()=>{const d=devicePixelRatio||1,c2=document.createElement("canvas");c2.width=cv.width;c2.height=cv.height;const x=c2.getContext("2d");x.drawImage(cv,0,0);x.scale(d,d);
-  const th=CC.THEME[dark()?"dark":"light"],W=cv.width/d,H=cv.height/d,now=new Date(),p2=n=>String(n).padStart(2,"0");
+  const th=thNow(),W=cv.width/d,H=cv.height/d,now=new Date(),p2=n=>String(n).padStart(2,"0");
   const title=`${S.mkt==="k"?S.sym+"/USDT":S.sym} · ${TFLAB[S.tf]} · ${S.src} · ${S.F!==1?"in € (umgerechnet)":"in "+(S.ccy||"$")}`,date=`${p2(now.getDate())}.${p2(now.getMonth()+1)}.${now.getFullYear()} ${p2(now.getHours())}:${p2(now.getMinutes())} Uhr`;
   const items=legendItems();x.font='600 11px "JetBrains Mono",monospace';const lw=items.reduce((a,it)=>a+x.measureText(it.t).width+10,0);x.font='800 16px Archivo,system-ui,sans-serif';const tw=Math.max(x.measureText(title).width,260,lw);
   x.fillStyle=th.bg;x.globalAlpha=.9;x.fillRect(6,6,Math.min(W-90,tw+24),items.length?74:52);x.globalAlpha=1;x.textBaseline="middle";x.textAlign="left";
