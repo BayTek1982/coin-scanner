@@ -28,7 +28,11 @@ INDICES = {
     "spx":    {"name": "S&P 500",       "wiki": "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", "alt": "https://www.slickcharts.com/sp500", "suffix": "", "bench": "^GSPC", "cur": "$"},
     "ndx":    {"name": "Nasdaq 100",    "wiki": "https://en.wikipedia.org/wiki/Nasdaq-100", "alt": "https://www.slickcharts.com/nasdaq100", "suffix": "", "bench": "^NDX", "cur": "$"},
     "dow":    {"name": "Dow Jones 30",  "wiki": "https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average", "alt": "https://www.slickcharts.com/dowjones", "suffix": "", "bench": "^DJI", "cur": "$"},
+    "eigene": {"name": "Eigene Aktien", "wiki": None, "suffix": None, "bench": "^GSPC", "cur": "$", "static": "EIGENE"},
 }
+
+# Eigene Aktien, die in keinem Index stehen (Yahoo-Kürzel|Name). Neue einfach mit ";" anhängen.
+EIGENE = """SOFI|SoFi Technologies;IREN|IREN;WULF|TeraWulf"""
 
 # Euro Stoxx 50 fest hinterlegt (Yahoo-Kürzel), Stand Mitte 2026
 SX5E = """ASML.AS|ASML;SAP.DE|SAP;MC.PA|LVMH;SIE.DE|Siemens;TTE.PA|TotalEnergies;ALV.DE|Allianz;SU.PA|Schneider Electric;
@@ -149,7 +153,7 @@ def main():
                 if need0 and len(members[k]) < need0 and ix.get("alt"):
                     print(k, "Wikipedia lieferte", len(members[k]), "Werte, versuche Ersatzquelle")
                     members[k] = wiki_members(ix["alt"], ix["suffix"])
-            need = {"tecdax": 25, "dow": 28, "ndx": 90, "spx": 450, "dax": 38, "mdax": 45}.get(k, 10)
+            need = {"tecdax": 25, "dow": 28, "ndx": 90, "spx": 450, "dax": 38, "mdax": 45, "eigene": 1}.get(k, 10)
             if len(members[k]) < need:
                 raise ValueError(f"nur {len(members[k])} Werte")
             print(k, len(members[k]), "Werte")
