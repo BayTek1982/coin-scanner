@@ -234,12 +234,30 @@ def main():
         json.dump(result, f, ensure_ascii=False, separators=(",", ":"))
 
 
-WORLD = [  # Indizes, die TradingView auf fremden Seiten nicht anzeigen darf -> eigene Kurse von Yahoo
-    {"k": "kospi", "n": "KOSPI", "r": "Südkorea", "y": "^KS11", "tv": "KRX:KOSPI"},
-    {"k": "hsi", "n": "Hang Seng", "r": "Hongkong", "y": "^HSI", "tv": "HSI:HSI"},
-    {"k": "nifty", "n": "Nifty 50", "r": "Indien", "y": "^NSEI", "tv": "NSE:NIFTY"},
-    {"k": "asx", "n": "ASX 200", "r": "Australien", "y": "^AXJO", "tv": "ASX:XJO"},
-    {"k": "bist", "n": "BIST 100", "r": "Türkei", "y": "XU100.IS", "tv": "BIST:XU100"},
+WORLD = [  # Welt-Überblick: alle Indizes je Region, Kurse von Yahoo; tv = Symbol für den Link zu TradingView
+    {"k": "spx", "n": "S&P 500", "r": "USA", "g": "USA", "y": "^GSPC", "tv": "FOREXCOM:SPXUSD"},
+    {"k": "ndx", "n": "Nasdaq 100", "r": "USA", "g": "USA", "y": "^NDX", "tv": "FOREXCOM:NSXUSD"},
+    {"k": "dji", "n": "Dow Jones", "r": "USA", "g": "USA", "y": "^DJI", "tv": "FOREXCOM:DJI"},
+    {"k": "rut", "n": "Russell 2000", "r": "USA", "g": "USA", "y": "^RUT", "tv": "TVC:RUT"},
+    {"k": "dax", "n": "DAX", "r": "Deutschland", "g": "Europa", "y": "^GDAXI", "tv": "XETR:DAX"},
+    {"k": "sx5e", "n": "Euro Stoxx 50", "r": "Eurozone", "g": "Europa", "y": "^STOXX50E", "tv": "CAPITALCOM:EU50"},
+    {"k": "ftse", "n": "FTSE 100", "r": "Großbritannien", "g": "Europa", "y": "^FTSE", "tv": "FOREXCOM:UKXGBP"},
+    {"k": "cac", "n": "CAC 40", "r": "Frankreich", "g": "Europa", "y": "^FCHI", "tv": "EURONEXT:PX1"},
+    {"k": "smi", "n": "SMI", "r": "Schweiz", "g": "Europa", "y": "^SSMI", "tv": "SIX:SMI"},
+    {"k": "aex", "n": "AEX", "r": "Niederlande", "g": "Europa", "y": "^AEX", "tv": "EURONEXT:AEX"},
+    {"k": "ibex", "n": "IBEX 35", "r": "Spanien", "g": "Europa", "y": "^IBEX", "tv": "BME:IBC"},
+    {"k": "mib", "n": "FTSE MIB", "r": "Italien", "g": "Europa", "y": "FTSEMIB.MI", "tv": "MIL:FTSEMIB"},
+    {"k": "bist", "n": "BIST 100", "r": "Türkei", "g": "Europa", "y": "XU100.IS", "tv": "BIST:XU100"},
+    {"k": "n225", "n": "Nikkei 225", "r": "Japan", "g": "Asien & Pazifik", "y": "^N225", "tv": "INDEX:NKY"},
+    {"k": "csi", "n": "CSI 300", "r": "China", "g": "Asien & Pazifik", "y": "000300.SS", "tv": "SSE:000300"},
+    {"k": "hsi", "n": "Hang Seng", "r": "Hongkong", "g": "Asien & Pazifik", "y": "^HSI", "tv": "HSI:HSI"},
+    {"k": "kospi", "n": "KOSPI", "r": "Südkorea", "g": "Asien & Pazifik", "y": "^KS11", "tv": "KRX:KOSPI"},
+    {"k": "twii", "n": "TAIEX", "r": "Taiwan", "g": "Asien & Pazifik", "y": "^TWII", "tv": "TWSE:TAIEX"},
+    {"k": "nifty", "n": "Nifty 50", "r": "Indien", "g": "Asien & Pazifik", "y": "^NSEI", "tv": "NSE:NIFTY"},
+    {"k": "asx", "n": "ASX 200", "r": "Australien", "g": "Asien & Pazifik", "y": "^AXJO", "tv": "ASX:XJO"},
+    {"k": "tsx", "n": "TSX", "r": "Kanada", "g": "Amerika", "y": "^GSPTSE", "tv": "TSX:TSX"},
+    {"k": "bvsp", "n": "Bovespa", "r": "Brasilien", "g": "Amerika", "y": "^BVSP", "tv": "BMFBOVESPA:IBOV"},
+    {"k": "mxx", "n": "IPC Mexiko", "r": "Mexiko", "g": "Amerika", "y": "^MXX", "tv": "BMV:ME"},
 ]
 
 
