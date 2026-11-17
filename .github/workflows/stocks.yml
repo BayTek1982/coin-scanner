@@ -1,7 +1,6 @@
 name: Aktienkurse
 on:
-  schedule:
-    - cron: "*/30 6-21 * * 1-5"
+  # Zeitplan jetzt über "Kurse Dauerlauf" (kurse-live.yml)
   workflow_dispatch:
 permissions:
   contents: write

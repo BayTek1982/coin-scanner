@@ -1,7 +1,6 @@
 name: Markt Tagesverlauf
 on:
-  schedule:
-    - cron: "3-59/15 6-23 * * 1-5"
+  # Zeitplan jetzt über "Kurse Dauerlauf" (kurse-live.yml)
   workflow_dispatch:
 permissions:
   contents: write
