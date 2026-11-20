@@ -6,6 +6,7 @@ Eigenes Modell nach dem Prinzip der Risk Metric von Into The Cryptoverse:
   darüber:  0,5 → 1 bis zum höchsten x der letzten 4 Jahre (die Hochs werden von Zyklus zu Zyklus kleiner)
 Kurse: Coin Metrics Community-Daten (lange Historie, z. B. BTC ab 2010), ergänzt um Binance bzw. OKX Tageskerzen.
 Ergebnis: data/risk.json (Werte für die Live-Berechnung im Scanner) und data/risk/<SYMBOL>.json (Verlauf).
+Zusätzlich: data/zyklus.json mit allen Bitcoin-Tageskursen ab 2010 für den Zyklus-Kompass (zyklus.html).
 Läuft automatisch über GitHub Actions (.github/workflows/risk.yml)."""
 import csv
 import datetime as dt
@@ -233,6 +234,9 @@ def main():
         hist, live = compute(rows)
         live.update({"id": c["id"], "name": c["name"], "src": src, "risk": round(hist[-1][2], 4)})
         out["coins"][sym] = live
+        if sym == "BTC":
+            with open("data/zyklus.json", "w") as f:
+                json.dump({"updated": out["updated"], "src": src, "d": [[d, sig(p)] for d, p in rows]}, f, separators=(",", ":"))
         with open(f"data/risk/{sym}.json", "w") as f:
             json.dump({"sym": sym, "src": src, "d": [[d, sig(p), round(r, 4)] for d, p, r in hist]}, f, separators=(",", ":"))
         print(f"{sym}: {len(rows)} Tage ab {dt.date(1970,1,1)+dt.timedelta(rows[0][0])} · Risiko {hist[-1][2]:.3f} · {src}")

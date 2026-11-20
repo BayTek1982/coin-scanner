@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0e131b">
 <script src="theme.js?v=1"></script>
+<script src="zyklus-core.js?v=1"></script>
 <meta name="description" content="Krypto-Scanner mit Live-Daten: Marktlage, Kern- und Spielgeld-Liste, eigene Filter, Derivate und TradingView-Watchlist.">
 <title>Bayazit Coin-Scanner</title>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAE2UlEQVR4nKxXXWxURRT+zty7vXcpBQqlLW2xpIrQYqw+GGxJQ8BITRpifBBNTDQCsWjRGPtgrIYoRJ/U1BrU+p9gYlISsRiBB0OiaEWJ2hAhRYpGaEv/fyxt793u3vHMvf2n7c42/ZLdnTt7Zr7vzpk554wJTcgaWC5llUrIh6WkTURIg+QPSe5CtyR0E3CRpFdnWR2nqByjOvNSXOL3lqe6seQqZtnH5kuhAQkMCOAjyxh6g54Z6MNCBMg6JI10rtkPSa+wUSoWABbC5PJQOOP6YdqFiLYAWbNymUP2MW5uxyJASlkfhvs4Pdf7X1wBTnXWBilQz/9sQBxQWgHkcBegPvFlNAnQQ9azbU1Te8U0k9qsNCb/RodcIXTvi7B3N4JSsgF7JYzCPUByxhzWtNED6mVN5upZBchahJwIjjP5emhCZBcBbj/kYCuM28oQKjkIY9398w253SFxTHHdJGAkklXJP0XQBKUX8hIkI3btzKQYhtf6c7yhW8a4JgWoZeHjXIUEYGQXTyM0lIDhTsj+K3HHMtdL8v2MdNU21ZcDOgSiFGggaecRZrOYmeNM1IF37UdQ6q3AknTELtdDC0TLnFFxkFv7SNamLnfccCf7PkljJOzyv3jpl0x2jfTA62z03RFt/Bje3yehBQnXtkYyzEgkvE2PnP2Vs2WC3Lt+DmSG+SjmQ+Te5/eFUtYiaq9A7OKX8ScjWIrb9KR8gJcEOhjfaArRX96C18Ib0E6FkbsNZuFef2OGtr8JjA5ruUNxC04id0ETYs09Y+wj8NrOBm2nD7FLX8E9/hgvq+d3qSOpA8Ut+N0ztaxFCCLj7qDtDgQk9mSKECvyeFmDUy0jg1pTKm6TZWRCwwMia/Pk5kvORGjHYYT4jWXvJf800PJ1wX9q+S9o7AFfKWWa0MQ0///6NgTnAbG2BLQqP+jkYxlrOorob+9C9sWPBeMwOSq082LkxjOc8P/oEKLnqll9zI8HxvoHYW6u5HyQA1p2C09lQBvMLThnt2tYTvjf6/g9IFeIufzWdXC/2Oq/tXJTUtmn0IXiFiTRGM9w6vmXg224KYvHHBbQHEjlldCF4jYF0Sk+POXzGU71v5H/CIy8UsSu/gDv39O842/A4DcXuVsDgT1NSEDA1+OhuENFpjktQ0uDYFNcBVL5Xpiz+5pPQ+TEbnhXv0dcSETszLYUQeV9A/z0+bzGozcQa+Y6JbzKD0LOhwWI/nkkmKf/H8iOP3zSSP2jeuTByM9UnegfQ9uIvup4oSdUcy5zWn2Hn3C8Kyd8QZQUJM/It0+y/y8jQTh2yDugGn7oooqudqlqonkwnv9jrQ3Bc05xUA0lTs6+996hpzs6JwQohKV7gK8Y5+cclLbJ//VaGkAq7Kr8P1YNJQLmOGtFzdfGnycEBCWzU8YGLbMNHD1dCbeuzA+9tDQrqANafkKCaA5b2EkvtIxM8M60cKvT7/SEcUZVLVhE8N2gWxjRIruiq3lqv5hpaD3fed4WIo+PSQMWCxLfhYXYOJN8VgEKtL+1x+5tK+HmXlbegQXzSq5S5VM8V6mac1auuJN8kpbiDpkvS6KKhC6n0vvASo6+Tnu65y0O9GoxjF3PkbFDktjFBAXkX83VFZ3rOb6a8+btJpIX+OGoldR2Uvd6/j8AAAD//2J7pVEAAAAGSURBVAMA62HiqEpMtvQAAAAASUVORK5CYII=">
@@ -131,7 +132,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
 .rkbands{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;height:150px;align-items:end;margin-top:6px}
 .rkb{display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-align:center;font:.66rem var(--f-num);color:var(--muted);min-width:0}.rkb span{margin-bottom:3px;white-space:nowrap}.rkb i{border-radius:3px 3px 0 0;display:block}.rkb small{margin-top:3px;font-size:.58rem;white-space:nowrap;overflow:hidden}
 .rkb.on{color:var(--fg);font-weight:700}.rkb.on i{outline:2px solid var(--fg)}
-.bubtile{cursor:pointer}.bubtile:hover{border-color:var(--accent)}
+.bubtile{cursor:pointer}.bubtile:hover{border-color:var(--accent)}a.zytile{text-decoration:none;color:inherit}
 #rkCv{width:100%;height:min(55vh,460px);display:block;touch-action:pan-y;cursor:crosshair}
 .bubdlg{width:min(1200px,96vw);max-width:none;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);padding:14px;box-sizing:border-box}
 .bubdlg::backdrop{background:rgba(0,0,0,.6)}
@@ -157,7 +158,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
   </header>
   <div class="src" id="src"></div>
   <p class="notice" id="notice" hidden></p>
-  <div class="seg" role="group" aria-label="Bereich"><button data-mode="krypto">Krypto</button><button data-mode="aktien">Aktien &amp; Indizes</button><button data-mode="flows">🐋 Geldflüsse</button><a class="seglink" href="golden-zone.html">◎ Golden Zone &amp; SK</a><a class="seglink" href="futures.html">📊 Futures &amp; Lagebild</a><a class="seglink" href="chart.html">✦ Chart-Bot</a><a class="seglink" href="https://markt.kompassapps.de/">↗ Markt</a></div>
+  <div class="seg" role="group" aria-label="Bereich"><button data-mode="krypto">Krypto</button><button data-mode="aktien">Aktien &amp; Indizes</button><button data-mode="flows">🐋 Geldflüsse</button><a class="seglink" href="golden-zone.html">◎ Golden Zone &amp; SK</a><a class="seglink" href="futures.html">📊 Futures &amp; Lagebild</a><a class="seglink" href="chart.html">✦ Chart-Bot</a><a class="seglink" href="zyklus.html">🌀 Zyklus-Kompass</a><a class="seglink" href="https://markt.kompassapps.de/">↗ Markt</a></div>
   <div id="cryptoView" class="view">
 
   <section class="mood" aria-label="Marktlage">
@@ -168,6 +169,7 @@ td.more a:hover{background:var(--accent);color:var(--accent-ink)}
     <div class="tile"><span class="label">Angst &amp; Gier</span><div class="gauge"><svg id="fngSvg" width="92" height="54" viewBox="0 0 92 54" aria-hidden="true"></svg><span class="v" id="tFng">–</span></div><span class="s" id="tFngS"></span></div>
     <div class="tile bubtile" id="rkTile" role="button" tabindex="0" title="Details öffnen"><span class="label">BTC Risiko · 0 bis 1</span><span class="v" id="tRk">–</span><span class="s" id="tRkS">Bayazit Risiko-Indikator · Tippen für Details</span></div>
     <div class="tile bubtile" id="bubTile" role="button" tabindex="0" title="Chart öffnen"><span class="label">BTC Hitze</span><span class="v" id="tBub">–</span><span class="s" id="tBubS">Kurs ÷ 20-Wochen-Schnitt · Tippen für Chart</span></div>
+    <a class="tile bubtile zytile" id="zyTile" href="zyklus.html" title="Zyklus-Kompass öffnen"><span class="label">BTC Zyklus · 4 Jahre</span><span class="v" id="tZy">–</span><span class="s" id="tZyS">Phase im 4-Jahres-Zyklus · Tippen für Spirale</span></a>
   </section>
 
   <details class="panel linkbox">
@@ -555,7 +557,7 @@ async function loadAll(){
   S.tokenCoins=[];
   btn.disabled=false;btn.textContent="Aktualisieren";
   renderTiles();render();
-  if(cgOk)loadRisk().then(loadBub)
+  if(cgOk)loadRisk().then(loadBub);loadZy()
   if(S.mode==="flows"){derivLoaded=0;loadFlows()}
 }
 
@@ -1457,7 +1459,10 @@ function rkOf(c){const R=rkInfo(c);return R&&c.p?rkAt(R,c.p):null}
 function rkCell(c){const v=rkOf(c);if(v==null)return'<span class="flat" title="Kein Risiko-Wert: weniger als 2 Jahre Kursdaten oder nicht unter den Top 100">–</span>';
   return`<button class="bub" data-rk="${esc(c.id)}" title="${rkTxt(v)} · Tippen für Details" style="--bc:${rkCol(v)}">${v.toLocaleString("de-DE",{minimumFractionDigits:2,maximumFractionDigits:2})}</button>`}
 async function loadRisk(){try{const r=await fetch("data/risk.json?t="+Date.now());if(!r.ok)throw 0;S.risk=await r.json()}catch(e){S.risk=null}renderRkTile();if(!SPEC[S.tab])render()}
-function renderRkTile(){const v=rkOf(S.btc);if(v==null)return;const e=$("tRk");e.textContent=fmtRk(v);e.style.color=rkCol(v);$("tRkS").textContent=rkTxt(v).split(" – ")[0]+" · Tippen für Details"}
+let ZY=null;
+async function loadZy(){try{const d=await Zyklus.load();ZY=d.pts;renderZyTile()}catch(e){}}
+function renderZyTile(){if(!ZY||!window.Zyklus)return;const s=Zyklus.summary(Zyklus.computeZ(Zyklus.withLive(ZY.map(p=>({t:p.t,p:p.p})),S.btc&&S.btc.p)));const e=$("tZy");e.textContent=s.phaseName;e.style.color=s.bull?"var(--up)":"var(--down)";$("tZyS").textContent=(s.bull?"▲ Bulle":"▼ Bär")+" · Tag "+s.day.toLocaleString("de-DE")+" von "+s.len.toLocaleString("de-DE")+" · Tippen für Spirale"}
+function renderRkTile(){renderZyTile();const v=rkOf(S.btc);if(v==null)return;const e=$("tRk");e.textContent=fmtRk(v);e.style.color=rkCol(v);$("tRkS").textContent=rkTxt(v).split(" – ")[0]+" · Tippen für Details"}
 
 const RV={D:[],a:0,b:0,hov:null,x0:null,x1:null,geo:null};
 const rkHist={};

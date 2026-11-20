@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="de" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e131b">
+<meta name="description" content="Bitcoin 4-Jahres-Zyklus als Spirale mit den Gefühlsphasen des Marktes.">
+<title>Zyklus-Kompass · Bayazit Coin-Scanner</title>
+<link rel="icon" type="image/svg+xml" href="icons/zyklus.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="theme.js?v=1"></script>
+<style>
+:root{
+  --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;--faint:#8d99ab;
+  --accent:#c77a12;--accent-ink:#fff;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;
+  --btc:#e8870f;--violet:#7c5cd6;--cyan:#0e9bb5;--blue:#2f6fd6;--gold:#c99212;
+  --grid:rgba(20,26,36,.10);--grid2:rgba(20,26,36,.24);
+  --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+:root.dk{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;
+  --btc:#f7931a;--violet:#a78bfa;--cyan:#22d3ee;--blue:#5b9bff;--gold:#eab308;
+  --grid:rgba(141,153,171,.16);--grid2:rgba(141,153,171,.34);color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not(.lt){
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --accent:#f0a33a;--accent-ink:#1a1206;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;
+  --btc:#f7931a;--violet:#a78bfa;--cyan:#22d3ee;--blue:#5b9bff;--gold:#eab308;
+  --grid:rgba(141,153,171,.16);--grid2:rgba(141,153,171,.34);color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+a{color:inherit}
+.wrap{max-width:1800px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));display:grid;gap:14px}
+header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;justify-content:space-between}
+h1{font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+h1 .dot{width:30px;height:30px;border-radius:50%;background:var(--btc);display:inline-grid;place-items:center;color:#1a1206;font-size:1rem}
+.label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sub{font-size:.85rem;color:var(--muted);margin:0;line-height:1.5}
+.status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stand{font-size:.8rem;color:var(--muted)}.stand b{font-family:var(--f-num);color:var(--fg);font-weight:600}
+.btn{font:600 .88rem var(--f-body);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--btc);color:#1a1206;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--chip);color:var(--fg)}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;position:relative;overflow:hidden;min-width:0}
+.tile::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--acc,var(--btc))}
+.tag{font-family:var(--f-num);font-size:.7rem;font-weight:800;letter-spacing:.12em;color:var(--acc,var(--btc));text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.tag .d{width:7px;height:7px;border-radius:50%;background:var(--acc,var(--btc))}
+h2{font-family:var(--f-num);font-size:1.25rem;margin:6px 0 4px;letter-spacing:-.01em}
+.spiral-tile{--acc:var(--btc);padding:12px}
+.spiral-box{position:relative;width:100%;margin-top:6px}
+.spiral-box svg{width:100%;height:auto;display:block;touch-action:none}
+.loading{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-num);color:var(--muted);font-size:.85rem}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:.8rem;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .12s;z-index:5}
+.tip.show{opacity:1}
+.tip b{font-family:var(--f-num)}
+.tip .r{display:flex;justify-content:space-between;gap:12px;color:var(--muted)}
+.tip .r span:last-child{color:var(--fg);font-family:var(--f-num)}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.chip{font:600 .78rem var(--f-num);border:1px solid var(--line);background:var(--chip);color:var(--fg);padding:7px 10px;border-radius:999px;cursor:pointer;user-select:none}
+.chip.off{opacity:.38;text-decoration:line-through}
+.slider{flex:1 1 180px;display:flex;align-items:center;gap:8px;min-width:180px}
+.slider input{flex:1;accent-color:var(--btc)}
+.slider span{font-family:var(--f-num);font-size:.78rem;color:var(--muted);min-width:78px;text-align:right}
+.legend{display:flex;align-items:center;gap:10px;margin-top:10px;font-family:var(--f-num);font-size:.7rem;color:var(--muted);flex-wrap:wrap}
+.bar{height:9px;width:140px;border-radius:5px;background:linear-gradient(90deg,#9b1c1c,#e0662a,#e8b43a,#b8d24a,#2f9e44)}
+.lg-i{display:flex;align-items:center;gap:5px}
+.lg-i i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.big{font-family:var(--f-num);font-size:2rem;font-weight:800;letter-spacing:-.02em;margin:8px 0 2px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px dashed var(--line);font-size:.85rem}
+.row span:first-child{color:var(--muted)}
+.row span:last-child{font-family:var(--f-num);font-weight:600;text-align:right}
+.badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-num);font-size:.72rem;font-weight:800;padding:5px 9px;border-radius:999px}
+.badge.bull{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up)}
+.badge.bear{background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)}
+.quote{font-size:.95rem;font-style:italic;margin:10px 0 4px;padding:10px 12px;border-left:3px solid var(--acc);background:var(--chip);border-radius:0 10px 10px 0}
+.prog{height:10px;background:var(--chip);border-radius:6px;overflow:hidden;margin:10px 0 6px}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--violet),var(--btc));border-radius:6px}
+.mini{font-family:var(--f-num);font-size:.72rem;color:var(--muted)}
+.phases{display:grid;grid-template-columns:1fr;gap:6px;margin-top:10px}
+@media(min-width:560px){.phases{grid-template-columns:1fr 1fr}}
+.ph{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:var(--chip);border:1px solid transparent}
+.ph .n{font-family:var(--f-num);font-size:.7rem;color:var(--faint);min-width:20px;padding-top:2px}
+.ph b{font-family:var(--f-num);font-size:.82rem;display:block}
+.ph em{font-size:.8rem;color:var(--muted)}
+.ph.now{border-color:var(--btc);background:color-mix(in srgb,var(--btc) 12%,transparent)}
+.ph.now .n{color:var(--btc)}
+table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:10px}
+th{font-family:var(--f-num);font-size:.66rem;letter-spacing:.08em;color:var(--muted);text-align:right;font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{padding:8px 4px;border-bottom:1px dashed var(--line);text-align:right;font-family:var(--f-num)}
+.info{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.ibox{border-radius:10px;padding:10px 12px;background:var(--chip);border-left:3px solid var(--c)}
+.ibox b{font-family:var(--f-num);font-size:.74rem;color:var(--c);letter-spacing:.06em;text-transform:uppercase}
+.ibox p{margin:4px 0 0;font-size:.85rem;line-height:1.5}
+.foot{color:var(--faint);font-size:.72rem;text-align:center;font-family:var(--f-num)}
+@media(min-width:1000px){
+  .grid{grid-template-columns:repeat(12,1fr);gap:14px}
+  .spiral-tile{grid-column:span 7;grid-row:span 3}
+  .today,.cycle,.halving,.cmp{grid-column:span 5}
+  .phase-tile{grid-column:span 7}
+  .how,.src{grid-column:span 6}
+}
+.g-ring{fill:none;stroke:var(--grid);stroke-width:1.2}
+.g-axis{stroke:var(--grid);stroke-width:1.2}
+.g-outer{fill:none;stroke:var(--grid2);stroke-width:2.5}
+.g-tick{stroke:var(--grid2);stroke-width:2.5}
+.g-ptxt{fill:var(--faint);font-family:var(--f-num);font-size:19px;font-weight:600}
+.g-ytxt{fill:var(--muted);font-family:var(--f-num);font-size:19px;font-weight:600}
+.g-phase{fill:var(--fg);font-family:var(--f-num);font-size:29px;font-weight:800;letter-spacing:.02em}
+.g-phase.now{fill:var(--btc)}
+.g-sector{fill:var(--btc);opacity:.08}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="label"><a href="index.html" style="color:var(--muted)">← Bayazit Coin-Scanner</a></div>
+      <h1><span class="dot">🌀</span><span>Zyklus-Kompass</span></h1>
+      <div class="sub">Bitcoin 4-Jahres-Zyklus · Psychologie eines Marktzyklus</div>
+    </div>
+    <div class="status">
+      <button class="btn ghost" id="themeBtn" type="button" style="font-size:17px;min-width:42px;line-height:1" title="Anzeige &amp; Farben: hell/dunkel, Themen, Helligkeit, eigene Farben" aria-label="Anzeige und Farben">◐</button>
+      <span class="stand">Stand <b id="stand">–</b></span>
+      <button class="btn" id="refresh">Aktualisieren</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="tile spiral-tile">
+      <div class="tag"><span class="d"></span>Spirale · Preis &amp; Gefühl</div>
+      <div class="spiral-box" id="box">
+        <svg id="sv" viewBox="-140 -140 1280 1280" aria-label="Bitcoin-Zyklus-Spirale"></svg>
+        <div class="loading" id="loading">Lade Bitcoin-Kurse …</div>
+        <div class="tip" id="tip"></div>
+      </div>
+      <div class="controls" id="chips"></div>
+      <div class="controls">
+        <button class="btn" id="play">▶ Zeitreise</button>
+        <div class="slider"><input type="range" id="sl" min="0" max="100" value="100"><span id="slv">–</span></div>
+      </div>
+      <div class="legend">
+        <span>Bär</span><span class="bar"></span><span>Bulle</span>
+        <span class="lg-i"><i style="background:#2f9e44;box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #2f9e44"></i>Zyklus-Hoch</span>
+        <span class="lg-i"><i style="background:#9b1c1c;box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px #9b1c1c"></i>Tief</span>
+        <span class="lg-i"><i style="background:transparent;border:2px solid var(--cyan);border-radius:2px;transform:rotate(45deg);width:9px;height:9px"></i>Halving</span>
+      </div>
+    </section>
+
+    <section class="tile today" style="--acc:var(--up)">
+      <div class="tag"><span class="d"></span>Heute</div>
+      <div class="big" id="tPrice">–</div>
+      <div class="mini" id="tDate">–</div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="badge" id="tBadge">–</span><span class="mini" id="tZ"></span>
+      </div>
+      <div class="quote" id="tQuote">–</div>
+      <div class="row"><span>Phase (Kalender)</span><span id="tPhase">–</span></div>
+      <div class="row"><span>Einstandspreis Kurzzeit-Anleger (Näherung)</span><span id="tCost">–</span></div>
+      <div class="row"><span>Abstand zum Zyklus-Hoch</span><span id="tAth">–</span></div>
+    </section>
+
+    <section class="tile cycle" style="--acc:var(--violet)">
+      <div class="tag"><span class="d"></span>Zyklus-Fortschritt</div>
+      <h2 id="cTitle">–</h2>
+      <div class="prog"><i id="cBar" style="width:0"></i></div>
+      <div class="mini" id="cTxt">–</div>
+    </section>
+
+    <section class="tile halving" style="--acc:var(--cyan)">
+      <div class="tag"><span class="d"></span>Nächstes Halving</div>
+      <h2 id="hDays">–</h2>
+      <p class="sub">Voraussichtlich im Frühjahr 2028 (das genaue Datum hängt von der Blockzeit ab). Dann halbiert sich die Belohnung für Miner von 3,125 auf 1,5625 BTC pro Block. Bisherige Halvings: Nov 2012, Jul 2016, Mai 2020, Apr 2024.</p>
+    </section>
+
+    <section class="tile phase-tile" style="--acc:var(--gold)">
+      <div class="tag"><span class="d"></span>Die 16 Gefühlsphasen</div>
+      <p class="sub" style="margin-top:6px">Im Uhrzeigersinn ab oben. Markiert ist die aktuelle Kalender-Position im Zyklus.</p>
+      <div class="phases" id="phList"></div>
+    </section>
+
+    <section class="tile cmp" style="--acc:var(--blue)">
+      <div class="tag"><span class="d"></span>Zyklen im Vergleich</div>
+      <p class="sub" style="margin-top:6px">Zyklus-Hoch (höchster Tagesschluss) und das tiefste Tief danach je 4-Jahres-Runde.</p>
+      <table id="cmp"></table>
+    </section>
+
+    <section class="tile how" style="--acc:var(--gold)">
+      <div class="tag"><span class="d"></span>So liest du die Spirale</div>
+      <div class="info">
+        <div class="ibox" style="--c:var(--blue)"><b>Was ist das?</b><p>Der Bitcoin-Preis seit 2010, aufgewickelt auf eine Uhr mit 4 Jahren pro Runde. Oben = 1. Januar im Zyklus-Startjahr (2009, 2013, 2017, 2021, 2025), rechts = 1 Jahr später, unten = 2 Jahre, links = 3 Jahre. Je weiter außen, desto höher der Preis (logarithmisch).</p></div>
+        <div class="ibox" style="--c:var(--up)"><b>So erkennst du es</b><p>Die Zyklus-Hochs (grüne Punkte) lagen bisher immer rechts bei „Euphorie“, die Tiefs (rote Punkte) unten bei „Kapitulation/Depression“.</p></div>
+        <div class="ibox" style="--c:var(--gold)"><b>Was bedeutet es?</b><p>Liegt der Kurs unter dem Einstandspreis der Kurzzeit-Anleger, sind viele neue Käufer im Minus – typisch für Bärenmärkte. Darüber sind sie im Gewinn – typisch für Bullenmärkte.</p></div>
+        <div class="ibox" style="--c:var(--down)"><b>Tipp</b><p>Der 4-Jahres-Rhythmus ist ein Muster aus der Vergangenheit, kein Naturgesetz. Zur groben Einordnung gut – für einzelne Trades nicht geeignet. Zusammen mit Risiko und Hitze im Scanner ansehen. Keine Anlageberatung.</p></div>
+      </div>
+    </section>
+
+    <section class="tile src" style="--acc:var(--faint)">
+      <div class="tag"><span class="d"></span>Daten &amp; Methode</div>
+      <div class="info">
+        <div class="ibox" style="--c:var(--muted)"><b>Preis</b><p id="srcTxt">–</p></div>
+        <div class="ibox" style="--c:var(--muted)"><b>Färbung</b><p>Das Original nutzt den on-chain gemessenen Einstandspreis der Kurzzeit-Anleger (Coins, die in den letzten 155 Tagen bewegt wurden) – diese Daten sind kostenpflichtig. Hier wird er als Näherung über den Durchschnittspreis der letzten 155 Tage berechnet. Der Z-Wert zeigt, wie weit der Kurs darüber oder darunter liegt – im Verhältnis zur üblichen Schwankung.</p></div>
+        <div class="ibox" style="--c:var(--muted)"><b>Idee</b><p>Nach dem „Hodlers' Cheat Sheet“ von Root (@TheRationalRoot) und der klassischen Grafik „Psychology of a Market Cycle“. Eigene Umsetzung, eigene Berechnung.</p></div>
+      </div>
+    </section>
+  </main>
+  <div class="foot">BAYAZIT ZYKLUS-KOMPASS · TEIL DES COIN-SCANNERS · KEINE ANLAGEBERATUNG</div>
+</div>
+
+<script src="zyklus-core.js?v=1"></script>
+<script>
+(function(){
+"use strict";
+var Z=window.Zyklus, DAY=Z.DAY, PHASES=Z.PHASES;
+var MON=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+function $(id){return document.getElementById(id)}
+function fmtP(p){ if(p>=100) return Math.round(p).toLocaleString("de-DE")+" $"; if(p>=1) return p.toLocaleString("de-DE",{maximumFractionDigits:2})+" $"; return p.toLocaleString("de-DE",{maximumFractionDigits:3})+" $"; }
+function fmtD(t,full){ var d=new Date(t); return full? d.getUTCDate()+". "+MON[d.getUTCMonth()]+" "+d.getUTCFullYear() : MON[d.getUTCMonth()]+" "+d.getUTCFullYear(); }
+function fmtN(x,d){ return x.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+var CX=500,CY=500,R0=30,R1=340,LMIN=-2,LMAX=5.5;
+function rad(p){ return R0+(Math.log10(p)-LMIN)/(LMAX-LMIN)*(R1-R0); }
+function pos(t,p){ var a=Z.cycleInfo(t).f*2*Math.PI, r=rad(p); return [CX+r*Math.sin(a), CY-r*Math.cos(a)]; }
+
+var NS="http://www.w3.org/2000/svg", sv=$("sv");
+function el(tag,attrs,parent){ var e=document.createElementNS(NS,tag); for(var k in attrs) e.setAttribute(k,attrs[k]); (parent||sv).appendChild(e); return e; }
+
+var ALL=[], PTS=[], SEGS=[], DOTS=[], CYC=[], hidden={}, idxMax=0, curIdx=0, gSeg, gMark, nowDot, nowHalo, DATA=null;
+
+/* Für die Zeichnung: alle 3 Tage ein Punkt (Monatswerte und der letzte Punkt bleiben immer erhalten) */
+function thin(pts){
+  var out=[], lastT=-1e18;
+  pts.forEach(function(p,i){ if(i===pts.length-1 || p.t-lastT>=3*DAY-1){ out.push(p); lastT=p.t; } });
+  return out;
+}
+
+function drawStatic(nowT){
+  sv.innerHTML="";
+  var nowPh=Z.phaseIdx(nowT), a0=nowPh/16*2*Math.PI, a1=(nowPh+1)/16*2*Math.PI, ro=355;
+  el("path",{class:"g-sector",d:"M"+CX+","+CY+" L"+(CX+ro*Math.sin(a0))+","+(CY-ro*Math.cos(a0))+" A"+ro+","+ro+" 0 0 1 "+(CX+ro*Math.sin(a1))+","+(CY-ro*Math.cos(a1))+" Z"});
+  [0.01,0.1,1,10,100,1000,10000,100000].forEach(function(p){
+    var r=rad(p); el("circle",{class:"g-ring",cx:CX,cy:CY,r:r});
+    var a=2.36, x=CX+r*Math.sin(a), y=CY-r*Math.cos(a);
+    var t=el("text",{class:"g-ptxt",x:x+6,y:y+18}); t.textContent = p>=1000 ? (p/1000).toLocaleString("de-DE")+"k $" : p.toLocaleString("de-DE")+" $";
+  });
+  for(var i=0;i<4;i++){ var a=i*Math.PI/4; el("line",{class:"g-axis",x1:CX-355*Math.sin(a),y1:CY+355*Math.cos(a),x2:CX+355*Math.sin(a),y2:CY-355*Math.cos(a)}); }
+  el("circle",{class:"g-outer",cx:CX,cy:CY,r:355});
+  for(var k=0;k<16;k++){
+    var ab=k/16*2*Math.PI;
+    el("line",{class:"g-tick",x1:CX+345*Math.sin(ab),y1:CY-345*Math.cos(ab),x2:CX+372*Math.sin(ab),y2:CY-372*Math.cos(ab)});
+    var am=(k+.5)/16*2*Math.PI, deg=am*180/Math.PI, rr=378, x=CX+rr*Math.sin(am), y=CY-rr*Math.cos(am);
+    var t=el("text",{class:"g-phase"+(k===nowPh?" now":""),x:x,y:y,"dominant-baseline":"middle"});
+    if(deg<180){ t.setAttribute("text-anchor","start"); t.setAttribute("transform","rotate("+(deg-90)+" "+x+" "+y+")"); }
+    else { t.setAttribute("text-anchor","end"); t.setAttribute("transform","rotate("+(deg+90)+" "+x+" "+y+")"); }
+    t.textContent=PHASES[k][0].toUpperCase();
+  }
+  [["2009 · '13 · '17 · '21 · '25",0],["2010 · '14 · '18 · '22 · '26",90],["2011 · '15 · '19 · '23 · '27",180],["2012 · '16 · '20 · '24 · '28",270]].forEach(function(o){
+    var a=o[1]*Math.PI/180, r=330, x=CX+r*Math.sin(a), y=CY-r*Math.cos(a), rot=o[1]===90?90:(o[1]===270?-90:0);
+    var t=el("text",{class:"g-ytxt",x:x,y:y,"text-anchor":"middle","dominant-baseline":"middle",transform:"rotate("+rot+" "+x+" "+y+")"}); t.textContent=o[0];
+  });
+  gSeg=el("g",{}); gMark=el("g",{});
+}
+
+function buildSegments(){
+  SEGS=[];
+  for(var i=1;i<PTS.length;i++){
+    var a=PTS[i-1], b=PTS[i], dt=b.t-a.t, n=Math.max(1,Math.ceil(dt/(6*DAY))), la=Math.log(a.p), lb=Math.log(b.p), prev=pos(a.t,a.p);
+    for(var s=1;s<=n;s++){
+      var f=s/n, t=a.t+dt*f, p=Math.exp(la+(lb-la)*f), z=a.z+(b.z-a.z)*f, q=pos(t,p);
+      var ln=el("line",{x1:prev[0].toFixed(1),y1:prev[1].toFixed(1),x2:q[0].toFixed(1),y2:q[1].toFixed(1),stroke:Z.zColor(z),"stroke-width":7,"stroke-linecap":"round"},gSeg);
+      SEGS.push({el:ln,i:i,cy:Z.cycleStartYear(a.t+dt*(s-.5)/n)});
+      prev=q;
+    }
+  }
+}
+function idxAt(t){ var i=0; while(i<PTS.length-1 && PTS[i].t<t) i++; return i; }
+function priceAt(t){ for(var i=1;i<ALL.length;i++){ if(ALL[i].t>=t){ var a=ALL[i-1],b=ALL[i],f=(t-a.t)/(b.t-a.t); return Math.exp(Math.log(a.p)+(Math.log(b.p)-Math.log(a.p))*f); } } return ALL[ALL.length-1].p; }
+
+function buildMarkers(){
+  DOTS=[];
+  CYC.forEach(function(c){
+    [[c.hi,"#2f9e44"],[c.lo,"#9b1c1c"]].forEach(function(m){
+      if(!m[0]) return; var q=pos(m[0].t,m[0].p);
+      var e=el("circle",{cx:q[0],cy:q[1],r:11,fill:m[1],stroke:"var(--panel)","stroke-width":4},gMark);
+      DOTS.push({el:e,i:idxAt(m[0].t),cy:c.sy});
+    });
+  });
+  Z.HALVINGS.forEach(function(t){
+    var q=pos(t,priceAt(t));
+    var r=el("rect",{x:q[0]-8,y:q[1]-8,width:16,height:16,fill:"none",stroke:"var(--cyan)","stroke-width":3.5,transform:"rotate(45 "+q[0]+" "+q[1]+")"},gMark);
+    DOTS.push({el:r,i:idxAt(t),cy:Z.cycleStartYear(t)});
+  });
+  nowHalo=el("circle",{r:22,fill:"none",stroke:"var(--btc)","stroke-width":3},gMark);
+  el("animate",{attributeName:"r",values:"14;30;14",dur:"2s",repeatCount:"indefinite"},nowHalo);
+  el("animate",{attributeName:"opacity",values:".9;0;.9",dur:"2s",repeatCount:"indefinite"},nowHalo);
+  nowDot=el("circle",{r:12,fill:"var(--btc)",stroke:"var(--panel)","stroke-width":4},gMark);
+}
+
+function setIdx(idx){
+  curIdx=idx;
+  for(var k=0;k<SEGS.length;k++){ var s=SEGS[k]; s.el.style.display=(s.i<=idx && !hidden[s.cy])?"":"none"; }
+  for(var d=0;d<DOTS.length;d++){ var o=DOTS[d]; o.el.style.display=(o.i<=idx && !hidden[o.cy])?"":"none"; }
+  var p=PTS[idx], q=pos(p.t,p.p);
+  [nowDot,nowHalo].forEach(function(c){ c.setAttribute("cx",q[0]); c.setAttribute("cy",q[1]); });
+  $("slv").textContent = idx===idxMax ? "Heute" : fmtD(p.t,true);
+}
+
+/* Tooltip */
+var tip=$("tip"), box=$("box");
+function onMove(ev){
+  if(!PTS.length) return;
+  var pt=sv.createSVGPoint(); pt.x=ev.clientX; pt.y=ev.clientY; var s=pt.matrixTransform(sv.getScreenCTM().inverse());
+  var best=null, bd=1e9;
+  for(var i=0;i<=curIdx;i++){ var p=PTS[i]; if(hidden[Z.cycleStartYear(p.t)]) continue; var q=pos(p.t,p.p), dd=(q[0]-s.x)*(q[0]-s.x)+(q[1]-s.y)*(q[1]-s.y); if(dd<bd){ bd=dd; best=p; } }
+  if(!best || bd>40*40){ tip.classList.remove("show"); return; }
+  tip.innerHTML="<b>"+(best===PTS[idxMax]?"Heute · ":"")+fmtD(best.t,true)+"</b>"+
+    '<div class="r"><span>Preis</span><span>'+fmtP(best.p)+"</span></div>"+
+    '<div class="r"><span>Phase</span><span>'+PHASES[Z.phaseIdx(best.t)][0]+"</span></div>"+
+    '<div class="r"><span>Z-Wert</span><span style="color:'+Z.zColor(best.z)+'">'+(best.z>=0?"+":"")+fmtN(best.z,2)+"</span></div>"+
+    '<div class="r"><span>Markt</span><span>'+(best.z>=0?"Bulle":"Bär")+"</span></div>";
+  var rb=box.getBoundingClientRect(), x=ev.clientX-rb.left, y=ev.clientY-rb.top;
+  tip.style.left=Math.min(Math.max(8,x+14),rb.width-200)+"px"; tip.style.top=Math.max(8,y-115)+"px"; tip.classList.add("show");
+}
+sv.addEventListener("pointermove",onMove); sv.addEventListener("pointerdown",onMove);
+sv.addEventListener("pointerleave",function(){ tip.classList.remove("show"); });
+
+function buildChips(){
+  var c=$("chips"); c.innerHTML="";
+  CYC.forEach(function(cy){
+    var sy=cy.sy, b=document.createElement("span"); b.className="chip"+(hidden[sy]?" off":"");
+    b.textContent=(sy===2009?"2010":sy)+"–"+String(sy+3).slice(2);
+    b.addEventListener("click",function(){ hidden[sy]=!hidden[sy]; b.classList.toggle("off",!!hidden[sy]); setIdx(curIdx); });
+    c.appendChild(b);
+  });
+}
+var sl=$("sl"), playBtn=$("play"), timer=null;
+sl.addEventListener("input",function(){ stop(); setIdx(+sl.value); });
+function stop(){ if(timer){ clearInterval(timer); timer=null; playBtn.textContent="▶ Zeitreise"; } }
+playBtn.addEventListener("click",function(){
+  if(timer){ stop(); return; }
+  var i=curIdx>=idxMax?0:curIdx, step=Math.max(1,Math.round(idxMax/280));
+  playBtn.textContent="❚❚ Pause";
+  timer=setInterval(function(){ i=Math.min(idxMax,i+step); sl.value=i; setIdx(i); if(i>=idxMax) stop(); },40);
+});
+
+function fillTiles(){
+  var S=Z.summary(ALL);
+  $("tPrice").textContent=fmtP(S.p);
+  $("tDate").textContent=(ALL[ALL.length-1].live?"Live · ":"Tagesschluss · ")+fmtD(S.t,true);
+  var b=$("tBadge"); b.className="badge "+(S.bull?"bull":"bear"); b.textContent=S.bull?"▲ BULLE":"▼ BÄR";
+  $("tZ").textContent="Z-Wert "+(S.z>=0?"+":"")+fmtN(S.z,2);
+  $("tQuote").textContent=S.quote;
+  $("tPhase").textContent=(S.phase+1)+"/16 · "+S.phaseName;
+  $("tCost").textContent=fmtP(S.sma);
+  var cyc=CYC[CYC.length-1];
+  $("tAth").textContent=fmtN((S.p/cyc.hi.p-1)*100,1)+" %";
+  $("cTitle").textContent="Tag "+S.day.toLocaleString("de-DE")+" von "+S.len.toLocaleString("de-DE");
+  $("cBar").style.width=(S.f*100).toFixed(1)+"%";
+  $("cTxt").textContent="Zyklus "+S.sy+"–"+(S.sy+3)+" · "+fmtN(S.f*100,1)+" % geschafft · Jahr "+(Math.floor(S.f*4)+1)+" von 4";
+  $("hDays").textContent="≈ "+S.halvingDays.toLocaleString("de-DE")+" Tage";
+  var pl=$("phList"); pl.innerHTML="";
+  PHASES.forEach(function(p,i){ var d=document.createElement("div"); d.className="ph"+(i===S.phase?" now":""); d.innerHTML='<span class="n">'+String(i+1).padStart(2,"0")+"</span><div><b>"+p[0]+"</b><em>"+p[1]+"</em></div>"; pl.appendChild(d); });
+  var h="<tr><th>Zyklus</th><th>Hoch</th><th>Tief danach</th><th>Rückgang</th></tr>";
+  CYC.forEach(function(c){
+    var lab=(c.sy===2009?"2010":c.sy)+"–"+String(c.sy+3).slice(2), lo=c.lo;
+    h+="<tr><td>"+lab+"</td><td>"+fmtP(c.hi.p)+'<br><span class="mini">'+fmtD(c.hi.t,true)+"</span></td><td>"+(lo?fmtP(lo.p)+'<br><span class="mini">'+(c.running?"bisher":fmtD(lo.t,true))+"</span>":"–")+'</td><td style="color:var(--down)">'+(lo?"−"+fmtN((1-lo.p/c.hi.p)*100,0)+" %":"–")+"</td></tr>";
+  });
+  $("cmp").innerHTML=h;
+  $("srcTxt").textContent = (DATA.src==="zyklus"
+    ? "Bitcoin-Tageskurse seit 2010 (Coin Metrics + Binance), jede Nacht automatisch aktualisiert"
+    : "Bitcoin-Tageskurse ab Mitte 2012 (Coin Metrics + Binance), davor Monatsschlusskurse")
+    + (ALL[ALL.length-1].live ? ", dazu der aktuelle Kurs live von Binance." : ".");
+  $("stand").textContent=new Date(S.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+}
+
+function livePrice(){
+  return fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT",{cache:"no-store"})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ return parseFloat(j.price); }).catch(function(){ return null; });
+}
+
+function render(){
+  CYC=Z.cycles(ALL);
+  PTS=thin(ALL);
+  drawStatic(ALL[ALL.length-1].t); buildSegments(); buildMarkers(); buildChips();
+  idxMax=PTS.length-1; sl.max=idxMax; sl.value=idxMax; setIdx(idxMax);
+  fillTiles();
+}
+
+function start(){
+  $("loading").hidden=false; $("loading").textContent="Lade Bitcoin-Kurse …";
+  Promise.all([Z.load(), livePrice()]).then(function(r){
+    DATA=r[0]; ALL=Z.computeZ(Z.withLive(DATA.pts.map(function(p){ return {t:p.t,p:p.p}; }), r[1]));
+    $("loading").hidden=true; render();
+  }).catch(function(){ $("loading").textContent="Kurse konnten nicht geladen werden – bitte später erneut versuchen."; });
+}
+$("refresh").addEventListener("click",function(){ stop(); start(); });
+start();
+})();
+</script>
+</body>
+</html>
