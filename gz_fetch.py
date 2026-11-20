@@ -1,4 +1,4 @@
-"""Holt die Kerzen (1H, 4H, 1D, 1W) aller Aktien aus data/stocks.json plus der wichtigsten Indizes
+"""Holt die Kerzen (1H, 4H, 1D, 1W) aller Aktien aus data/stocks.json plus der wichtigsten Indizes, Rohstoffe und Währungspaare
 für die Golden-Zone-/SK-Seite. Ergebnis: gz_tmp/candles.json und gz_tmp/meta.json (werden NICHT ins Repo
 übernommen, sondern von gz_stocks.js ausgewertet). Läuft über GitHub Actions (.github/workflows/gz-stocks.yml)."""
 import json
@@ -21,6 +21,13 @@ BENCH = {
     "DX-Y.NYB": ("US-Dollar-Index", ""),
 }
 
+# Währungspaare (Yahoo-Kürzel mit "=X"); das zweite Feld ist die Währung, in der der Kurs notiert
+FOREX = {
+    "EURUSD=X": ("EUR/USD", "$"), "GBPUSD=X": ("GBP/USD", "$"), "AUDUSD=X": ("AUD/USD", "$"), "NZDUSD=X": ("NZD/USD", "$"),
+    "USDJPY=X": ("USD/JPY", "¥"), "USDCHF=X": ("USD/CHF", "CHF"), "USDCAD=X": ("USD/CAD", ""),
+    "EURJPY=X": ("EUR/JPY", "¥"), "EURGBP=X": ("EUR/GBP", "£"), "EURCHF=X": ("EUR/CHF", "CHF"), "GBPJPY=X": ("GBP/JPY", "¥"),
+}
+
 
 def members():
     with open("data/stocks.json", encoding="utf-8") as f:
@@ -34,6 +41,9 @@ def members():
                 s["g"].append(k)
     for y, (n, c) in BENCH.items():
         syms[y] = {"n": n, "g": ["idx"], "c": c, "mc": 1e16}
+    groups["fx"] = "Forex"
+    for y, (n, c) in FOREX.items():
+        syms[y] = {"n": n, "g": ["fx"], "c": c, "mc": 1e15}
     return syms, groups
 
 
