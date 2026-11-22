@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="de" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e131b">
+<meta name="description" content="Bitcoin Potenzgesetz-Band mit 9 Bändern und Pi-Zyklus (111 / 2×350).">
+<title>Power Law + Pi · Bayazit Coin-Scanner</title>
+<link rel="icon" type="image/svg+xml" href="icons/powerlaw.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="theme.js?v=1"></script>
+<style>
+:root{
+  --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;--faint:#8d99ab;
+  --accent:#c77a12;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;
+  --btc:#e8870f;--blue:#2f6fd6;--gold:#c99212;--violet:#7c5cd6;--cyan:#0e9bb5;
+  --grid:rgba(20,26,36,.09);--price:#141a24;
+  --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+:root.dk{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --accent:#f0a33a;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;
+  --btc:#f7931a;--blue:#6d8dff;--gold:#f0b429;--violet:#a78bfa;--cyan:#22d3ee;
+  --grid:rgba(141,153,171,.13);--price:#f2f5fa;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not(.lt){
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --accent:#f0a33a;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;
+  --btc:#f7931a;--blue:#6d8dff;--gold:#f0b429;--violet:#a78bfa;--cyan:#22d3ee;
+  --grid:rgba(141,153,171,.13);--price:#f2f5fa;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+a{color:inherit}
+.wrap{max-width:1800px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));display:grid;gap:12px}
+header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;justify-content:space-between}
+h1{font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+h1 .dot{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--btc));display:inline-grid;place-items:center;color:#fff;font-size:.95rem}
+.label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sub{font-size:.85rem;color:var(--muted);margin:0;line-height:1.5}
+.status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stand{font-size:.8rem;color:var(--muted)}.stand b{font-family:var(--f-num);color:var(--fg);font-weight:600}
+.btn{font:600 .88rem var(--f-body);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--btc);color:#1a1206;text-decoration:none;display:inline-block}
+.btn.ghost{background:var(--chip);color:var(--fg)}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden;min-width:0}
+.tile::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--acc,var(--btc))}
+.tag{font-family:var(--f-num);font-size:.68rem;font-weight:800;letter-spacing:.12em;color:var(--acc,var(--btc));text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.tag .d{width:7px;height:7px;border-radius:50%;background:var(--acc,var(--btc))}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(min-width:900px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi .v{font-family:var(--f-num);font-size:1.75rem;font-weight:800;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
+.kpi .v small{font-size:.9rem;color:var(--muted);font-weight:600}
+.kpi .s{font-family:var(--f-num);font-size:.7rem;color:var(--muted);margin-top:4px}
+.meter{height:5px;border-radius:3px;background:var(--chip);margin-top:8px;overflow:hidden}.meter i{display:block;height:100%;background:var(--acc)}
+@media(max-width:520px){.kpi .v{font-size:1.35rem}}
+.charttile{--acc:var(--blue);padding:12px}
+.ctop{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:700 .78rem var(--f-num);border:0;background:none;color:var(--muted);padding:7px 10px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.lg{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--f-num);font-size:.7rem;color:var(--muted);align-items:center}
+.lg i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.cwrap{position:relative;margin-top:8px}
+canvas{display:block;width:100%;touch-action:none}
+#cMain{height:min(62vh,560px);min-height:330px}
+#cPi{height:150px;margin-top:6px}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.78rem;min-width:190px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .1s;z-index:5}
+.tip.show{opacity:1}
+.tip b{font-family:var(--f-num)}
+.tip .r{display:flex;justify-content:space-between;gap:12px;color:var(--muted)}
+.tip .r span:last-child{color:var(--fg);font-family:var(--f-num)}
+.loading{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-num);color:var(--muted);font-size:.85rem}
+.bandtile{--acc:var(--gold)}
+table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:8px}
+th{font-family:var(--f-num);font-size:.64rem;letter-spacing:.06em;color:var(--muted);text-align:right;font-weight:600;padding:5px 4px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{padding:6px 4px;border-bottom:1px dashed var(--line);text-align:right;font-family:var(--f-num);white-space:nowrap}
+tr.now td{background:color-mix(in srgb,var(--btc) 14%,transparent);font-weight:800}
+tr.now td:first-child{box-shadow:inset 3px 0 0 var(--btc)}
+.sw{display:inline-block;width:10px;height:14px;border-radius:3px;vertical-align:middle;margin-right:6px}
+#cBand{height:190px;margin-top:10px}
+.info{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+@media(min-width:900px){.info.two{grid-template-columns:1fr 1fr}}
+.ibox{border-radius:10px;padding:10px 12px;background:var(--chip);border-left:3px solid var(--c)}
+.ibox b{font-family:var(--f-num);font-size:.72rem;color:var(--c);letter-spacing:.06em;text-transform:uppercase}
+.ibox p{margin:4px 0 0;font-size:.85rem;line-height:1.5}
+.foot{color:var(--faint);font-size:.72rem;text-align:center;font-family:var(--f-num)}
+@media(min-width:1100px){
+  .grid{grid-template-columns:repeat(12,1fr);gap:14px}
+  .kpis{grid-column:span 12}
+  .charttile{grid-column:span 9}
+  .bandtile{grid-column:span 3}
+  .how{grid-column:span 12}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="label"><a href="index.html" style="color:var(--muted)">← Bayazit Coin-Scanner</a> · <a href="zyklus.html" style="color:var(--muted)">🌀 Zyklus-Kompass</a></div>
+      <h1><span class="dot">π</span><span>Power Law + Pi</span></h1>
+      <div class="sub">Bitcoin Potenzgesetz-Band (9 Bänder) · Pi-Zyklus 111 / 2×350</div>
+    </div>
+    <div class="status">
+      <button class="btn ghost" id="themeBtn" type="button" style="font-size:17px;min-width:42px;line-height:1" title="Anzeige &amp; Farben: hell/dunkel, Themen, Helligkeit, eigene Farben" aria-label="Anzeige und Farben">◐</button>
+      <span class="stand">Stand <b id="stand">–</b></span>
+      <button class="btn" id="refresh">Aktualisieren</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="kpis">
+      <div class="tile kpi" style="--acc:var(--fg)"><div class="tag"><span class="d"></span>Potenzgesetz-Linie</div><div class="v" id="kLine">–</div><div class="s">Modellwert heute</div></div>
+      <div class="tile kpi" style="--acc:var(--blue)"><div class="tag"><span class="d"></span>Lage zur Linie</div><div class="v" id="kRatio">–</div><div class="s" id="kRatioS">–</div><div class="meter"><i id="kRatioM" style="width:0"></i></div></div>
+      <div class="tile kpi" style="--acc:var(--gold)"><div class="tag"><span class="d"></span>Pi-Abstand 111 / 2×350</div><div class="v" id="kPi">–</div><div class="s" id="kPiS">–</div></div>
+      <div class="tile kpi" style="--acc:var(--btc)"><div class="tag"><span class="d"></span>Pi-Top-Signale</div><div class="v" id="kCross">–</div><div class="s" id="kCrossS">–</div></div>
+    </section>
+
+    <section class="tile charttile">
+      <div class="ctop">
+        <div class="tag"><span class="d"></span>Chart · logarithmisch</div>
+        <div class="seg" id="rangeSeg"><button data-r="all" aria-pressed="true">Alles</button><button data-r="2017">ab 2017</button><button data-r="4y">4 Jahre</button><button data-r="1y">1 Jahr</button></div>
+      </div>
+      <div class="lg" style="margin-top:8px">
+        <span><i style="border-color:var(--price)"></i>BTC</span>
+        <span><i style="border-color:var(--fg);border-top-style:dotted"></i>Linie</span>
+        <span><i style="border-color:var(--blue)"></i>111 T</span>
+        <span><i style="border-color:var(--gold)"></i>2 × 350 T</span>
+        <span><i style="border-color:var(--gold);border-top-style:dashed;width:2px;height:12px;border-top:0;border-left:2px dashed var(--gold)"></i>Pi-Kreuzung</span>
+      </div>
+      <div class="cwrap" id="wMain">
+        <canvas id="cMain"></canvas>
+        <div class="label" style="margin-top:8px">Pi-Abstand · 111-Tage-Schnitt zu 2 × 350-Tage-Schnitt</div>
+        <canvas id="cPi"></canvas>
+        <div class="loading" id="loading">Lade Bitcoin-Kurse …</div>
+        <div class="tip" id="tip"></div>
+      </div>
+    </section>
+
+    <section class="tile bandtile">
+      <div class="tag"><span class="d"></span>Bänder</div>
+      <table id="bands"></table>
+      <div class="label" style="margin-top:12px">Lage im Band · Verlauf</div>
+      <canvas id="cBand"></canvas>
+      <div class="lg" style="justify-content:space-between;margin-top:4px"><span id="bFrom">–</span><span id="bTo">–</span></div>
+    </section>
+
+    <section class="tile how" style="--acc:var(--gold)">
+      <div class="tag"><span class="d"></span>So liest du das</div>
+      <div class="info two">
+        <div class="ibox" style="--c:var(--blue)"><b>Potenzgesetz-Linie</b><p>Langfristiger „fairer Wert“ nach dem Power-Law-Modell von Giovanni Santostasi: Preis = 10<sup>−17,01</sup> × (Tage seit dem ersten Bitcoin-Block am 3.1.2009)<sup>5,82</sup>. Im Log-Chart ist das eine leicht abflachende Kurve.</p></div>
+        <div class="ibox" style="--c:var(--gold)"><b>9 Bänder</b><p>Jedes Band ist ein Viertel einer Zehnerpotenz breit (Faktor ×1,33). Band 5 = 1,00–1,33 × Linie. Band 1 (0,32–0,42 ×) war historisch fast immer die Boden-Zone, Band 8–9 die Top-Zone. Die Tabelle zeigt, wie viel Prozent aller Tage Bitcoin in jedem Band war.</p></div>
+        <div class="ibox" style="--c:var(--btc)"><b>Pi-Zyklus</b><p>Steigt der 111-Tage-Schnitt über den doppelten 350-Tage-Schnitt (Abstand über 0 %), war das bisher ein Signal nahe großer Zyklus-Hochs. Ein stark negativer Abstand ist typisch für Bärenmärkte und Bodenphasen.</p></div>
+        <div class="ibox" style="--c:var(--down)"><b>Vorsicht</b><p>Beide Modelle sind an die bisherigen Kurse angepasst. Band 1 heißt nicht, dass der Kurs nicht noch tiefer fallen kann, und die Pi-Kreuzung kam nicht in jedem Zyklus genau am Hoch. Zusammen mit Risiko, Hitze und Zyklus-Kompass ansehen. Keine Anlageberatung.</p></div>
+      </div>
+      <p class="sub" style="margin-top:10px" id="srcTxt">–</p>
+    </section>
+  </main>
+  <div class="foot">BAYAZIT COIN-SCANNER · POWER LAW + PI · KEINE ANLAGEBERATUNG</div>
+</div>
+
+<script src="zyklus-core.js?v=1"></script>
+<script>
+(function(){
+"use strict";
+var Z=window.Zyklus, DAY=864e5, GENESIS=Date.UTC(2009,0,3);
+var PL_A=-17.01, PL_B=5.82, STEP=0.125;           // Santostasi-Modell, Bandbreite 1/4 Zehnerpotenz
+var BAND_COLORS=["#3346c4","#4a6ad6","#6e8ee0","#97a9d6","#bdb6a6","#d4a65c","#e0913a","#e57628","#e0561f"];
+var MON=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+function $(id){return document.getElementById(id)}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function fmtP(p){ if(p>=1e6) return (p/1e6).toLocaleString("de-DE",{maximumFractionDigits:2})+" Mio. $"; if(p>=100) return Math.round(p).toLocaleString("de-DE")+" $"; if(p>=1) return p.toLocaleString("de-DE",{maximumFractionDigits:2})+" $"; return p.toLocaleString("de-DE",{maximumFractionDigits:3})+" $"; }
+function fmtK(p){ return p>=1e6 ? (p/1e6).toLocaleString("de-DE",{maximumFractionDigits:1})+"M" : p>=1000 ? Math.round(p/1000)+"K" : fmtP(p); }
+function fmtN(x,d){ return x.toLocaleString("de-DE",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtD(t){ var d=new Date(t); return String(d.getUTCDate()).padStart(2,"0")+"."+String(d.getUTCMonth()+1).padStart(2,"0")+"."+d.getUTCFullYear(); }
+function fmtM(t){ var d=new Date(t); return String(d.getUTCMonth()+1).padStart(2,"0")+"/"+d.getUTCFullYear(); }
+
+function plLog(t){ return PL_A + PL_B*Math.log10(Math.max(1,(t-GENESIS)/DAY)); }   // log10 Modellpreis
+function plPrice(t){ return Math.pow(10,plLog(t)); }
+function bandPos(t,p){ return 5 + (Math.log10(p)-plLog(t))/STEP; }                  // 1,0 = Unterkante Band 1 … 10,0 = Oberkante Band 9
+function bandOf(t,p){ return Math.floor(bandPos(t,p)); }                              // 1…9 (0 = darunter, 10 = darüber)
+function factor(k){ return Math.pow(10,(k-5)*STEP); }                                 // Unterkante von Band k
+
+var P=[], CROSS=[], piMax=null, range="all", hoverT=null;
+
+function compute(pts){
+  P=pts.map(function(p){ return {t:p.t,p:p.p,live:p.live}; });
+  var s111=0,s350=0;
+  for(var i=0;i<P.length;i++){
+    s111+=P[i].p; s350+=P[i].p;
+    if(i>=111) s111-=P[i-111].p;
+    if(i>=350) s350-=P[i-350].p;
+    P[i].m111 = i>=110 ? s111/111 : null;
+    P[i].m700 = i>=349 ? 2*s350/350 : null;
+    P[i].pi = (P[i].m111 && P[i].m700) ? (P[i].m111/P[i].m700-1)*100 : null;
+    P[i].bp = bandPos(P[i].t,P[i].p);
+  }
+  CROSS=[]; piMax=null;
+  for(var k=1;k<P.length;k++){
+    var a=P[k-1].pi, b=P[k].pi; if(a==null||b==null) continue;
+    if(a<0 && b>=0) CROSS.push(P[k].t);
+    if(!piMax || b>piMax.v) piMax={v:b,t:P[k].t};
+  }
+}
+
+/* ---------- Canvas-Hilfen ---------- */
+function setup(cv){
+  var dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){ cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); }
+  var c=cv.getContext("2d"); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
+  return {c:c,w:w,h:h};
+}
+var PADL=8, PADR=58;
+function xRange(){
+  var last=P[P.length-1].t, end;
+  if(range==="all") return [Date.UTC(2010,6,1), Date.UTC(2027,6,1)];
+  if(range==="2017") return [Date.UTC(2017,0,1), Date.UTC(2027,6,1)];
+  if(range==="4y"){ end=last+200*DAY; return [last-4*365*DAY, end]; }
+  end=last+40*DAY; return [last-365*DAY, end];
+}
+
+function drawMain(){
+  var cv=$("cMain"), g=setup(cv), c=g.c, W=g.w, H=g.h, xr=xRange(), x0=xr[0], x1=xr[1];
+  var PADT=10, PADB=22, iw=W-PADL-PADR, ih=H-PADT-PADB;
+  // y-Bereich aus sichtbaren Kursen und Bändern
+  var lo=1e18, hi=0;
+  P.forEach(function(p){ if(p.t>=x0&&p.t<=x1){ lo=Math.min(lo,p.p); hi=Math.max(hi,p.p); } });
+  lo=Math.min(lo,plPrice(x0)*factor(1)); hi=Math.max(hi,plPrice(x1)*factor(10));
+  var ly0=Math.log10(lo)-.08, ly1=Math.log10(hi)+.05;
+  function X(t){ return PADL+(t-x0)/(x1-x0)*iw; }
+  function Y(p){ return PADT+(1-(Math.log10(p)-ly0)/(ly1-ly0))*ih; }
+  drawMain.X=X; drawMain.Y=Y; drawMain.x0=x0; drawMain.x1=x1; drawMain.iw=iw;
+  var grid=css("--grid"), muted=css("--muted"), fg=css("--fg");
+  c.font="600 10.5px JetBrains Mono, monospace";
+  // Bänder
+  var N=Math.max(80,Math.round(iw/3));
+  for(var k=1;k<=9;k++){
+    c.beginPath();
+    for(var i=0;i<=N;i++){ var t=x0+(x1-x0)*i/N, y=Y(plPrice(t)*factor(k)); i?c.lineTo(X(t),y):c.moveTo(X(t),y); }
+    for(var j=N;j>=0;j--){ var t2=x0+(x1-x0)*j/N; c.lineTo(X(t2),Y(plPrice(t2)*factor(k+1))); }
+    c.closePath(); c.fillStyle=BAND_COLORS[k-1]; c.globalAlpha=.22; c.fill(); c.globalAlpha=1;
+  }
+  // Raster: Zehnerpotenzen
+  c.strokeStyle=grid; c.lineWidth=1; c.fillStyle=muted; c.textAlign="left"; c.textBaseline="middle";
+  for(var e=Math.ceil(ly0);e<=Math.floor(ly1);e++){
+    var yy=Y(Math.pow(10,e)); c.beginPath(); c.moveTo(PADL,yy); c.lineTo(PADL+iw,yy); c.stroke();
+    var v=Math.pow(10,e); c.fillText(v>=1000?fmtK(v):v.toLocaleString("de-DE"), PADL+iw+6, yy);
+  }
+  // Jahre
+  c.textAlign="center"; c.textBaseline="top";
+  var y0=new Date(x0).getUTCFullYear(), y1=new Date(x1).getUTCFullYear(), stepY=(y1-y0)>10&&iw<700?2:1;
+  for(var y=y0;y<=y1+1;y++){
+    var tx=Date.UTC(y,0,1); if(tx<x0||tx>x1) continue;
+    var xx=X(tx); c.beginPath(); c.moveTo(xx,PADT); c.lineTo(xx,PADT+ih); c.stroke();
+    if((y-y0)%stepY===0) c.fillText(String(y),xx,PADT+ih+5);
+  }
+  if(range==="1y"){ for(var m=0;m<14;m++){ var d=new Date(x0); var tm=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+m,1); if(tm>x0&&tm<x1){ c.fillText(MON[new Date(tm).getUTCMonth()],X(tm),PADT+ih+5); } } }
+  // Pi-Kreuzungen
+  c.save(); c.setLineDash([3,4]); c.strokeStyle=css("--gold"); c.globalAlpha=.75;
+  CROSS.forEach(function(t){ if(t<x0||t>x1) return; c.beginPath(); c.moveTo(X(t),PADT); c.lineTo(X(t),PADT+ih); c.stroke(); });
+  c.restore();
+  // Modell-Linie
+  c.save(); c.setLineDash([2,4]); c.strokeStyle=fg; c.globalAlpha=.7; c.lineWidth=1.3; c.beginPath();
+  for(var q=0;q<=N;q++){ var tq=x0+(x1-x0)*q/N; q?c.lineTo(X(tq),Y(plPrice(tq))):c.moveTo(X(tq),Y(plPrice(tq))); }
+  c.stroke(); c.restore();
+  c.fillStyle=muted; c.textAlign="right"; c.textBaseline="bottom"; c.fillText("Modell", X(x1)-4, Y(plPrice(x1)*factor(10))+14);
+  // Linien
+  function line(key,col,w){ c.strokeStyle=col; c.lineWidth=w; c.beginPath(); var st=false;
+    for(var i=0;i<P.length;i++){ var p=P[i], v=p[key]; if(v==null||p.t<x0-5*DAY||p.t>x1) { continue; } var px=X(p.t), py=Y(v); st?c.lineTo(px,py):c.moveTo(px,py); st=true; } c.stroke(); }
+  line("m700",css("--gold"),1.4); line("m111",css("--blue"),1.4); line("p",css("--price"),1.2);
+  // aktueller Kurs
+  var L=P[P.length-1], lx=X(L.t), lyy=Y(L.p);
+  c.fillStyle=css("--btc"); c.beginPath(); c.arc(lx,lyy,4,0,7); c.fill();
+  c.save(); c.setLineDash([2,3]); c.strokeStyle=muted; c.globalAlpha=.5; c.beginPath(); c.moveTo(PADL,lyy); c.lineTo(PADL+iw,lyy); c.stroke(); c.restore();
+  var lab=fmtK(L.p); c.font="800 10.5px JetBrains Mono, monospace"; var tw=c.measureText(lab).width+10;
+  c.fillStyle=css("--btc"); c.fillRect(PADL+iw+2,lyy-9,tw,18); c.fillStyle="#1a1206"; c.textAlign="left"; c.textBaseline="middle"; c.fillText(lab,PADL+iw+7,lyy);
+  // Fadenkreuz
+  if(hoverT!=null){ var hx=X(hoverT); c.strokeStyle=muted; c.globalAlpha=.6; c.beginPath(); c.moveTo(hx,PADT); c.lineTo(hx,PADT+ih); c.stroke(); c.globalAlpha=1;
+    var hp=nearest(hoverT); if(hp){ c.fillStyle=css("--price"); c.beginPath(); c.arc(X(hp.t),Y(hp.p),3.5,0,7); c.fill(); } }
+}
+
+function drawPi(){
+  var cv=$("cPi"), g=setup(cv), c=g.c, W=g.w, H=g.h, x0=drawMain.x0, x1=drawMain.x1, iw=W-PADL-PADR, PADT=8, PADB=8, ih=H-PADT-PADB;
+  function X(t){ return PADL+(t-x0)/(x1-x0)*iw; }
+  var vis=P.filter(function(p){ return p.pi!=null && p.t>=x0 && p.t<=x1; });
+  var mn=-80, mx=60; vis.forEach(function(p){ mn=Math.min(mn,p.pi); mx=Math.max(mx,p.pi); });
+  function Y(v){ return PADT+(1-(v-mn)/(mx-mn))*ih; }
+  var grid=css("--grid"), muted=css("--muted"), gold=css("--gold"), blue=css("--blue");
+  c.font="600 10px JetBrains Mono, monospace"; c.textBaseline="middle"; c.textAlign="left";
+  [-75,-50,-25,0,25,50].forEach(function(v){ if(v<mn||v>mx) return; var y=Y(v); c.strokeStyle=v===0?muted:grid; c.globalAlpha=v===0?.6:1; c.setLineDash(v===0?[4,4]:[]); c.beginPath(); c.moveTo(PADL,y); c.lineTo(PADL+iw,y); c.stroke(); c.setLineDash([]); c.globalAlpha=1; c.fillStyle=muted; c.fillText(v===0?"Kreuzung":(v>0?"+":"")+v+" %",PADL+iw+6,y); });
+  if(!vis.length) return;
+  var y0=Y(0);
+  // Fläche
+  [[blue,function(v){return Math.min(v,0)}],[gold,function(v){return Math.max(v,0)}]].forEach(function(o){
+    c.beginPath(); c.moveTo(X(vis[0].t),y0);
+    vis.forEach(function(p){ c.lineTo(X(p.t),Y(o[1](p.pi))); });
+    c.lineTo(X(vis[vis.length-1].t),y0); c.closePath(); c.fillStyle=o[0]; c.globalAlpha=.18; c.fill(); c.globalAlpha=1;
+  });
+  c.lineWidth=1.5; c.beginPath();
+  vis.forEach(function(p,i){ var x=X(p.t), y=Y(p.pi); i?c.lineTo(x,y):c.moveTo(x,y); });
+  var grad=c.createLinearGradient(0,PADT,0,PADT+ih); var z=(y0-PADT)/ih; z=Math.max(0,Math.min(1,z));
+  grad.addColorStop(0,gold); grad.addColorStop(z,gold); grad.addColorStop(z,blue); grad.addColorStop(1,blue);
+  c.strokeStyle=grad; c.stroke();
+  if(piMax && piMax.t>=x0 && piMax.t<=x1){ c.fillStyle=gold; c.textAlign="center"; c.textBaseline="bottom"; c.fillText("höchster "+(piMax.v>=0?"+":"")+fmtN(piMax.v,1)+" %",Math.min(Math.max(X(piMax.t),70),PADL+iw-70),Y(piMax.v)-3); }
+  if(hoverT!=null){ var hx=X(hoverT); c.strokeStyle=muted; c.globalAlpha=.6; c.beginPath(); c.moveTo(hx,PADT); c.lineTo(hx,PADT+ih); c.stroke(); c.globalAlpha=1; }
+}
+
+function drawBand(){
+  var cv=$("cBand"), g=setup(cv), c=g.c, W=g.w, H=g.h, PL=4, PR=18, PT=4, PB=4, iw=W-PL-PR, ih=H-PT-PB;
+  var t0=P[0].t, t1=P[P.length-1].t;
+  function X(t){ return PL+(t-t0)/(t1-t0)*iw; }
+  function Y(b){ return PT+(1-(Math.min(10.4,Math.max(.6,b))-.6)/9.8)*ih; }
+  for(var k=1;k<=9;k++){ c.fillStyle=BAND_COLORS[k-1]; c.globalAlpha=.20; c.fillRect(PL,Y(k+1),iw,Y(k)-Y(k+1)); c.globalAlpha=1;
+    c.fillStyle=css("--muted"); c.font="600 9.5px JetBrains Mono, monospace"; c.textAlign="left"; c.textBaseline="middle"; if(k%2===1) c.fillText(String(k),PL+iw+5,(Y(k)+Y(k+1))/2); }
+  c.strokeStyle=css("--price"); c.lineWidth=1; c.beginPath();
+  var stepN=Math.max(1,Math.floor(P.length/(iw*1.5)));
+  for(var i=0;i<P.length;i+=stepN){ var x=X(P[i].t), y=Y(P[i].bp); i?c.lineTo(x,y):c.moveTo(x,y); }
+  c.stroke();
+  var L=P[P.length-1]; c.fillStyle=css("--btc"); c.beginPath(); c.arc(X(L.t),Y(L.bp),3.5,0,7); c.fill();
+  $("bFrom").textContent=fmtM(t0); $("bTo").textContent=fmtM(t1);
+}
+
+function nearest(t){
+  var lo=0, hi=P.length-1; while(hi-lo>1){ var m=(lo+hi)>>1; if(P[m].t<t) lo=m; else hi=m; }
+  return Math.abs(P[lo].t-t)<Math.abs(P[hi].t-t)?P[lo]:P[hi];
+}
+
+function fillUI(){
+  var L=P[P.length-1], line=plPrice(L.t), ratio=L.p/line, b=bandOf(L.t,L.p);
+  $("kLine").innerHTML=Math.round(line).toLocaleString("de-DE")+" <small>$</small>";
+  $("kRatio").innerHTML=fmtN(ratio,2)+" <small>×</small>"; $("kRatio").style.color=BAND_COLORS[Math.max(0,Math.min(8,b-1))];
+  $("kRatioS").textContent = b<1 ? "unter Band 1" : b>9 ? "über Band 9" : "Band "+b+" von 9";
+  $("kRatioM").style.width=Math.max(2,Math.min(100,(L.bp-1)/9*100))+"%";
+  $("kPi").innerHTML=(L.pi>=0?"+":"−")+fmtN(Math.abs(L.pi),1)+" <small>%</small>"; $("kPi").style.color=L.pi>=0?css("--gold"):css("--blue");
+  $("kPiS").textContent=piMax?"höchster "+(piMax.v>=0?"+":"")+fmtN(piMax.v,1)+" % · "+fmtM(piMax.t):"";
+  $("kCross").textContent=CROSS.length;
+  $("kCrossS").textContent=CROSS.length?"seit "+fmtM(P.find(function(p){return p.pi!=null}).t)+" · zuletzt "+fmtM(CROSS[CROSS.length-1]):"–";
+  $("kCross").title="Kreuzungen nach oben: "+CROSS.map(fmtD).join(", ");
+  // Bänder-Tabelle
+  var cnt=new Array(11).fill(0), tot=0;
+  P.forEach(function(p){ var k=Math.max(0,Math.min(10,Math.floor(p.bp))); cnt[k]++; tot++; });
+  var h="<tr><th>Band</th><th>Faktor</th><th>heute</th><th>Tage</th></tr>";
+  if(cnt[10]) h+="<tr><td>über 9</td><td>> "+fmtN(factor(10),2)+" ×</td><td>> "+fmtK(line*factor(10))+"</td><td>"+fmtN(cnt[10]/tot*100,1)+" %</td></tr>";
+  for(var k=9;k>=1;k--){
+    h+='<tr'+(k===b?' class="now"':'')+'><td><span class="sw" style="background:'+BAND_COLORS[k-1]+'"></span>'+k+'</td><td>'+fmtN(factor(k),2)+"–"+fmtN(factor(k+1),2)+" ×</td><td>"+fmtK(line*factor(k))+"–"+fmtK(line*factor(k+1))+"</td><td>"+fmtN(cnt[k]/tot*100,1)+" %</td></tr>";
+  }
+  if(cnt[0]) h+='<tr'+(b<1?' class="now"':'')+"><td>unter 1</td><td>< "+fmtN(factor(1),2)+" ×</td><td>< "+fmtK(line*factor(1))+"</td><td>"+fmtN(cnt[0]/tot*100,1)+" %</td></tr>";
+  $("bands").innerHTML=h;
+  $("stand").textContent=new Date(L.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  $("srcTxt").textContent="Daten: Bitcoin-Tageskurse seit "+fmtM(P[0].t)+" (Coin Metrics + Binance, jede Nacht aktualisiert)"+(L.live?", dazu der aktuelle Kurs live von Binance":"")+". Tage-Statistik über "+tot.toLocaleString("de-DE")+" Tage. Pi-Kreuzungen nach oben: "+CROSS.map(fmtM).join(", ")+".";
+}
+
+function drawAll(){ if(!P.length) return; drawMain(); drawPi(); drawBand(); }
+
+/* ---------- Tooltip ---------- */
+var tip=$("tip"), wrap=$("wMain");
+function onMove(ev){
+  if(!P.length) return;
+  var cv=ev.currentTarget, r=cv.getBoundingClientRect(), x=ev.clientX-r.left;
+  var t=drawMain.x0+(x-PADL)/drawMain.iw*(drawMain.x1-drawMain.x0);
+  var p=nearest(Math.min(t,P[P.length-1].t));
+  if(t<P[0].t-30*DAY){ hide(); return; }
+  hoverT=p.t; drawMain(); drawPi();
+  var line=plPrice(p.t), b=bandOf(p.t,p.p);
+  tip.innerHTML="<b>"+fmtD(p.t)+(p.live?" · live":"")+"</b>"+
+    '<div class="r"><span>BTC</span><span>'+fmtP(p.p)+"</span></div>"+
+    '<div class="r"><span>Linie</span><span>'+fmtP(line)+"</span></div>"+
+    '<div class="r"><span>Lage</span><span>'+fmtN(p.p/line,2)+" × · "+(b<1?"unter 1":b>9?"über 9":"Band "+b)+"</span></div>"+
+    (p.pi!=null?'<div class="r"><span>Pi-Abstand</span><span>'+(p.pi>=0?"+":"")+fmtN(p.pi,1)+" %</span></div>":"");
+  var wr=wrap.getBoundingClientRect(), lx=ev.clientX-wr.left, ly=ev.clientY-wr.top;
+  tip.style.left=(lx>wr.width/2? lx-205 : lx+14)+"px"; tip.style.top=Math.max(4,Math.min(ly-60,wr.height-120))+"px";
+  tip.classList.add("show");
+}
+function hide(){ tip.classList.remove("show"); if(hoverT!=null){ hoverT=null; drawMain(); drawPi(); } }
+["cMain","cPi"].forEach(function(id){ var cv=$(id); cv.addEventListener("pointermove",onMove); cv.addEventListener("pointerdown",onMove); cv.addEventListener("pointerleave",hide); });
+
+$("rangeSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; range=b.dataset.r;
+  this.querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed",x===b?"true":"false"); });
+  try{ localStorage.setItem("bayPlRange",range); }catch(err){} hide(); drawAll(); });
+try{ var sr=localStorage.getItem("bayPlRange"); if(sr){ range=sr; $("rangeSeg").querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed",x.dataset.r===sr?"true":"false"); }); } }catch(e){}
+
+var rt; window.addEventListener("resize",function(){ clearTimeout(rt); rt=setTimeout(drawAll,120); });
+window.addEventListener("baytheme",function(){ setTimeout(drawAll,30); });
+
+function livePrice(){
+  return fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT",{cache:"no-store"})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ return parseFloat(j.price); }).catch(function(){ return null; });
+}
+function start(){
+  $("loading").hidden=false; $("loading").textContent="Lade Bitcoin-Kurse …";
+  Promise.all([Z.load(),livePrice()]).then(function(r){
+    var pts=r[0].pts.filter(function(p){ return p.t>=r[0].firstDaily; });   // nur echte Tageskurse (für die Durchschnitte)
+    compute(Z.withLive(pts,r[1]));
+    $("loading").hidden=true; fillUI(); drawAll();
+  }).catch(function(){ $("loading").textContent="Kurse konnten nicht geladen werden – bitte später erneut versuchen."; });
+}
+$("refresh").addEventListener("click",start);
+start();
+})();
+</script>
+</body>
+</html>
