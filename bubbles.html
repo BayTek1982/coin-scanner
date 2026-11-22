@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="de" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e131b">
+<meta name="description" content="Krypto-Blasen: Top-Coins als Blasen, Größe nach Kursbewegung oder Marktwert.">
+<title>Blasen · Bayazit Coin-Scanner</title>
+<link rel="icon" type="image/svg+xml" href="icons/bubbles.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="theme.js?v=1"></script>
+<style>
+:root{
+  --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;--faint:#8d99ab;
+  --up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;--btc:#e8870f;--stage:#f7f9fc;
+  --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+:root.dk{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--btc:#f7931a;--stage:#0b0f15;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not(.lt){
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;--btc:#f7931a;--stage:#0b0f15;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:clip}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+a{color:inherit}
+.wrap{max-width:1900px;margin:0 auto;padding-block:max(14px,env(safe-area-inset-top)) 24px;padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right));display:grid;gap:10px}
+header{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:end;justify-content:space-between}
+h1{font-weight:800;font-size:1.5rem;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.logo{display:inline-grid;width:30px;height:30px;position:relative}
+.logo i{position:absolute;border-radius:50%}
+.label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stand{font-size:.8rem;color:var(--muted)}.stand b{font-family:var(--f-num);color:var(--fg);font-weight:600}
+.btn{font:600 .88rem var(--f-body);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--btc);color:#1a1206}
+.btn.ghost{background:var(--chip);color:var(--fg)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px}
+.seg{display:inline-flex;background:var(--chip);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:800 .78rem var(--f-num);border:0;background:none;color:var(--muted);padding:7px 11px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--up);color:#fff}
+#tfSeg button[data-tf="mc"][aria-pressed="true"]{background:var(--btc);color:#1a1206}
+select,input[type=search]{font:600 .82rem var(--f-num);background:var(--chip);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+input[type=search]{min-width:150px;flex:1 1 150px;max-width:260px}
+.tg{font:600 .76rem var(--f-num);color:var(--muted);display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.tg input{accent-color:var(--btc)}
+.stage{position:relative;background:var(--stage);border:1px solid var(--line);border-radius:14px;overflow:hidden;height:calc(100vh - 190px);min-height:440px}
+@media(max-width:700px){.stage{height:calc(100vh - 250px);min-height:520px}}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas.drag{cursor:grabbing}
+.msg{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-num);color:var(--muted);font-size:.9rem;text-align:center;padding:20px}
+.card{position:absolute;right:12px;top:12px;width:min(350px,calc(100% - 24px));background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.35);padding:14px;z-index:5}
+.card .hd{display:flex;align-items:center;gap:10px}
+.card img{width:36px;height:36px;border-radius:50%}
+.card .nm{font-weight:800;font-size:1.05rem;line-height:1.1}
+.card .sy{font:600 .74rem var(--f-num);color:var(--muted)}
+.card .x{margin-left:auto;border:0;background:var(--chip);color:var(--fg);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:1rem}
+.card .pr{font:800 1.5rem var(--f-num);margin:10px 0 6px}
+.chg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:8px 0}
+.chg div{background:var(--chip);border-radius:8px;padding:6px 2px;text-align:center}
+.chg b{display:block;font:600 .62rem var(--f-num);color:var(--muted)}
+.chg span{font:800 .7rem var(--f-num);white-space:nowrap}
+.row{display:flex;justify-content:space-between;font-size:.8rem;padding:5px 0;border-top:1px dashed var(--line)}
+.row span:first-child{color:var(--muted)}.row span:last-child{font-family:var(--f-num);font-weight:600}
+.links{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.links a{font:700 .76rem var(--f-num);text-decoration:none;background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.foot{color:var(--faint);font-size:.72rem;text-align:center;font-family:var(--f-num)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="label"><a href="index.html" style="color:var(--muted)">← Bayazit Coin-Scanner</a> · <a href="renditen.html" style="color:var(--muted)">% Renditen</a> · <a href="zyklus.html" style="color:var(--muted)">🌀 Zyklus-Kompass</a></div>
+      <h1><span class="logo"><i style="width:18px;height:18px;left:0;top:8px;background:#3ccf8a"></i><i style="width:13px;height:13px;left:15px;top:2px;background:#ff6b5e"></i><i style="width:10px;height:10px;left:17px;top:17px;background:#f7931a"></i></span><span>Krypto-Blasen</span></h1>
+    </div>
+    <div class="status">
+      <button class="btn ghost" id="themeBtn" type="button" style="font-size:17px;min-width:42px;line-height:1" title="Anzeige &amp; Farben" aria-label="Anzeige und Farben">◐</button>
+      <span class="stand">Stand <b id="stand">–</b></span>
+      <button class="btn" id="refresh">Aktualisieren</button>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="seg" id="tfSeg">
+      <button data-tf="h">1 Std</button><button data-tf="d" aria-pressed="true">1 Tag</button><button data-tf="w">1 Woche</button><button data-tf="m">1 Monat</button><button data-tf="y">1 Jahr</button><button data-tf="mc" title="Größe nach Marktwert, Farbe nach 24 Std">Marktwert</button>
+    </div>
+    <select id="range" aria-label="Rang-Bereich">
+      <option value="0">Top 1–100</option><option value="100">101–200</option><option value="200">201–300</option><option value="400">Top 1–50</option>
+    </select>
+    <input type="search" id="q" placeholder="Coin suchen …" autocomplete="off">
+    <label class="tg"><input type="checkbox" id="noStable" checked>Stablecoins &amp; Wrapped ausblenden</label>
+    <label class="tg"><input type="checkbox" id="logos" checked>Logos</label>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="msg" id="msg">Lade Coins von CoinGecko …</div>
+    <div class="card" id="card" hidden></div>
+  </div>
+  <div class="foot" id="foot">Blase antippen = Details · Blasen lassen sich mit Maus oder Finger verschieben · Daten: CoinGecko · Keine Anlageberatung</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var CG="https://api.coingecko.com/api/v3";
+var STABLE=/^(usdt|usdc|dai|fdusd|usde|usds|pyusd|tusd|usdd|usd1|busd|frax|lusd|gusd|usdp|susd|eurc|eurt|usdx|usdb|usdy|usdtb|rlusd|usd0|bsc-usd|usdf|usdg|susde|buidl|ousg|xaut|paxg|gho|crvusd|dola|mim|eura|usdl|usdm|syrupusdc|usdai)$/i;
+var WRAP=/^(weth|wbtc|steth|wsteth|weeth|cbbtc|wbeth|reth|cbeth|meth|rseth|ezeth|lbtc|solvbtc|jitosol|msol|bnsol|jupsol|stsol|wbnb|btcb|tbtc|clbtc|fbtc|ethx|oseth|sweth|pufeth|bbtc|ebtc|lseth|wstusr|unibtc|pumpbtc|wtrx|wavax|wmatic|wpol|wsol|wavax|stkaave|sfrxeth|frxeth|cmeth|benji|hbtc|kbtc|wbt?c\.e|enzobtc|sbtc|stbtc|lsk)$/i;
+var TF={h:"price_change_percentage_1h_in_currency",d:"price_change_percentage_24h_in_currency",w:"price_change_percentage_7d_in_currency",m:"price_change_percentage_30d_in_currency",y:"price_change_percentage_1y_in_currency",mc:"price_change_percentage_24h_in_currency"};
+var TFN={h:"1 Std",d:"24 Std",w:"7 Tage",m:"30 Tage",y:"1 Jahr",mc:"24 Std"};
+function $(id){return document.getElementById(id)}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function pct(v){ if(v==null||!isFinite(v)) return "–"; var a=Math.abs(v), d=a>=100?0:1; if(a<0.05) return "0 %"; return (v>0?"+":v<0?"−":"")+a.toLocaleString("de-DE",{maximumFractionDigits:d})+" %"; }
+function fmtP(p){ if(p==null) return "–"; if(p>=1000) return p.toLocaleString("de-DE",{maximumFractionDigits:0})+" $"; if(p>=1) return p.toLocaleString("de-DE",{maximumFractionDigits:2})+" $"; if(p>=0.01) return p.toLocaleString("de-DE",{maximumFractionDigits:4})+" $"; return p.toLocaleString("de-DE",{maximumSignificantDigits:4})+" $"; }
+function fmtB(x){ if(x==null) return "–"; if(x>=1e12) return (x/1e12).toLocaleString("de-DE",{maximumFractionDigits:2})+" Bio. $"; if(x>=1e9) return (x/1e9).toLocaleString("de-DE",{maximumFractionDigits:2})+" Mrd. $"; if(x>=1e6) return (x/1e6).toLocaleString("de-DE",{maximumFractionDigits:1})+" Mio. $"; return Math.round(x).toLocaleString("de-DE")+" $"; }
+
+var S={tf:"d",range:0,noStable:true,logos:true};
+try{ var sv=JSON.parse(localStorage.getItem("bayBubbles")||"null"); if(sv) for(var k in sv) S[k]=sv[k]; }catch(e){}
+function save(){ try{ localStorage.setItem("bayBubbles",JSON.stringify(S)); }catch(e){} }
+
+var COINS=[], B=[], IMG={}, W=0, H=0, dpr=1, cv=$("cv"), ctx=cv.getContext("2d"), hover=null, sel=null, drag=null, q="";
+
+function setup(){
+  dpr=window.devicePixelRatio||1; W=cv.clientWidth; H=cv.clientHeight;
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+  targets();
+}
+window.addEventListener("resize",function(){ setup(); });
+
+/* ---------- Daten ---------- */
+function fetchPage(p){
+  return fetch(CG+"/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page="+p+"&sparkline=false&price_change_percentage=1h,24h,7d,30d,1y",{cache:"no-store"})
+    .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); });
+}
+function load(){
+  $("msg").hidden=false; $("msg").textContent="Lade Coins von CoinGecko …";
+  var pages=[fetchPage(1)]; if(S.range===200) pages.push(fetchPage(2));
+  Promise.all(pages).then(function(r){
+    COINS=[].concat.apply([],r);
+    try{ localStorage.setItem("bayBubblesCache",JSON.stringify({t:Date.now(),d:COINS.slice(0,250).map(slim)})); }catch(e){}
+    $("stand").textContent=new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})+" Uhr";
+    build();
+  }).catch(function(){
+    var c=null; try{ c=JSON.parse(localStorage.getItem("bayBubblesCache")||"null"); }catch(e){}
+    if(c && c.d && !COINS.length){ COINS=c.d; $("stand").textContent=new Date(c.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+" (gespeichert)"; build(); }
+    if(!COINS.length){ $("msg").hidden=false; $("msg").textContent="CoinGecko antwortet gerade nicht (meist ein kurzes Abruf-Limit). Bitte in einer Minute auf „Aktualisieren“ tippen."; }
+  });
+}
+function slim(c){ var o={}; ["id","symbol","name","image","current_price","market_cap","market_cap_rank","total_volume","high_24h","low_24h","ath","ath_change_percentage",TF.h,TF.d,TF.w,TF.m,TF.y,"price_change_percentage_24h"].forEach(function(k){ o[k]=c[k]; }); return o; }
+function isStable(c){
+  var s=(c.symbol||"").toLowerCase();
+  if(STABLE.test(s)||WRAP.test(s)) return true;
+  if(/wrapped|bridged|staked |liquid staked|restaked/i.test(c.name||"")) return true;
+  var ch=c.price_change_percentage_24h; if(c.current_price>0.985&&c.current_price<1.015&&Math.abs(ch||0)<0.6) return true;
+  return false;
+}
+function chg(c){ var v=c[TF[S.tf]]; if(v==null && S.tf==="d") v=c.price_change_percentage_24h; return v; }
+
+function build(){
+  var list=COINS.filter(function(c){ return c && c.market_cap && !(S.noStable && isStable(c)); });
+  list.sort(function(a,b){ return (a.market_cap_rank||1e9)-(b.market_cap_rank||1e9); });
+  var from=S.range===400?0:S.range, n=S.range===400?50:100;
+  list=list.slice(from,from+n);
+  var old={}; B.forEach(function(b){ old[b.c.id]=b; });
+  B=list.map(function(c){
+    var o=old[c.id]; if(o){ o.c=c; return o; }
+    return {c:c, x:W*(.1+.8*Math.random()), y:H*(.1+.8*Math.random()), vx:0, vy:0, r:2, tr:10};
+  });
+  B.forEach(function(b){ var u=b.c.image; if(u && S.logos && !IMG[u]){ var im=new Image(); im.decoding="async"; im.src=u.replace("/large/","/small/"); IMG[u]=im; } });
+  $("msg").hidden=B.length>0; if(!B.length) $("msg").textContent="Keine Coins in diesem Bereich.";
+  targets();
+  if(sel){ var still=B.find(function(b){return b.c.id===sel.c.id}); if(still) showCard(still); else closeCard(); }
+}
+
+function targets(){
+  if(!B.length||!W) return;
+  var ws=B.map(function(b){
+    if(S.tf==="mc") return Math.pow(b.c.market_cap||1,.55);
+    var v=Math.abs(chg(b.c)||0); return Math.pow(v,.75);
+  });
+  var mx=Math.max.apply(null,ws)||1, floor=mx*(S.tf==="mc"?.02:.06);
+  ws=ws.map(function(w){ return Math.max(w,floor); });
+  var sum=ws.reduce(function(a,b){return a+b*b},0); // Fläche ∝ w²
+  var fill=W<700?.62:.58, k=Math.sqrt(fill*W*H/(Math.PI*sum));
+  var rmax=Math.min(W,H)*(W<700?.2:.17);
+  B.forEach(function(b,i){ b.tr=Math.max(9,Math.min(rmax,k*ws[i])); });
+}
+
+/* ---------- Physik ---------- */
+function step(){
+  var cx=W/2, cy=H/2, n=B.length;
+  for(var i=0;i<n;i++){
+    var b=B[i];
+    b.r+=(b.tr-b.r)*.08;
+    if(b===drag) continue;
+    b.vx+=(cx-b.x)*.0009*(H/W<1?1:1.4)*(W>H?.6:1);
+    b.vy+=(cy-b.y)*.0009*(W>H?1.3:.8);
+    b.vx*=.86; b.vy*=.86;
+    b.x+=b.vx; b.y+=b.vy;
+  }
+  for(var it=0;it<3;it++){
+    for(var a=0;a<n;a++){ var A=B[a];
+      for(var c=a+1;c<n;c++){ var C=B[c], dx=C.x-A.x, dy=C.y-A.y, rr=A.r+C.r+1.5, d2=dx*dx+dy*dy;
+        if(d2<rr*rr){ var d=Math.sqrt(d2)||.01, o=(rr-d)/2, ux=dx/d, uy=dy/d;
+          var wa=A===drag?0:C===drag?1:.5, wc=1-wa; if(A===drag){wa=0;wc=1;}
+          A.x-=ux*o*2*wa; A.y-=uy*o*2*wa; C.x+=ux*o*2*wc; C.y+=uy*o*2*wc; } } }
+    for(var j=0;j<n;j++){ var e=B[j]; if(e===drag) continue;
+      if(e.x<e.r){ e.x=e.r; e.vx*=-.3; } if(e.x>W-e.r){ e.x=W-e.r; e.vx*=-.3; }
+      if(e.y<e.r){ e.y=e.r; e.vy*=-.3; } if(e.y>H-e.r){ e.y=H-e.r; e.vy*=-.3; } }
+  }
+}
+
+/* ---------- Zeichnen ---------- */
+function draw(){
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  var up=css("--up")||"#3ccf8a", dn=css("--down")||"#ff6b5e", fg=css("--fg"), dark=document.documentElement.classList.contains("dk")||(!document.documentElement.classList.contains("lt")&&matchMedia("(prefers-color-scheme:dark)").matches);
+  var qq=q.toLowerCase();
+  B.forEach(function(b){
+    var v=chg(b.c), pos=(v||0)>=0, col=pos?up:dn, r=b.r;
+    var match=!qq || (b.c.symbol||"").toLowerCase().indexOf(qq)===0 || (b.c.name||"").toLowerCase().indexOf(qq)>=0;
+    ctx.globalAlpha=match?1:.18;
+    var inten=Math.min(1,Math.abs(v||0)/(S.tf==="h"?3:S.tf==="d"?8:S.tf==="w"?20:S.tf==="m"?40:100));
+    var g=ctx.createRadialGradient(b.x,b.y,r*.15,b.x,b.y,r);
+    g.addColorStop(0,"rgba(0,0,0,0)");
+    g.addColorStop(.62,hexA(col,dark?.05+.10*inten:.06+.08*inten));
+    g.addColorStop(.9,hexA(col,dark?.35+.4*inten:.28+.35*inten));
+    g.addColorStop(1,hexA(col,dark?.75+.25*inten:.6+.3*inten));
+    ctx.beginPath(); ctx.arc(b.x,b.y,r,0,7); ctx.fillStyle=g; ctx.fill();
+    ctx.lineWidth=(b===hover||b===sel)?3:1.4; ctx.strokeStyle=hexA(col,(b===hover||b===sel)?1:.85); ctx.stroke();
+    // Inhalt
+    var sym=(b.c.symbol||"").toUpperCase(), im=IMG[b.c.image];
+    var hasImg=S.logos && im && im.complete && im.naturalWidth>0;
+    ctx.fillStyle=fg; ctx.textAlign="center"; ctx.textBaseline="middle";
+    if(r<15){ if(hasImg){ var s0=r*1.1; ctx.drawImage(im,b.x-s0/2,b.y-s0/2,s0,s0); } else { ctx.font="800 "+Math.max(7,r*.55)+"px Archivo, sans-serif"; ctx.fillText(sym.slice(0,3),b.x,b.y); } ctx.globalAlpha=1; return; }
+    var fs=Math.min(r*.42, r*1.55/Math.max(2.2,sym.length*.62)), fp=Math.max(8,r*.24);
+    var showImg=hasImg && r>24, isz=r*.38;
+    var total=(showImg?isz+r*.04:0)+fs+fp*1.1, top=b.y-total/2;
+    if(showImg){ ctx.drawImage(im,b.x-isz/2,top,isz,isz); top+=isz+r*.04; }
+    ctx.font="800 "+fs+"px Archivo, sans-serif"; ctx.fillText(sym,b.x,top+fs/2);
+    ctx.font="700 "+fp+"px Archivo, sans-serif"; ctx.globalAlpha*=.92; ctx.fillText(pct(v),b.x,top+fs+fp*.6);
+    ctx.globalAlpha=1;
+  });
+}
+function hexA(c,a){
+  c=c.trim(); if(c.indexOf("rgb")===0){ var m=c.match(/[\d.]+/g); return "rgba("+m[0]+","+m[1]+","+m[2]+","+a+")"; }
+  if(c[0]==="#"){ var h=c.slice(1); if(h.length===3) h=h.split("").map(function(x){return x+x}).join(""); var n=parseInt(h,16); return "rgba("+(n>>16&255)+","+(n>>8&255)+","+(n&255)+","+a+")"; }
+  return c;
+}
+function loop(){ step(); draw(); requestAnimationFrame(loop); }
+
+/* ---------- Bedienung ---------- */
+function hit(x,y){ for(var i=B.length-1;i>=0;i--){ var b=B[i], dx=x-b.x, dy=y-b.y; if(dx*dx+dy*dy<=b.r*b.r) return b; } return null; }
+function pt(ev){ var r=cv.getBoundingClientRect(); return {x:ev.clientX-r.left, y:ev.clientY-r.top}; }
+var down=null;
+cv.addEventListener("pointerdown",function(ev){ var p=pt(ev), b=hit(p.x,p.y); down={x:p.x,y:p.y,b:b,moved:false}; if(b){ drag=b; cv.classList.add("drag"); try{ cv.setPointerCapture(ev.pointerId); }catch(e){} } });
+cv.addEventListener("pointermove",function(ev){ var p=pt(ev);
+  if(down && drag){ if(Math.abs(p.x-down.x)+Math.abs(p.y-down.y)>4) down.moved=true; drag.vx=(p.x-drag.x); drag.vy=(p.y-drag.y); drag.x=p.x; drag.y=p.y; return; }
+  hover=hit(p.x,p.y); cv.style.cursor=hover?"pointer":"grab"; });
+function up(){ if(down && down.b && !down.moved) showCard(down.b); else if(down && !down.b && !down.moved) closeCard();
+  if(drag){ drag.vx*=.5; drag.vy*=.5; } drag=null; down=null; cv.classList.remove("drag"); }
+cv.addEventListener("pointerup",up); cv.addEventListener("pointercancel",up);
+cv.addEventListener("pointerleave",function(){ hover=null; });
+
+function showCard(b){
+  sel=b; var c=b.c, sym=(c.symbol||"").toUpperCase();
+  function cell(n,k){ var v=c[k]; if(v==null&&k===TF.d) v=c.price_change_percentage_24h; return '<div><b>'+n+'</b><span style="color:'+((v||0)>=0?"var(--up)":"var(--down)")+'">'+pct(v)+"</span></div>"; }
+  $("card").innerHTML='<div class="hd">'+(c.image?'<img src="'+c.image.replace("/large/","/small/")+'" alt="">':"")+'<div><div class="nm">'+esc(c.name)+'</div><div class="sy">'+sym+" · Rang "+(c.market_cap_rank||"–")+'</div></div><button class="x" id="cx" aria-label="Schließen">✕</button></div>'+
+    '<div class="pr">'+fmtP(c.current_price)+"</div>"+
+    '<div class="chg">'+cell("1 Std",TF.h)+cell("24 Std",TF.d)+cell("7 T",TF.w)+cell("30 T",TF.m)+cell("1 J",TF.y)+"</div>"+
+    '<div class="row"><span>Marktwert</span><span>'+fmtB(c.market_cap)+"</span></div>"+
+    '<div class="row"><span>Volumen 24 Std</span><span>'+fmtB(c.total_volume)+"</span></div>"+
+    '<div class="row"><span>Tief / Hoch 24 Std</span><span>'+fmtP(c.low_24h)+" – "+fmtP(c.high_24h)+"</span></div>"+
+    '<div class="row"><span>Allzeithoch</span><span>'+fmtP(c.ath)+" ("+pct(c.ath_change_percentage)+")</span></div>"+
+    '<div class="links"><a href="https://www.tradingview.com/chart/?symbol='+encodeURIComponent(sym+"USDT")+'" target="_blank" rel="noopener">TradingView ↗</a><a href="https://www.coingecko.com/de/munze/'+encodeURIComponent(c.id)+'" target="_blank" rel="noopener">CoinGecko ↗</a><a href="index.html">Scanner</a></div>';
+  $("card").hidden=false; $("cx").onclick=closeCard;
+}
+function closeCard(){ sel=null; $("card").hidden=true; }
+function esc(s){ return String(s||"").replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]}); }
+
+function setPressed(){ $("tfSeg").querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed",x.dataset.tf===S.tf?"true":"false"); }); }
+$("tfSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; S.tf=b.dataset.tf; save(); setPressed(); targets(); if(sel) showCard(sel); });
+$("range").value=String(S.range);
+$("range").addEventListener("change",function(){ var old=S.range; S.range=+this.value; save(); if((S.range===200)!==(old===200)) load(); else build(); });
+$("noStable").checked=S.noStable; $("noStable").addEventListener("change",function(){ S.noStable=this.checked; save(); build(); });
+$("logos").checked=S.logos; $("logos").addEventListener("change",function(){ S.logos=this.checked; save(); build(); });
+$("q").addEventListener("input",function(){ q=this.value.trim(); var m=q && B.find(function(b){ return (b.c.symbol||"").toLowerCase()===q.toLowerCase(); }); if(m) showCard(m); });
+$("refresh").addEventListener("click",load);
+setPressed(); setup();
+requestAnimationFrame(loop);
+load();
+setInterval(function(){ if(!document.hidden) load(); },180000);
+})();
+</script>
+</body>
+</html>
