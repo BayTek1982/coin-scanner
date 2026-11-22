@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="de" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e131b">
+<meta name="description" content="Bitcoin-Renditen: Monate, Quartale, Wochen, Wochentage und Jahresverlauf im Vergleich.">
+<title>Renditen · Bayazit Coin-Scanner</title>
+<link rel="icon" type="image/svg+xml" href="icons/renditen.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="theme.js?v=1"></script>
+<style>
+:root{
+  --bg:#f3f5f8;--panel:#fff;--line:#dde2ea;--fg:#141a24;--muted:#5d6878;--faint:#8d99ab;
+  --accent:#c77a12;--up:#0f8a4f;--down:#c8372d;--chip:#e8ecf2;
+  --btc:#e8870f;--blue:#2f6fd6;--gold:#c99212;--violet:#7c5cd6;--cyan:#0e9bb5;
+  --grid:rgba(20,26,36,.09);--upc:15,138,79;--dnc:200,55,45;
+  --f-body:"Archivo",system-ui,sans-serif;--f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+:root.dk{
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --accent:#f0a33a;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;
+  --btc:#f7931a;--blue:#6d8dff;--gold:#f0b429;--violet:#a78bfa;--cyan:#22d3ee;
+  --grid:rgba(141,153,171,.13);--upc:47,190,120;--dnc:235,80,80;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not(.lt){
+  --bg:#0e131b;--panel:#151c27;--line:#253041;--fg:#e7ecf3;--muted:#8d99ab;--faint:#5f6b7c;
+  --accent:#f0a33a;--up:#3ccf8a;--down:#ff6b5e;--chip:#1d2633;
+  --btc:#f7931a;--blue:#6d8dff;--gold:#f0b429;--violet:#a78bfa;--cyan:#22d3ee;
+  --grid:rgba(141,153,171,.13);--upc:47,190,120;--dnc:235,80,80;color-scheme:dark}}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:clip}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+a{color:inherit}
+.wrap{max-width:1800px;margin:0 auto;padding-block:max(18px,env(safe-area-inset-top)) 48px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));display:grid;gap:12px}
+header{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;justify-content:space-between}
+h1{font-weight:800;font-size:1.6rem;margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+h1 .dot{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--up),var(--down));display:inline-grid;place-items:center;color:#fff;font-size:.9rem}
+.label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.sub{font-size:.85rem;color:var(--muted);margin:0;line-height:1.5}
+.status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stand{font-size:.8rem;color:var(--muted)}.stand b{font-family:var(--f-num);color:var(--fg);font-weight:600}
+.btn{font:600 .88rem var(--f-body);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--btc);color:#1a1206}
+.btn.ghost{background:var(--chip);color:var(--fg)}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative;overflow:hidden;min-width:0}
+.tile::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--acc,var(--btc))}
+.tag{font-family:var(--f-num);font-size:.68rem;font-weight:800;letter-spacing:.12em;color:var(--acc,var(--btc));text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.tag .d{width:7px;height:7px;border-radius:50%;background:var(--acc,var(--btc))}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(min-width:900px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi .v{font-family:var(--f-num);font-size:1.7rem;font-weight:800;letter-spacing:-.02em;margin-top:6px;line-height:1.1}
+.kpi .s{font-family:var(--f-num);font-size:.7rem;color:var(--muted);margin-top:4px}
+@media(max-width:520px){.kpi .v{font-size:1.3rem}}
+.ttop{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:700 .76rem var(--f-num);border:0;background:none;color:var(--muted);padding:6px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.hint{font-size:.72rem;color:var(--faint);margin:6px 0 0;font-family:var(--f-num)}
+/* Tabelle */
+.tscroll{overflow-x:auto;margin-top:10px;-webkit-overflow-scrolling:touch}
+table.hm{border-collapse:separate;border-spacing:3px;font-family:var(--f-num);font-size:.74rem;width:100%;min-width:760px}
+table.hm.weeks{min-width:2300px;font-size:.66rem}
+.hm th{color:var(--muted);font-weight:600;padding:3px 2px;text-align:center;white-space:nowrap}
+.hm th.y,.hm td.y{position:sticky;left:0;background:var(--panel);z-index:1;text-align:left;padding-right:6px;color:var(--muted);font-weight:700}
+.hm td{text-align:center;padding:6px 2px;border-radius:5px;white-space:nowrap;font-weight:600;cursor:default}
+.hm td.now{outline:1.5px dashed var(--btc);outline-offset:-1.5px}
+.hm td.yr{font-weight:800}
+.hm tr.stat td{background:var(--chip);color:var(--fg)}
+.hm tr.stat td.y{color:var(--fg)}
+.hm tr.sep td{height:4px;padding:0;background:none}
+/* Wochentage */
+.wd{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;align-items:stretch;height:240px;margin-top:12px;position:relative}
+.wd .col{display:grid;grid-template-rows:1fr auto;min-width:0}
+.wd .bar{position:relative;margin:18px 0 20px}
+.wd .bar i{position:absolute;left:8%;right:8%;border-radius:4px}
+.wd .bar span{position:absolute;left:0;right:0;text-align:center;font:700 .66rem var(--f-num);white-space:nowrap}
+.wd .lab{font:700 .7rem var(--f-num);color:var(--muted);text-align:center;padding-top:6px}
+.wd .lab.best{color:var(--btc)}
+.wd .zero{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+@media(min-width:1200px){.wd{height:340px}}
+.wdinfo{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px}
+/* Jahresverlauf */
+.ychips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.yc{font:700 .72rem var(--f-num);border:1px solid var(--line);background:var(--chip);color:var(--muted);padding:5px 9px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.yc i{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--c)}
+.yc.on{color:var(--fg);border-color:var(--c)}
+.yc:not(.on) i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--faint)}
+.yc.sp{border-style:dashed}
+.cwrap{position:relative;margin-top:10px}
+canvas{display:block;width:100%;height:420px;touch-action:pan-y;cursor:crosshair}
+.tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.76rem;min-width:150px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .1s;z-index:5;font-family:var(--f-num)}
+.tip.show{opacity:1}
+.tip .r{display:flex;justify-content:space-between;gap:12px}
+.tip .r i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.loading{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-num);color:var(--muted);font-size:.85rem}
+.info{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+@media(min-width:900px){.info{grid-template-columns:1fr 1fr 1fr}}
+.ibox{border-radius:10px;padding:10px 12px;background:var(--chip);border-left:3px solid var(--c)}
+.ibox b{font-family:var(--f-num);font-size:.72rem;color:var(--c);letter-spacing:.06em;text-transform:uppercase}
+.ibox p{margin:4px 0 0;font-size:.85rem;line-height:1.5}
+.foot{color:var(--faint);font-size:.72rem;text-align:center;font-family:var(--f-num)}
+@media(min-width:1200px){
+  .grid{grid-template-columns:repeat(12,1fr);gap:14px}
+  .kpis,.hmtile,.how{grid-column:span 12}
+  .wdtile{grid-column:span 5}
+  .yrtile{grid-column:span 7}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="label"><a href="index.html" style="color:var(--muted)">← Bayazit Coin-Scanner</a> · <a href="zyklus.html" style="color:var(--muted)">🌀 Zyklus-Kompass</a> · <a href="powerlaw.html" style="color:var(--muted)">π Power Law + Pi</a></div>
+      <h1><span class="dot">%</span><span>Renditen</span></h1>
+      <div class="sub">Bitcoin · Monate, Quartale, Wochen, Wochentage und Jahresverlauf</div>
+    </div>
+    <div class="status">
+      <button class="btn ghost" id="themeBtn" type="button" style="font-size:17px;min-width:42px;line-height:1" title="Anzeige &amp; Farben: hell/dunkel, Themen, Helligkeit, eigene Farben" aria-label="Anzeige und Farben">◐</button>
+      <span class="stand">Stand <b id="stand">–</b></span>
+      <button class="btn" id="refresh">Aktualisieren</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="kpis">
+      <div class="tile kpi" style="--acc:var(--btc)"><div class="tag"><span class="d"></span><span id="kYearL">Jahr bisher</span></div><div class="v" id="kYear">–</div><div class="s" id="kYearS">–</div></div>
+      <div class="tile kpi" style="--acc:var(--blue)"><div class="tag"><span class="d"></span><span id="kMonL">Monat bisher</span></div><div class="v" id="kMon">–</div><div class="s" id="kMonS">–</div></div>
+      <div class="tile kpi" style="--acc:var(--gold)"><div class="tag"><span class="d"></span><span id="kAvgL">Ø dieser Monat</span></div><div class="v" id="kAvg">–</div><div class="s" id="kAvgS">–</div></div>
+      <div class="tile kpi" style="--acc:var(--violet)"><div class="tag"><span class="d"></span>Bester / schwächster Monat</div><div class="v" id="kBest" style="font-size:1.25rem">–</div><div class="s" id="kBestS">nach Median aller Jahre</div></div>
+    </section>
+
+    <section class="tile hmtile" style="--acc:var(--up)">
+      <div class="ttop">
+        <div class="tag"><span class="d"></span>BTC · Renditen seit 2011</div>
+        <div class="seg" id="hmSeg"><button data-m="m" aria-pressed="true">Monate</button><button data-m="q">Quartale</button><button data-m="w">Wochen</button></div>
+      </div>
+      <div class="tscroll" id="hmWrap"><div class="loading" style="position:static;padding:30px" id="loading">Lade Bitcoin-Kurse …</div></div>
+      <p class="hint" id="hmHint">Rendite in % vom Schlusskurs des Vormonats bis zum Monatsende (UTC). Gestrichelt = läuft noch. Unten: Durchschnitt (Ø), Median und Anteil positiver Jahre.</p>
+    </section>
+
+    <section class="tile wdtile" style="--acc:var(--cyan)">
+      <div class="ttop">
+        <div class="tag"><span class="d"></span>Wochentage · UTC</div>
+        <div class="seg" id="wdSeg"><button data-r="30">1M</button><button data-r="91">3M</button><button data-r="182">6M</button><button data-r="365">1J</button><button data-r="1095">3J</button><button data-r="1826" aria-pressed="true">5J</button><button data-r="0">Alles</button></div>
+      </div>
+      <div class="wd" id="wd"></div>
+      <div class="wdinfo"><span class="hint" id="wdInfo">–</span></div>
+    </section>
+
+    <section class="tile yrtile" style="--acc:var(--btc)">
+      <div class="ttop">
+        <div class="tag"><span class="d"></span>Jahresverlauf ab 1. Januar</div>
+        <div class="seg" id="yrSeg"><button data-q="zyklus">Zyklusjahr</button><button data-q="last">Letzte 4</button><button data-q="all">Alle</button><button data-q="none">Keine</button></div>
+      </div>
+      <div class="ychips" id="ychips"></div>
+      <div class="cwrap" id="yrWrap"><canvas id="cYr"></canvas><div class="tip" id="tip"></div></div>
+      <p class="hint">Jahre antippen = ein-/ausblenden · Zyklusjahr = Jahre an derselben Stelle im 4-Jahres-Zyklus wie heute</p>
+    </section>
+
+    <section class="tile how" style="--acc:var(--gold)">
+      <div class="tag"><span class="d"></span>So liest du das</div>
+      <div class="info">
+        <div class="ibox" style="--c:var(--up)"><b>Rendite-Tabelle</b><p>Jede Zelle zeigt, wie viel Prozent Bitcoin in diesem Monat (Quartal, Woche) gewonnen oder verloren hat. Je kräftiger die Farbe, desto größer die Bewegung. Die Zeilen Ø und Median zeigen, wie ein Monat „normalerweise“ läuft.</p></div>
+        <div class="ibox" style="--c:var(--cyan)"><b>Wochentage</b><p>Durchschnittliche Tagesrendite je Wochentag (Schluss um 0 Uhr UTC = 1 Uhr deutscher Winterzeit). Die Werte sind klein und schwanken je nach Zeitraum stark – eher ein Hinweis als eine Regel.</p></div>
+        <div class="ibox" style="--c:var(--down)"><b>Vorsicht</b><p>Saisonalität beschreibt die Vergangenheit. Ein „starker November“ im Schnitt heißt nicht, dass jeder November steigt – 2026 zeigt das gerade. Zusammen mit Zyklus-Kompass, Risiko und Hitze ansehen. Keine Anlageberatung.</p></div>
+      </div>
+      <p class="sub" style="margin-top:10px" id="srcTxt">–</p>
+    </section>
+  </main>
+  <div class="foot">BAYAZIT COIN-SCANNER · RENDITEN · KEINE ANLAGEBERATUNG</div>
+</div>
+
+<script src="zyklus-core.js?v=1"></script>
+<script>
+(function(){
+"use strict";
+var Z=window.Zyklus, DAY=864e5;
+var MON=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+var MONL=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+var WDN=["Mo","Di","Mi","Do","Fr","Sa","So"];
+var YCOL=["#f7931a","#6d8dff","#3ccf8a","#e5486d","#22d3ee","#a78bfa","#f0b429","#ff8a5b","#59c3c3","#c084fc","#84cc16","#f472b6","#60a5fa","#fb923c","#2dd4bf","#e879f9","#a3e635"];
+function $(id){return document.getElementById(id)}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
+function pct(x,d){ if(x==null||!isFinite(x)) return "–"; var v=x*100, dd=d==null?(Math.abs(v)>=1000?0:1):d; if(Math.abs(v)<0.5*Math.pow(10,-dd)) v=0; return (v>0?"+":v<0?"−":"")+Math.abs(v).toLocaleString("de-DE",{minimumFractionDigits:dd,maximumFractionDigits:dd}); }
+function fmtP(p){ return Math.round(p).toLocaleString("de-DE")+" $"; }
+function median(a){ if(!a.length) return null; var s=a.slice().sort(function(x,y){return x-y}), m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+function mean(a){ return a.length? a.reduce(function(s,x){return s+x},0)/a.length : null; }
+
+var DAYS=[], byKey={}, LAST=null, hmMode="m", wdRange=1826, YEARS=[], yOn={}, showMed=false, hoverDoy=null, YR={};
+try{ var st=JSON.parse(localStorage.getItem("bayRendite")||"null"); if(st){ hmMode=st.m||hmMode; wdRange=st.w!=null?st.w:wdRange; if(st.y) yOn=st.y; if(st.med!=null) showMed=st.med; } }catch(e){}
+function save(){ try{ localStorage.setItem("bayRendite",JSON.stringify({m:hmMode,w:wdRange,y:yOn,med:showMed})); }catch(e){} }
+
+function dayKey(t){ return Math.floor(t/DAY); }
+/* Schlusskurs am Ende eines UTC-Tages (letzter bekannter Kurs bis dahin) */
+function closeAt(dk){ while(dk>=DAYS[0].k){ if(byKey[dk]!=null) return byKey[dk]; dk--; } return null; }
+
+/* ---------- Tabelle ---------- */
+function cellColor(r,scale){
+  if(r==null) return "transparent";
+  var a=Math.min(1,Math.abs(r)/scale)*.85+.12;
+  return "rgba("+(r>=0?css("--upc"):css("--dnc"))+","+a.toFixed(2)+")";
+}
+function txtColor(r,scale){ return (r!=null && Math.abs(r)/scale>.45) ? "#fff" : "var(--fg)"; }
+function periods(mode,y){
+  // liefert [{label, start(dayKey des Vorperioden-Schlusses), end(dayKey Schluss)}]
+  var out=[];
+  if(mode==="m"){ for(var m=0;m<12;m++) out.push({l:MON[m], s:dayKey(Date.UTC(y,m,0)), e:dayKey(Date.UTC(y,m+1,0))}); }
+  else if(mode==="q"){ for(var q=0;q<4;q++) out.push({l:"Q"+(q+1), s:dayKey(Date.UTC(y,q*3,0)), e:dayKey(Date.UTC(y,q*3+3,0))}); }
+  else {
+    // ISO-Wochen: Woche 1 enthält den 4. Januar, Wochen enden sonntags
+    var j4=Date.UTC(y,0,4), wd=(new Date(j4).getUTCDay()+6)%7, mon1=j4-wd*DAY;
+    for(var w=0;w<53;w++){ var mon=mon1+w*7*DAY; var th=new Date(mon+3*DAY); if(w===52 && th.getUTCFullYear()!==y) break;
+      out.push({l:"W"+(w+1), s:dayKey(mon)-1, e:dayKey(mon)+6}); }
+  }
+  return out;
+}
+function ret(p){
+  var lastK=LAST.k, firstK=DAYS[0].k;
+  if(p.s<firstK || p.s>=lastK) return null;
+  var a=closeAt(p.s), b=closeAt(Math.min(p.e,lastK));
+  return (a&&b)? b/a-1 : null;
+}
+function renderHM(){
+  var y0=2011, y1=new Date(LAST.t).getUTCFullYear(), scale=hmMode==="m"?.35:hmMode==="q"?.7:.18, yScale=1.5;
+  var cols=periods(hmMode,y1), nC=hmMode==="w"?53:cols.length;
+  var head='<tr><th class="y"></th>'; for(var c=0;c<nC;c++) head+="<th>"+(hmMode==="w"?(c+1):cols[c].l)+"</th>"; head+="<th>Jahr</th></tr>";
+  var rows="", colVals=[]; for(var i=0;i<nC;i++) colVals.push([]);
+  var yrVals=[];
+  for(var y=y1;y>=y0;y--){
+    var ps=periods(hmMode,y), tr='<tr><td class="y">'+y+"</td>";
+    for(var k=0;k<nC;k++){
+      var p=ps[k], r=p?ret(p):null, running=p && p.e>LAST.k && p.s<LAST.k;
+      if(r!=null && !running) colVals[k].push(r);
+      var tt=p? (hmMode==="w"?"KW "+(k+1)+" "+y:(hmMode==="m"?MONL[k]:"Q"+(k+1))+" "+y)+": "+pct(r)+" %"+(running?" (läuft noch)":"") : "";
+      tr+='<td'+(running?' class="now"':'')+' title="'+tt+'" style="background:'+cellColor(r,scale)+';color:'+txtColor(r,scale)+'">'+(r==null?"":pct(r,hmMode==="w"?1:1))+"</td>";
+    }
+    var ys={s:dayKey(Date.UTC(y,0,0)),e:dayKey(Date.UTC(y,12,0))}, yr=ret(ys), yrun=ys.e>LAST.k;
+    if(yr!=null && !yrun) yrVals.push(yr);
+    tr+='<td class="yr'+(yrun?' now':'')+'" title="Jahr '+y+': '+pct(yr)+' %" style="background:'+cellColor(yr,yScale)+';color:'+txtColor(yr,yScale)+'">'+(yr==null?"":pct(yr))+"</td></tr>";
+    rows+=tr;
+  }
+  function statRow(name,fn,fmt){ var tr='<tr class="stat"><td class="y">'+name+"</td>"; for(var k=0;k<nC;k++){ var v=fn(colVals[k]); tr+='<td title="'+name+'">'+fmt(v)+"</td>"; } var vy=fn(yrVals); return tr+"<td>"+fmt(vy)+"</td></tr>"; }
+  rows+='<tr class="sep"><td colspan="'+(nC+2)+'"></td></tr>';
+  rows+=statRow("Ø",mean,function(v){return v==null?"":pct(v)});
+  rows+=statRow("Median",median,function(v){return v==null?"":pct(v)});
+  rows+=statRow("% Plus",function(a){ return a.length? a.filter(function(x){return x>0}).length/a.length : null; },function(v){ return v==null?"":Math.round(v*100)+" %"; });
+  $("hmWrap").innerHTML='<table class="hm'+(hmMode==="w"?" weeks":"")+'">'+head+rows+"</table>";
+  $("hmHint").textContent = (hmMode==="m"?"Rendite in % vom Schlusskurs des Vormonats bis zum Monatsende":hmMode==="q"?"Rendite in % je Quartal":"Rendite in % je Kalenderwoche (ISO, Montag bis Sonntag)")+" (UTC). Gestrichelt = läuft noch. Unten: Durchschnitt (Ø), Median und Anteil positiver Jahre."+(hmMode==="w"?" Tabelle seitlich wischen.":"");
+  if(hmMode==="m"){ RENDER_STATS(colVals); }
+}
+var RENDER_STATS=function(colVals){
+  var meds=colVals.map(median), best=0, worst=0;
+  meds.forEach(function(v,i){ if(v>meds[best]) best=i; if(v<meds[worst]) worst=i; });
+  $("kBest").innerHTML='<span style="color:var(--up)">'+MON[best]+" "+pct(meds[best])+' %</span><br><span style="color:var(--down)">'+MON[worst]+" "+pct(meds[worst])+" %</span>";
+  var m=new Date(LAST.t).getUTCMonth(), vals=colVals[m];
+  $("kAvgL").textContent="Ø "+MONL[m];
+  var md=median(vals); $("kAvg").textContent=pct(md)+" %"; $("kAvg").style.color=md>=0?css("--up"):css("--down");
+  $("kAvgS").textContent="Median · Ø "+pct(mean(vals))+" % · "+vals.filter(function(x){return x>0}).length+" von "+vals.length+" Jahren im Plus";
+};
+
+/* ---------- Wochentage ---------- */
+function renderWD(){
+  var lastK=LAST.k-1, fromK = wdRange? lastK-wdRange+1 : DAYS[1].k;   // ohne den laufenden Tag
+  var acc=[[],[],[],[],[],[],[]];
+  for(var k=Math.max(fromK,DAYS[1].k);k<=lastK;k++){ var a=byKey[k-1], b=byKey[k]; if(a==null||b==null) continue; acc[(new Date(k*DAY).getUTCDay()+6)%7].push(b/a-1); }
+  var vals=acc.map(mean), wk=[].concat(acc[0],acc[1],acc[2],acc[3],acc[4]), we=[].concat(acc[5],acc[6]);
+  vals.push(mean(wk)); vals.push(mean(we));
+  var labs=WDN.concat(["Mo–Fr","Sa–So"]), mx=Math.max.apply(null,vals.map(function(v){return Math.abs(v||0)}))||1e-9;
+  var pos=Math.max(0,Math.max.apply(null,vals)), neg=Math.max(0,-Math.min.apply(null,vals)), tot=(pos+neg)||1, z=pos/tot;
+  var bi=0; vals.slice(0,7).forEach(function(v,i){ if(v>vals[bi]) bi=i; });
+  var h='<div class="zero" style="top:calc(18px + (100% - 64px) * '+z.toFixed(4)+')"></div>';
+  vals.forEach(function(v,i){
+    var hgt=Math.abs(v)/tot*100, up=v>=0, col=up?"var(--up)":"var(--down)";
+    var style=up? "bottom:"+((1-z)*100)+"%;height:"+hgt+"%" : "top:"+(z*100)+"%;height:"+hgt+"%";
+    var lab=up? "bottom:calc("+((1-z)*100+hgt)+"% + 2px)" : "top:calc("+(z*100+hgt)+"% + 2px)";
+    h+='<div class="col"><div class="bar"><i style="'+style+';background:'+col+';opacity:'+(i>6?.6:.9)+'"></i><span style="'+lab+';color:'+col+'">'+pct(v,2)+' %</span></div><div class="lab'+(i===bi?' best':'')+'">'+labs[i]+"</div></div>";
+  });
+  $("wd").innerHTML=h;
+  var n=acc.reduce(function(s,a){return s+a.length},0);
+  $("wdInfo").textContent="Ø Tagesrendite je Wochentag · "+n.toLocaleString("de-DE")+" Tage · bester Tag: "+["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"][bi];
+}
+
+/* ---------- Jahresverlauf ---------- */
+function buildYears(){
+  YR={}; YEARS=[];
+  var y1=new Date(LAST.t).getUTCFullYear();
+  for(var y=2011;y<=y1;y++){
+    var base=closeAt(dayKey(Date.UTC(y,0,0))); if(!base) continue;
+    var arr=[], k0=dayKey(Date.UTC(y,0,1)), k1=Math.min(dayKey(Date.UTC(y,11,31)),LAST.k);
+    for(var k=k0;k<=k1;k++){ var p=byKey[k]; arr.push(p!=null? p/base-1 : (arr.length?arr[arr.length-1]:0)); }
+    YR[y]=arr; YEARS.push(y);
+  }
+  // Median über alle abgeschlossenen Jahre je Kalendertag
+  var med=[]; for(var d=0;d<366;d++){ var v=[]; YEARS.forEach(function(y){ if(y<y1 && YR[y][d]!=null) v.push(YR[y][d]); }); med.push(median(v)); }
+  YR.med=med;
+}
+function zyklusYears(){ var y1=new Date(LAST.t).getUTCFullYear(), out=[]; for(var y=y1;y>=2011;y-=4) out.push(y); return out; }
+function colorOf(y){ var y1=new Date(LAST.t).getUTCFullYear(); return y===y1? css("--btc") : YCOL[1+((y1-y-1)%(YCOL.length-1)+YCOL.length-1)%(YCOL.length-1)]; }
+function renderChips(){
+  var h=YEARS.slice().reverse().map(function(y){ return '<button class="yc'+(yOn[y]?" on":"")+'" data-y="'+y+'" style="--c:'+colorOf(y)+'"><i></i>'+y+"</button>"; }).join("");
+  h='<button class="yc sp'+(showMed?" on":"")+'" data-y="med" style="--c:var(--fg)"><i></i>Median</button>'+h;
+  $("ychips").innerHTML=h;
+}
+function drawYr(){
+  var cv=$("cYr"), dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+  var c=cv.getContext("2d"); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+  var PL=6, PR=52, PT=12, PB=22, iw=W-PL-PR, ih=H-PT-PB;
+  var shown=YEARS.filter(function(y){return yOn[y]});
+  var lo=0, hi=0;
+  shown.forEach(function(y){ YR[y].forEach(function(v){ lo=Math.min(lo,v); hi=Math.max(hi,v); }); });
+  if(showMed) YR.med.forEach(function(v){ if(v!=null){ lo=Math.min(lo,v); hi=Math.max(hi,v); } });
+  if(hi-lo<.1){ hi+=.05; lo-=.05; }
+  var pad=(hi-lo)*.06; lo-=pad; hi+=pad;
+  function X(d){ return PL+d/365*iw; } function Y(v){ return PT+(1-(v-lo)/(hi-lo))*ih; }
+  drawYr.X=X; drawYr.iw=iw; drawYr.PL=PL;
+  var grid=css("--grid"), muted=css("--muted");
+  c.font="600 10.5px JetBrains Mono, monospace"; c.strokeStyle=grid; c.fillStyle=muted; c.lineWidth=1;
+  // Raster
+  var span=hi-lo, steps=[.05,.1,.25,.5,1,2,5,10,25,50], st=steps.find(function(s){return span/s<=7})||100;
+  c.textAlign="left"; c.textBaseline="middle";
+  for(var v=Math.ceil(lo/st)*st; v<=hi; v+=st){ var y=Y(v); c.globalAlpha=Math.abs(v)<1e-9?1:.9; c.strokeStyle=Math.abs(v)<1e-9?muted:grid; c.beginPath(); c.moveTo(PL,y); c.lineTo(PL+iw,y); c.stroke(); c.fillText((v>0?"+":"")+Math.round(v*100).toLocaleString("de-DE")+" %",PL+iw+6,y); }
+  c.globalAlpha=1; c.strokeStyle=grid; c.textAlign="center"; c.textBaseline="top";
+  for(var m=0;m<12;m++){ var d=Math.round((Date.UTC(2021,m,1)-Date.UTC(2021,0,1))/DAY), x=X(d); c.beginPath(); c.moveTo(x,PT); c.lineTo(x,PT+ih); c.stroke(); if(iw>500||m%2===0) c.fillText(MON[m],x+(iw/24),PT+ih+5); }
+  // Linien (aktuelles Jahr zuletzt = oben)
+  var y1=new Date(LAST.t).getUTCFullYear();
+  if(showMed){ c.save(); c.setLineDash([5,4]); c.strokeStyle=css("--fg"); c.globalAlpha=.75; c.lineWidth=1.6; c.beginPath(); YR.med.forEach(function(v,d){ if(v==null) return; d?c.lineTo(X(d),Y(v)):c.moveTo(X(d),Y(v)); }); c.stroke(); c.restore(); }
+  shown.slice().sort(function(a,b){ return (a===y1)-(b===y1); }).forEach(function(y){
+    var a=YR[y]; c.strokeStyle=colorOf(y); c.lineWidth=y===y1?2.4:1.4; c.globalAlpha=y===y1?1:.85; c.beginPath();
+    a.forEach(function(v,d){ d?c.lineTo(X(d),Y(v)):c.moveTo(X(d),Y(v)); }); c.stroke(); c.globalAlpha=1;
+    // Endbeschriftung
+    var ld=a.length-1, lv=a[ld]; c.fillStyle=colorOf(y); c.font="800 10.5px JetBrains Mono, monospace"; c.textAlign="left"; c.textBaseline="middle";
+    if(y===y1 || shown.length<=6){ c.beginPath(); c.arc(X(ld),Y(lv),3,0,7); c.fill(); if(ld<330 || y===y1) c.fillText(y+" "+pct(lv)+" %",Math.min(X(ld)+6,PL+iw-90),Y(lv)); }
+  });
+  if(hoverDoy!=null){ var hx=X(hoverDoy); c.strokeStyle=muted; c.globalAlpha=.6; c.beginPath(); c.moveTo(hx,PT); c.lineTo(hx,PT+ih); c.stroke(); c.globalAlpha=1; }
+}
+var tip=$("tip");
+function onYrMove(ev){
+  if(!YEARS.length) return;
+  var r=$("cYr").getBoundingClientRect(), x=ev.clientX-r.left, d=Math.round((x-drawYr.PL)/drawYr.iw*365);
+  if(d<0||d>365){ hideTip(); return; }
+  hoverDoy=d; drawYr();
+  var dt=new Date(Date.UTC(2021,0,1)+Math.min(d,364)*DAY), y1=new Date(LAST.t).getUTCFullYear();
+  var rows=YEARS.filter(function(y){return yOn[y] && YR[y][d]!=null}).sort(function(a,b){return b-a}).map(function(y){ var v=YR[y][d]; return '<div class="r"><span><i style="background:'+colorOf(y)+'"></i>'+y+'</span><span style="color:'+(v>=0?css("--up"):css("--down"))+'">'+pct(v)+" %</span></div>"; });
+  if(showMed && YR.med[d]!=null) rows.push('<div class="r"><span><i style="background:var(--fg)"></i>Median</span><span>'+pct(YR.med[d])+" %</span></div>");
+  tip.innerHTML="<b>"+dt.getUTCDate()+". "+MON[dt.getUTCMonth()]+"</b>"+rows.join("");
+  var wr=$("yrWrap").getBoundingClientRect(), lx=ev.clientX-wr.left;
+  tip.style.left=(lx>wr.width/2? lx-170 : lx+14)+"px"; tip.style.top="10px"; tip.classList.add("show");
+}
+function hideTip(){ tip.classList.remove("show"); if(hoverDoy!=null){ hoverDoy=null; drawYr(); } }
+$("cYr").addEventListener("pointermove",onYrMove); $("cYr").addEventListener("pointerdown",onYrMove); $("cYr").addEventListener("pointerleave",hideTip);
+$("ychips").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; var y=b.dataset.y;
+  if(y==="med") showMed=!showMed; else yOn[y]=!yOn[y]; save(); renderChips(); drawYr(); clearQuick(); });
+function clearQuick(){ $("yrSeg").querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed","false"); }); }
+$("yrSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; var q=b.dataset.q, y1=new Date(LAST.t).getUTCFullYear();
+  yOn={}; if(q==="zyklus") zyklusYears().forEach(function(y){ yOn[y]=true; });
+  else if(q==="last") [y1,y1-1,y1-2,y1-3].forEach(function(y){ yOn[y]=true; });
+  else if(q==="all") YEARS.forEach(function(y){ yOn[y]=true; });
+  save(); renderChips(); drawYr(); clearQuick(); b.setAttribute("aria-pressed","true"); });
+
+/* ---------- Bedienung ---------- */
+function setPressed(seg,attr,val){ $(seg).querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed",String(x.dataset[attr])===String(val)?"true":"false"); }); }
+$("hmSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; hmMode=b.dataset.m; setPressed("hmSeg","m",hmMode); save(); renderHM(); });
+$("wdSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; wdRange=+b.dataset.r; setPressed("wdSeg","r",wdRange); save(); renderWD(); });
+setPressed("hmSeg","m",hmMode); setPressed("wdSeg","r",wdRange);
+var rt; window.addEventListener("resize",function(){ clearTimeout(rt); rt=setTimeout(drawYr,120); });
+window.addEventListener("baytheme",function(){ setTimeout(function(){ if(LAST){ renderHM(); renderWD(); renderChips(); drawYr(); } },30); });
+
+function fillKpis(){
+  var y=new Date(LAST.t).getUTCFullYear(), m=new Date(LAST.t).getUTCMonth();
+  var yb=closeAt(dayKey(Date.UTC(y,0,0))), mb=closeAt(dayKey(Date.UTC(y,m,0)));
+  var yr=LAST.p/yb-1, mr=LAST.p/mb-1;
+  $("kYearL").textContent=y+" bisher"; $("kYear").textContent=pct(yr)+" %"; $("kYear").style.color=yr>=0?css("--up"):css("--down");
+  $("kYearS").textContent="seit 1. Jan · "+fmtP(yb)+" → "+fmtP(LAST.p);
+  var zy=zyklusYears()[1]; if(zy && YR[zy]){ var d=Math.min(YR[y].length-1,YR[zy].length-1); $("kYearS").textContent+=" · "+zy+" zur selben Zeit "+pct(YR[zy][d])+" %"; }
+  $("kMonL").textContent=MONL[m]+" bisher"; $("kMon").textContent=pct(mr)+" %"; $("kMon").style.color=mr>=0?css("--up"):css("--down");
+  $("kMonS").textContent="seit Ende "+MONL[(m+11)%12]+" · "+fmtP(mb);
+  $("stand").textContent=new Date(LAST.t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+}
+
+function livePrice(){
+  return fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT",{cache:"no-store"})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ return parseFloat(j.price); }).catch(function(){ return null; });
+}
+function start(){
+  Promise.all([Z.load(),livePrice()]).then(function(r){
+    var pts=Z.withLive(r[0].pts.filter(function(p){ return p.t>=r[0].firstDaily; }), r[1]);
+    DAYS=[]; byKey={};
+    pts.forEach(function(p){ var k=dayKey(p.t); byKey[k]=p.p; DAYS.push({k:k,p:p.p,t:p.t,live:p.live}); });
+    LAST=DAYS[DAYS.length-1];
+    buildYears();
+    if(!Object.keys(yOn).some(function(k){return yOn[k]})){ zyklusYears().slice(0,2).forEach(function(y){ yOn[y]=true; }); }
+    renderHM(); renderWD(); renderChips(); fillKpis(); drawYr();
+    $("srcTxt").textContent="Daten: Bitcoin-Tagesschlusskurse (UTC) seit "+new Date(DAYS[0].t).toLocaleDateString("de-DE",{month:"2-digit",year:"numeric"})+" (Coin Metrics + Binance, jede Nacht aktualisiert)"+(LAST.live?", dazu der aktuelle Kurs live von Binance":"")+". Die Tabelle beginnt 2011 (erstes volles Jahr).";
+  }).catch(function(){ $("hmWrap").innerHTML='<div class="loading" style="position:static;padding:30px">Kurse konnten nicht geladen werden – bitte später erneut versuchen.</div>'; });
+}
+$("refresh").addEventListener("click",start);
+start();
+})();
+</script>
+</body>
+</html>
