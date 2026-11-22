@@ -61,7 +61,17 @@ h1 .dot{width:30px;height:30px;border-radius:50%;background:linear-gradient(135d
 .lg{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--f-num);font-size:.7rem;color:var(--muted);align-items:center}
 .lg i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
 .cwrap{position:relative;margin-top:8px}
-canvas{display:block;width:100%;touch-action:none}
+canvas{display:block;width:100%;touch-action:pan-y;cursor:crosshair}
+.sel{position:absolute;top:0;height:0;background:color-mix(in srgb,var(--blue) 18%,transparent);border-left:1px solid var(--blue);border-right:1px solid var(--blue);pointer-events:none;z-index:4}
+.zchip{font:700 .74rem var(--f-num);border:1px solid var(--btc);background:color-mix(in srgb,var(--btc) 14%,transparent);color:var(--btc);padding:6px 10px;border-radius:8px;cursor:pointer}
+.lg button{font:600 .7rem var(--f-num);color:var(--muted);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer;display:inline-flex;align-items:center}
+.lg button.off{opacity:.4;text-decoration:line-through}
+.hint{font-size:.72rem;color:var(--faint);margin:6px 0 0;font-family:var(--f-num)}
+#bands tr.tg{cursor:pointer}
+#bands tr.off td{opacity:.38}
+#bands tr.off .sw{background:transparent!important;box-shadow:inset 0 0 0 1.5px var(--muted)}
+.bhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mini-btn{font:700 .68rem var(--f-num);border:1px solid var(--line);background:var(--chip);color:var(--fg);padding:5px 9px;border-radius:7px;cursor:pointer}
 #cMain{height:min(62vh,560px);min-height:330px}
 #cPi{height:150px;margin-top:6px}
 .tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.78rem;min-width:190px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .1s;z-index:5}
@@ -120,26 +130,30 @@ tr.now td:first-child{box-shadow:inset 3px 0 0 var(--btc)}
     <section class="tile charttile">
       <div class="ctop">
         <div class="tag"><span class="d"></span>Chart · logarithmisch</div>
-        <div class="seg" id="rangeSeg"><button data-r="all" aria-pressed="true">Alles</button><button data-r="2017">ab 2017</button><button data-r="4y">4 Jahre</button><button data-r="1y">1 Jahr</button></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="zchip" id="zoomChip" hidden title="Zoom zurücksetzen">–</button><div class="seg" id="rangeSeg"><button data-r="all" aria-pressed="true">Alles</button><button data-r="2017">ab 2017</button><button data-r="4y">4 Jahre</button><button data-r="1y">1 Jahr</button></div></div>
       </div>
-      <div class="lg" style="margin-top:8px">
-        <span><i style="border-color:var(--price)"></i>BTC</span>
-        <span><i style="border-color:var(--fg);border-top-style:dotted"></i>Linie</span>
-        <span><i style="border-color:var(--blue)"></i>111 T</span>
-        <span><i style="border-color:var(--gold)"></i>2 × 350 T</span>
-        <span><i style="border-color:var(--gold);border-top-style:dashed;width:2px;height:12px;border-top:0;border-left:2px dashed var(--gold)"></i>Pi-Kreuzung</span>
+      <div class="lg" id="lgT" style="margin-top:8px">
+        <button data-k="p"><i style="border-color:var(--price)"></i>BTC</button>
+        <button data-k="line"><i style="border-color:var(--fg);border-top-style:dotted"></i>Linie</button>
+        <button data-k="m111"><i style="border-color:var(--blue)"></i>111 T</button>
+        <button data-k="m700"><i style="border-color:var(--gold)"></i>2 × 350 T</button>
+        <button data-k="cross"><i style="border-top:0;border-left:2px dashed var(--gold);width:0;height:12px"></i>Pi-Kreuzung</button>
+        <button data-k="bands"><i style="border:0;width:14px;height:10px;border-radius:2px;background:linear-gradient(0deg,#3346c4,#bdb6a6,#e0561f);opacity:.8"></i>Bänder</button>
       </div>
+      <p class="hint">Tipp: Mit gedrückter Maus (oder Finger) waagrecht über den Chart ziehen = Bereich vergrößern · Doppelklick = zurück</p>
       <div class="cwrap" id="wMain">
         <canvas id="cMain"></canvas>
         <div class="label" style="margin-top:8px">Pi-Abstand · 111-Tage-Schnitt zu 2 × 350-Tage-Schnitt</div>
         <canvas id="cPi"></canvas>
         <div class="loading" id="loading">Lade Bitcoin-Kurse …</div>
         <div class="tip" id="tip"></div>
+        <div class="sel" id="sel" hidden></div>
       </div>
     </section>
 
     <section class="tile bandtile">
-      <div class="tag"><span class="d"></span>Bänder</div>
+      <div class="bhead"><div class="tag"><span class="d"></span>Bänder</div><button class="mini-btn" id="bandAll">alle an/aus</button></div>
+      <p class="hint" style="margin-top:4px">Zeile antippen = Band ein-/ausblenden</p>
       <table id="bands"></table>
       <div class="label" style="margin-top:12px">Lage im Band · Verlauf</div>
       <canvas id="cBand"></canvas>
@@ -182,7 +196,10 @@ function bandPos(t,p){ return 5 + (Math.log10(p)-plLog(t))/STEP; }              
 function bandOf(t,p){ return Math.floor(bandPos(t,p)); }                              // 1…9 (0 = darunter, 10 = darüber)
 function factor(k){ return Math.pow(10,(k-5)*STEP); }                                 // Unterkante von Band k
 
-var P=[], CROSS=[], piMax=null, range="all", hoverT=null;
+var P=[], CROSS=[], piMax=null, range="all", hoverT=null, custom=null;
+var VIS={p:1,line:1,m111:1,m700:1,cross:1,bands:1}, BANDS=[1,1,1,1,1,1,1,1,1];
+try{ var sv=JSON.parse(localStorage.getItem("bayPlVis")||"null"); if(sv){ if(sv.v) for(var kk in sv.v) VIS[kk]=sv.v[kk]; if(sv.b&&sv.b.length===9) BANDS=sv.b; } }catch(e){}
+function saveVis(){ try{ localStorage.setItem("bayPlVis",JSON.stringify({v:VIS,b:BANDS})); }catch(e){} }
 
 function compute(pts){
   P=pts.map(function(p){ return {t:p.t,p:p.p,live:p.live}; });
@@ -213,6 +230,7 @@ function setup(cv){
 }
 var PADL=8, PADR=58;
 function xRange(){
+  if(custom) return custom;
   var last=P[P.length-1].t, end;
   if(range==="all") return [Date.UTC(2010,6,1), Date.UTC(2027,6,1)];
   if(range==="2017") return [Date.UTC(2017,0,1), Date.UTC(2027,6,1)];
@@ -225,56 +243,77 @@ function drawMain(){
   var PADT=10, PADB=22, iw=W-PADL-PADR, ih=H-PADT-PADB;
   // y-Bereich aus sichtbaren Kursen und Bändern
   var lo=1e18, hi=0;
-  P.forEach(function(p){ if(p.t>=x0&&p.t<=x1){ lo=Math.min(lo,p.p); hi=Math.max(hi,p.p); } });
-  lo=Math.min(lo,plPrice(x0)*factor(1)); hi=Math.max(hi,plPrice(x1)*factor(10));
-  var ly0=Math.log10(lo)-.08, ly1=Math.log10(hi)+.05;
+  function inc(v){ if(v>0){ lo=Math.min(lo,v); hi=Math.max(hi,v); } }
+  P.forEach(function(p){ if(p.t>=x0&&p.t<=x1){ if(VIS.p) inc(p.p); if(VIS.m111) inc(p.m111); if(VIS.m700) inc(p.m700); } });
+  if(VIS.line||hi===0){ inc(plPrice(x0)); inc(plPrice(Math.min(x1,P[P.length-1].t))); }
+  if(!custom && VIS.bands){ var fb=BANDS.indexOf(1), lb=BANDS.lastIndexOf(1); if(fb>=0){ inc(plPrice(x0)*factor(fb+1)); inc(plPrice(x1)*factor(lb+2)); } }
+  if(hi===0){ lo=1; hi=1e5; }
+  var span=Math.log10(hi)-Math.log10(lo), pad=Math.max(.04,span*.06);
+  var ly0=Math.log10(lo)-pad, ly1=Math.log10(hi)+pad*.8;
   function X(t){ return PADL+(t-x0)/(x1-x0)*iw; }
   function Y(p){ return PADT+(1-(Math.log10(p)-ly0)/(ly1-ly0))*ih; }
   drawMain.X=X; drawMain.Y=Y; drawMain.x0=x0; drawMain.x1=x1; drawMain.iw=iw;
   var grid=css("--grid"), muted=css("--muted"), fg=css("--fg");
   c.font="600 10.5px JetBrains Mono, monospace";
+  c.save(); c.beginPath(); c.rect(PADL,PADT,iw,ih); c.clip();
   // Bänder
   var N=Math.max(80,Math.round(iw/3));
   for(var k=1;k<=9;k++){
+    if(!VIS.bands||!BANDS[k-1]) continue;
     c.beginPath();
     for(var i=0;i<=N;i++){ var t=x0+(x1-x0)*i/N, y=Y(plPrice(t)*factor(k)); i?c.lineTo(X(t),y):c.moveTo(X(t),y); }
     for(var j=N;j>=0;j--){ var t2=x0+(x1-x0)*j/N; c.lineTo(X(t2),Y(plPrice(t2)*factor(k+1))); }
-    c.closePath(); c.fillStyle=BAND_COLORS[k-1]; c.globalAlpha=.22; c.fill(); c.globalAlpha=1;
+    c.closePath(); c.fillStyle=BAND_COLORS[k-1]; c.globalAlpha=.24; c.fill(); c.globalAlpha=1;
   }
+  c.restore();
   // Raster: Zehnerpotenzen
   c.strokeStyle=grid; c.lineWidth=1; c.fillStyle=muted; c.textAlign="left"; c.textBaseline="middle";
-  for(var e=Math.ceil(ly0);e<=Math.floor(ly1);e++){
-    var yy=Y(Math.pow(10,e)); c.beginPath(); c.moveTo(PADL,yy); c.lineTo(PADL+iw,yy); c.stroke();
-    var v=Math.pow(10,e); c.fillText(v>=1000?fmtK(v):v.toLocaleString("de-DE"), PADL+iw+6, yy);
-  }
+  var mults=(ly1-ly0)<0.6?[1,1.25,1.5,2,2.5,3,4,5,6,7,8]:(ly1-ly0)<1.6?[1,2,3,5,7]:(ly1-ly0)<3?[1,3]:[1];
+  for(var e=Math.floor(ly0);e<=Math.ceil(ly1);e++){ mults.forEach(function(mu){
+    var v=mu*Math.pow(10,e), lv=Math.log10(v); if(lv<ly0||lv>ly1) return;
+    var yy=Y(v); c.beginPath(); c.moveTo(PADL,yy); c.lineTo(PADL+iw,yy); c.stroke();
+    c.fillText(v>=1000?fmtK(v):v.toLocaleString("de-DE"), PADL+iw+6, yy); }); }
   // Jahre
   c.textAlign="center"; c.textBaseline="top";
   var y0=new Date(x0).getUTCFullYear(), y1=new Date(x1).getUTCFullYear(), stepY=(y1-y0)>10&&iw<700?2:1;
-  for(var y=y0;y<=y1+1;y++){
-    var tx=Date.UTC(y,0,1); if(tx<x0||tx>x1) continue;
-    var xx=X(tx); c.beginPath(); c.moveTo(xx,PADT); c.lineTo(xx,PADT+ih); c.stroke();
-    if((y-y0)%stepY===0) c.fillText(String(y),xx,PADT+ih+5);
+  var spanD=(x1-x0)/DAY;
+  if(spanD>900){
+    for(var y=y0;y<=y1+1;y++){
+      var tx=Date.UTC(y,0,1); if(tx<x0||tx>x1) continue;
+      var xx=X(tx); c.beginPath(); c.moveTo(xx,PADT); c.lineTo(xx,PADT+ih); c.stroke();
+      if((y-y0)%stepY===0) c.fillText(String(y),xx,PADT+ih+5);
+    }
+  } else {
+    var mStep = spanD>500 ? 3 : spanD>220 ? (iw<500?2:1) : 1, d0=new Date(x0);
+    for(var m=0;m<40;m++){ var tm=Date.UTC(d0.getUTCFullYear(),d0.getUTCMonth()+m,1); if(tm>x1) break; if(tm<x0) continue;
+      var dm=new Date(tm); if(dm.getUTCMonth()%mStep) continue;
+      var xm=X(tm); c.beginPath(); c.moveTo(xm,PADT); c.lineTo(xm,PADT+ih); c.stroke();
+      c.fillText(MON[dm.getUTCMonth()]+" "+String(dm.getUTCFullYear()).slice(2),xm,PADT+ih+5); }
+    if(spanD<45){ for(var dd=0;dd<50;dd++){ var td=Math.ceil(x0/DAY)*DAY+dd*DAY; if(td>x1) break; var ddd=new Date(td); if(ddd.getUTCDate()%7!==1||ddd.getUTCDate()===1) continue; c.globalAlpha=.6; c.fillText(ddd.getUTCDate()+".",X(td),PADT+ih+5); c.globalAlpha=1; } }
   }
-  if(range==="1y"){ for(var m=0;m<14;m++){ var d=new Date(x0); var tm=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+m,1); if(tm>x0&&tm<x1){ c.fillText(MON[new Date(tm).getUTCMonth()],X(tm),PADT+ih+5); } } }
   // Pi-Kreuzungen
   c.save(); c.setLineDash([3,4]); c.strokeStyle=css("--gold"); c.globalAlpha=.75;
-  CROSS.forEach(function(t){ if(t<x0||t>x1) return; c.beginPath(); c.moveTo(X(t),PADT); c.lineTo(X(t),PADT+ih); c.stroke(); });
+  if(VIS.cross) CROSS.forEach(function(t){ if(t<x0||t>x1) return; c.beginPath(); c.moveTo(X(t),PADT); c.lineTo(X(t),PADT+ih); c.stroke(); });
   c.restore();
+  c.save(); c.beginPath(); c.rect(PADL,PADT,iw,ih); c.clip();
   // Modell-Linie
-  c.save(); c.setLineDash([2,4]); c.strokeStyle=fg; c.globalAlpha=.7; c.lineWidth=1.3; c.beginPath();
+  if(VIS.line){ c.save(); c.setLineDash([2,4]); c.strokeStyle=fg; c.globalAlpha=.7; c.lineWidth=1.3; c.beginPath();
   for(var q=0;q<=N;q++){ var tq=x0+(x1-x0)*q/N; q?c.lineTo(X(tq),Y(plPrice(tq))):c.moveTo(X(tq),Y(plPrice(tq))); }
-  c.stroke(); c.restore();
-  c.fillStyle=muted; c.textAlign="right"; c.textBaseline="bottom"; c.fillText("Modell", X(x1)-4, Y(plPrice(x1)*factor(10))+14);
+  c.stroke(); c.restore(); }
   // Linien
   function line(key,col,w){ c.strokeStyle=col; c.lineWidth=w; c.beginPath(); var st=false;
     for(var i=0;i<P.length;i++){ var p=P[i], v=p[key]; if(v==null||p.t<x0-5*DAY||p.t>x1) { continue; } var px=X(p.t), py=Y(v); st?c.lineTo(px,py):c.moveTo(px,py); st=true; } c.stroke(); }
-  line("m700",css("--gold"),1.4); line("m111",css("--blue"),1.4); line("p",css("--price"),1.2);
+  if(VIS.m700) line("m700",css("--gold"),1.4); if(VIS.m111) line("m111",css("--blue"),1.4); if(VIS.p) line("p",css("--price"),custom?1.5:1.2);
+  c.restore();
   // aktueller Kurs
   var L=P[P.length-1], lx=X(L.t), lyy=Y(L.p);
+  if(L.t>=x0 && L.t<=x1 && lyy>=PADT && lyy<=PADT+ih){
   c.fillStyle=css("--btc"); c.beginPath(); c.arc(lx,lyy,4,0,7); c.fill();
   c.save(); c.setLineDash([2,3]); c.strokeStyle=muted; c.globalAlpha=.5; c.beginPath(); c.moveTo(PADL,lyy); c.lineTo(PADL+iw,lyy); c.stroke(); c.restore();
   var lab=fmtK(L.p); c.font="800 10.5px JetBrains Mono, monospace"; var tw=c.measureText(lab).width+10;
   c.fillStyle=css("--btc"); c.fillRect(PADL+iw+2,lyy-9,tw,18); c.fillStyle="#1a1206"; c.textAlign="left"; c.textBaseline="middle"; c.fillText(lab,PADL+iw+7,lyy);
+  }
+  drawMain.PADT=PADT; drawMain.ih=ih;
   // Fadenkreuz
   if(hoverT!=null){ var hx=X(hoverT); c.strokeStyle=muted; c.globalAlpha=.6; c.beginPath(); c.moveTo(hx,PADT); c.lineTo(hx,PADT+ih); c.stroke(); c.globalAlpha=1;
     var hp=nearest(hoverT); if(hp){ c.fillStyle=css("--price"); c.beginPath(); c.arc(X(hp.t),Y(hp.p),3.5,0,7); c.fill(); } }
@@ -343,7 +382,7 @@ function fillUI(){
   var h="<tr><th>Band</th><th>Faktor</th><th>heute</th><th>Tage</th></tr>";
   if(cnt[10]) h+="<tr><td>über 9</td><td>> "+fmtN(factor(10),2)+" ×</td><td>> "+fmtK(line*factor(10))+"</td><td>"+fmtN(cnt[10]/tot*100,1)+" %</td></tr>";
   for(var k=9;k>=1;k--){
-    h+='<tr'+(k===b?' class="now"':'')+'><td><span class="sw" style="background:'+BAND_COLORS[k-1]+'"></span>'+k+'</td><td>'+fmtN(factor(k),2)+"–"+fmtN(factor(k+1),2)+" ×</td><td>"+fmtK(line*factor(k))+"–"+fmtK(line*factor(k+1))+"</td><td>"+fmtN(cnt[k]/tot*100,1)+" %</td></tr>";
+    h+='<tr data-b="'+k+'" class="tg'+(k===b?' now':'')+(BANDS[k-1]?'':' off')+'"><td><span class="sw" style="background:'+BAND_COLORS[k-1]+'"></span>'+k+'</td><td>'+fmtN(factor(k),2)+"–"+fmtN(factor(k+1),2)+" ×</td><td>"+fmtK(line*factor(k))+"–"+fmtK(line*factor(k+1))+"</td><td>"+fmtN(cnt[k]/tot*100,1)+" %</td></tr>";
   }
   if(cnt[0]) h+='<tr'+(b<1?' class="now"':'')+"><td>unter 1</td><td>< "+fmtN(factor(1),2)+" ×</td><td>< "+fmtK(line*factor(1))+"</td><td>"+fmtN(cnt[0]/tot*100,1)+" %</td></tr>";
   $("bands").innerHTML=h;
@@ -353,31 +392,80 @@ function fillUI(){
 
 function drawAll(){ if(!P.length) return; drawMain(); drawPi(); drawBand(); }
 
-/* ---------- Tooltip ---------- */
-var tip=$("tip"), wrap=$("wMain");
-function onMove(ev){
-  if(!P.length) return;
-  var cv=ev.currentTarget, r=cv.getBoundingClientRect(), x=ev.clientX-r.left;
-  var t=drawMain.x0+(x-PADL)/drawMain.iw*(drawMain.x1-drawMain.x0);
+/* ---------- Tooltip, Zoom per Ziehen ---------- */
+var tip=$("tip"), wrap=$("wMain"), sel=$("sel"), drag=null;
+function tAt(cv,clientX){ var r=cv.getBoundingClientRect(); return drawMain.x0+(clientX-r.left-PADL)/drawMain.iw*(drawMain.x1-drawMain.x0); }
+function showTip(ev){
+  var t=tAt(ev.currentTarget,ev.clientX);
+  if(t<P[0].t-30*DAY || t>drawMain.x1){ hide(); return; }
   var p=nearest(Math.min(t,P[P.length-1].t));
-  if(t<P[0].t-30*DAY){ hide(); return; }
   hoverT=p.t; drawMain(); drawPi();
   var line=plPrice(p.t), b=bandOf(p.t,p.p);
   tip.innerHTML="<b>"+fmtD(p.t)+(p.live?" · live":"")+"</b>"+
     '<div class="r"><span>BTC</span><span>'+fmtP(p.p)+"</span></div>"+
     '<div class="r"><span>Linie</span><span>'+fmtP(line)+"</span></div>"+
     '<div class="r"><span>Lage</span><span>'+fmtN(p.p/line,2)+" × · "+(b<1?"unter 1":b>9?"über 9":"Band "+b)+"</span></div>"+
+    (p.m111?'<div class="r"><span>111 T</span><span>'+fmtP(p.m111)+"</span></div>":"")+
+    (p.m700?'<div class="r"><span>2 × 350 T</span><span>'+fmtP(p.m700)+"</span></div>":"")+
     (p.pi!=null?'<div class="r"><span>Pi-Abstand</span><span>'+(p.pi>=0?"+":"")+fmtN(p.pi,1)+" %</span></div>":"");
   var wr=wrap.getBoundingClientRect(), lx=ev.clientX-wr.left, ly=ev.clientY-wr.top;
-  tip.style.left=(lx>wr.width/2? lx-205 : lx+14)+"px"; tip.style.top=Math.max(4,Math.min(ly-60,wr.height-120))+"px";
+  tip.style.left=(lx>wr.width/2? lx-215 : lx+14)+"px"; tip.style.top=Math.max(4,Math.min(ly-60,wr.height-150))+"px";
   tip.classList.add("show");
 }
 function hide(){ tip.classList.remove("show"); if(hoverT!=null){ hoverT=null; drawMain(); drawPi(); } }
-["cMain","cPi"].forEach(function(id){ var cv=$(id); cv.addEventListener("pointermove",onMove); cv.addEventListener("pointerdown",onMove); cv.addEventListener("pointerleave",hide); });
+function onDown(ev){
+  if(!P.length || (ev.pointerType==="mouse" && ev.button!==0)) return;
+  drag={cv:ev.currentTarget, x:ev.clientX, y:ev.clientY, t:tAt(ev.currentTarget,ev.clientX), on:false, id:ev.pointerId};
+  if(ev.pointerType!=="mouse") showTip(ev);
+}
+function onMoveP(ev){
+  if(!P.length) return;
+  if(drag && drag.id===ev.pointerId){
+    var dx=ev.clientX-drag.x;
+    if(!drag.on && Math.abs(dx)>8 && Math.abs(dx)>Math.abs(ev.clientY-drag.y)){ drag.on=true; try{ drag.cv.setPointerCapture(ev.pointerId); }catch(e){} tip.classList.remove("show"); }
+    if(drag.on){
+      var wr=wrap.getBoundingClientRect(), a=Math.min(drag.x,ev.clientX)-wr.left, b=Math.max(drag.x,ev.clientX)-wr.left;
+      var cm=$("cMain").getBoundingClientRect(), cp=$("cPi").getBoundingClientRect();
+      sel.hidden=false; sel.style.left=Math.max(PADL,a)+"px"; sel.style.width=Math.max(1,Math.min(b,wr.width-PADR)-Math.max(PADL,a))+"px";
+      sel.style.top=(cm.top-wr.top)+"px"; sel.style.height=(cp.bottom-cm.top)+"px";
+      return;
+    }
+  }
+  if(ev.pointerType==="mouse" || drag) showTip(ev);
+}
+function onUp(ev){
+  if(!drag || drag.id!==ev.pointerId) return;
+  var d=drag; drag=null; sel.hidden=true;
+  if(!d.on) return;
+  var t2=tAt(d.cv,ev.clientX), a=Math.min(d.t,t2), b=Math.max(d.t,t2);
+  a=Math.max(a,P[0].t-30*DAY); b=Math.min(b,drawMain.x1);
+  if(b-a<5*DAY) return;
+  setZoom([a,b]);
+}
+function setZoom(z){
+  custom=z; var chip=$("zoomChip");
+  if(z){ chip.hidden=false; chip.textContent=fmtM(z[0])+" – "+fmtM(z[1])+"  ✕"; $("rangeSeg").querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed","false"); }); }
+  else { chip.hidden=true; $("rangeSeg").querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed",x.dataset.r===range?"true":"false"); }); }
+  hide(); drawAll();
+}
+["cMain","cPi"].forEach(function(id){ var cv=$(id);
+  cv.addEventListener("pointerdown",onDown); cv.addEventListener("pointermove",onMoveP);
+  cv.addEventListener("pointerup",onUp); cv.addEventListener("pointercancel",function(){ drag=null; sel.hidden=true; });
+  cv.addEventListener("pointerleave",function(){ if(!drag) hide(); });
+  cv.addEventListener("dblclick",function(){ if(custom) setZoom(null); });
+});
+$("zoomChip").addEventListener("click",function(){ setZoom(null); });
+
+/* ---------- Ein-/Ausschalter ---------- */
+function syncToggles(){ document.querySelectorAll("#lgT button").forEach(function(b){ b.classList.toggle("off",!VIS[b.dataset.k]); }); }
+$("lgT").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; var k=b.dataset.k; VIS[k]=VIS[k]?0:1; saveVis(); syncToggles(); drawAll(); });
+$("bands").addEventListener("click",function(e){ var tr=e.target.closest("tr[data-b]"); if(!tr) return; var k=+tr.dataset.b; BANDS[k-1]=BANDS[k-1]?0:1; if(BANDS[k-1]) VIS.bands=1; tr.classList.toggle("off",!BANDS[k-1]); saveVis(); syncToggles(); drawAll(); });
+$("bandAll").addEventListener("click",function(){ var any=BANDS.some(function(x){return x}); BANDS=BANDS.map(function(){ return any?0:1; }); VIS.bands=1; saveVis(); syncToggles();
+  document.querySelectorAll("#bands tr[data-b]").forEach(function(tr){ tr.classList.toggle("off",!BANDS[+tr.dataset.b-1]); }); drawAll(); });
+syncToggles();
 
 $("rangeSeg").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; range=b.dataset.r;
-  this.querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed",x===b?"true":"false"); });
-  try{ localStorage.setItem("bayPlRange",range); }catch(err){} hide(); drawAll(); });
+  try{ localStorage.setItem("bayPlRange",range); }catch(err){} setZoom(null); });
 try{ var sr=localStorage.getItem("bayPlRange"); if(sr){ range=sr; $("rangeSeg").querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed",x.dataset.r===sr?"true":"false"); }); } }catch(e){}
 
 var rt; window.addEventListener("resize",function(){ clearTimeout(rt); rt=setTimeout(drawAll,120); });
