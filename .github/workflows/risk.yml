@@ -20,3 +20,15 @@ jobs:
           git config user.email "kurs-bot@users.noreply.github.com"
           git add data/
           git diff --staged --quiet || (git commit -m "Risiko-Indikator aktualisiert" && git pull --rebase && git push)
+
+  # Wachhund: startet den Kurs-Dauerlauf, falls er gerade nicht läuft
+  wachhund:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - run: |
+          n=$(gh run list -R "$GITHUB_REPOSITORY" --workflow kurse-live.yml --limit 20 --json status --jq '[.[]|select(.status!="completed")]|length')
+          if [ "$n" = "0" ]; then gh workflow run kurse-live.yml -R "$GITHUB_REPOSITORY" --ref main && echo "Kurs-Dauerlauf gestartet"; else echo "Kurs-Dauerlauf läuft bereits"; fi
+        env:
+          GH_TOKEN: ${{ github.token }}

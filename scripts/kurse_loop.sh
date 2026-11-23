@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Dauerlauf für die Aktienkurse (statt unzuverlässiger GitHub-Zeitpläne):
 # alle 10 Min. 5-Minuten-Kurse (markt.py intraday), alle 30 Min. Kurse (stocks.py).
-# Läuft Mo-Fr 06:00-23:59 UTC, max. ca. 5 Std. 40 Min. pro Lauf, danach startet er sich selbst neu.
+# Arbeitet Mo-Fr 06:00-23:59 UTC, wartet sonst; max. ca. 5 Std. 40 Min. pro Lauf, danach startet er sich selbst neu.
 set -u
 git config user.name "kurs-bot"
 git config user.email "kurs-bot@users.noreply.github.com"
 ENDE=$((SECONDS + 340*60))
 n=0
 im_fenster() { [ "$(date -u +%u)" -le 5 ] && [ "$(date -u +%H)" -ge 6 ]; }
-while [ $SECONDS -lt $ENDE ] && im_fenster; do
+while [ $SECONDS -lt $ENDE ]; do
+  # außerhalb der Handelszeit (Nacht, Wochenende) nur warten, damit die Kette nie abreißt
+  if ! im_fenster; then sleep 600; continue; fi
   start=$SECONDS
   if python markt.py intraday; then
     ( cd markt_out && rm -rf .git && git init -q && git checkout -q -b markt-data && git add . \
@@ -28,7 +30,5 @@ while [ $SECONDS -lt $ENDE ] && im_fenster; do
   rest=$((600 - (SECONDS - start)))
   [ $rest -gt 0 ] && sleep $rest
 done
-# noch im Handelsfenster -> nächsten Lauf anstoßen
-if im_fenster; then
-  gh workflow run kurse-live.yml --ref main -R "$GITHUB_REPOSITORY" && echo "Nächster Lauf gestartet"
-fi
+# immer den nächsten Lauf anstoßen (auch nachts/am Wochenende), damit die Kette nie abreißt
+for i in 1 2 3; do gh workflow run kurse-live.yml --ref main -R "$GITHUB_REPOSITORY" && echo "Nächster Lauf gestartet" && break; sleep 20; done
