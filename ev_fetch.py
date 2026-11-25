@@ -44,7 +44,19 @@ def has_options(y):
     return "." not in y and not y.startswith("^") and "=" not in y
 
 
-def retry(fn, tries=3):
+def reset_crumb():
+    """Yahoo lehnt Abfragen manchmal mit 401 'Invalid Crumb' ab: Sitzung von yfinance neu aufbauen."""
+    try:
+        from yfinance.data import YfData
+        d = YfData()
+        for k in ("_crumb", "_cookie"):
+            if hasattr(d, k):
+                setattr(d, k, None)
+    except Exception:
+        pass
+
+
+def retry(fn, tries=4):
     for a in range(tries):
         try:
             return fn()
@@ -52,7 +64,11 @@ def retry(fn, tries=3):
             msg = str(e)
             if a == tries - 1 or "404" in msg or "No data" in msg:
                 return None
-            time.sleep(2 * (a + 1))
+            if "401" in msg or "Crumb" in msg or "Unauthorized" in msg or "Too Many" in msg:
+                reset_crumb()
+                time.sleep(3 * (a + 1))
+            else:
+                time.sleep(2 * (a + 1))
     return None
 
 
@@ -184,9 +200,11 @@ def main():
     syms = symbols()
     print(len(syms), "Aktien")
     hist = load(os.path.join(PREV, "iv_hist.json"), {})
+    # 11.11.2026: erster Lauf vor US-Börsenstart mit unbrauchbaren Yahoo-IV-Werten -> entfernen
+    hist = {y: [p for p in h if p[0] != "2026-11-11"] for y, h in hist.items()}
     old = load(os.path.join(PREV, "ev.json"), {}).get("s", {})
     res = {}
-    with ThreadPoolExecutor(6) as ex:
+    with ThreadPoolExecutor(3) as ex:   # wenige gleichzeitige Abfragen, sonst sperrt Yahoo (401 Invalid Crumb)
         for i, (y, r) in enumerate(ex.map(one, syms)):
             res[y] = r
             if i % 100 == 0:
@@ -208,9 +226,10 @@ def main():
         h = h[-KEEP:]
         if h:
             hist[y] = h
-        if h and h[-1][0] == day:
+        if h:   # letzter bekannter Wert (auch wenn Yahoo heute nichts geliefert hat), mit Datum
             cur = h[-1][1]
             o["iv"] = cur
+            o["ivd"] = h[-1][0]
             o["dte"] = r.get("dte")
             o["n"] = len(h)
             if len(h) >= MIN_IVP:

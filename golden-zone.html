@@ -254,7 +254,7 @@ const RAWEV="https://raw.githubusercontent.com/BayTek1982/coin-scanner/ev-data/e
 // Earnings + IV/IVP (1x täglich von GitHub, nur Aktien)
 async function loadEv(){if(S.ev)return;try{const j=await getJSON(RAWEV+"?t="+Math.floor(Date.now()/36e5),20000);S.ev=j.s||{};S.evUpd=j.updated;render()}catch(e){S.ev=null}}
 function evInfo(c){const x=S.ev&&c.y?S.ev[c.y]:null;if(!x)return null;let ed=null;
-  if(x.e&&x.e.d){const t=new Date(x.e.d+"T12:00:00"),n=new Date();n.setHours(12,0,0,0);ed={t,days:Math.round((t-n)/864e5),est:x.e.r}}return{ed,iv:x.iv,ivp:x.ivp,n:x.n||0}}
+  if(x.e&&x.e.d){const t=new Date(x.e.d+"T12:00:00"),n=new Date();n.setHours(12,0,0,0);ed={t,days:Math.round((t-n)/864e5),est:x.e.r}}return{ed,iv:x.iv,ivp:x.ivp,n:x.n||0,ivd:x.ivd}}
 const pctDe=v=>(v*100).toFixed(1).replace(".",",")+" %";
 function evDays(d){return d<=0?(d===0?"heute":"gestern"):d===1?"morgen":`in ${d} Tagen`}
 function evBadges(c,full){if(!isStk())return"";const e=evInfo(c);if(!e)return full?'<span class="bd grey">Earnings: kein Termin bekannt</span>':"";let h="";
@@ -263,7 +263,8 @@ function evBadges(c,full){if(!isStk())return"";const e=evInfo(c);if(!e)return fu
   else if(full)h+='<span class="bd grey">Earnings: kein Termin bekannt</span>';
   if(e.ivp!=null)h+=`<span class="bd ${e.ivp>=80?"near":"grey"}" data-it="IV-Perzentil: an ${e.ivp} % der Tage der letzten ${e.n} Handelstage war die implizite Volatilität niedriger als heute">IVP ${e.ivp} %</span>`;
   else if(full&&e.iv!=null)h+=`<span class="bd grey" data-it="Das IVP braucht eine Historie. Sie wird seit 11.11.2026 täglich gesammelt.">IVP sammelt (${e.n}/20 Tage)</span>`;
-  if(full&&e.iv!=null)h+=`<span class="bd grey" data-it="Implizite Volatilität: erwartete Jahresschwankung aus den Optionspreisen (At-the-Money, ca. 30 Tage)">IV ${pctDe(e.iv)}</span>`;
+  if(full&&e.iv!=null){const dd=e.ivd?new Date(e.ivd+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}):"";
+    h+=`<span class="bd grey" data-it="Implizite Volatilität: erwartete Jahresschwankung aus den Optionspreisen (At-the-Money, ca. 30 Tage). Gemessen 1× pro Werktag während der US-Börsenzeit${dd?", zuletzt am "+dd:""}.">IV ${pctDe(e.iv)}${dd?" · "+dd:""}</span>`}
   return h}
 const safeY=y=>y.replace(/[^A-Za-z0-9.\-]/g,"_");
 const shortSym=y=>/^\^|=F$|\.NYB$/.test(y)?y:y.replace(/\.[A-Z]{1,2}$/,"");

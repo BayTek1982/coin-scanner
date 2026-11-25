@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: pip install yfinance pandas
+      - run: pip install -U yfinance pandas curl_cffi
       - run: python gz_fetch.py
       - run: node gz_stocks.js gz_tmp gz_out
       # Daten in einen eigenen Branch ohne Verlauf, damit das Repo nicht immer größer wird
