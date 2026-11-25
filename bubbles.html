@@ -165,7 +165,7 @@ function build(){
   var old={}; B.forEach(function(b){ old[b.c.id]=b; });
   B=list.map(function(c){
     var o=old[c.id]; if(o){ o.c=c; return o; }
-    return {c:c, x:W*(.1+.8*Math.random()), y:H*(.1+.8*Math.random()), vx:0, vy:0, r:2, tr:10};
+    return {c:c, x:W*(.1+.8*Math.random()), y:H*(.1+.8*Math.random()), vx:0, vy:0, r:2, tr:10, ph:Math.random()*6.283};
   });
   B.forEach(function(b){ var u=b.c.image; if(u && S.logos && !IMG[u]){ var im=new Image(); im.decoding="async"; im.src=u.replace("/large/","/small/"); IMG[u]=im; } });
   $("msg").hidden=B.length>0; if(!B.length) $("msg").textContent="Keine Coins in diesem Bereich.";
@@ -182,26 +182,29 @@ function targets(){
   var mx=Math.max.apply(null,ws)||1, floor=mx*(S.tf==="mc"?.02:.06);
   ws=ws.map(function(w){ return Math.max(w,floor); });
   var sum=ws.reduce(function(a,b){return a+b*b},0); // Fläche ∝ w²
-  var fill=W<700?.62:.58, k=Math.sqrt(fill*W*H/(Math.PI*sum));
+  var fill=W<700?.46:.42,   // weniger Fläche = mehr Luft zwischen den Blasen
+      k=Math.sqrt(fill*W*H/(Math.PI*sum));
   var rmax=Math.min(W,H)*(W<700?.2:.17);
   B.forEach(function(b,i){ b.tr=Math.max(9,Math.min(rmax,k*ws[i])); });
 }
 
 /* ---------- Physik ---------- */
 function step(){
-  var cx=W/2, cy=H/2, n=B.length;
+  var cx=W/2, cy=H/2, n=B.length, t=performance.now()/1000, GAP=W<700?5:9;   // GAP = Mindestabstand zwischen Blasen
   for(var i=0;i<n;i++){
     var b=B[i];
     b.r+=(b.tr-b.r)*.08;
     if(b===drag) continue;
-    b.vx+=(cx-b.x)*.0009*(H/W<1?1:1.4)*(W>H?.6:1);
-    b.vy+=(cy-b.y)*.0009*(W>H?1.3:.8);
-    b.vx*=.86; b.vy*=.86;
+    b.vx+=(cx-b.x)*.0005*(H/W<1?1:1.4)*(W>H?.6:1);
+    b.vy+=(cy-b.y)*.0005*(W>H?1.3:.8);
+    // leichtes Schweben: jede Blase treibt langsam in ihrem eigenen Rhythmus
+    if(b.ph!=null){ b.vx+=Math.sin(t*.55+b.ph)*.035; b.vy+=Math.cos(t*.42+b.ph*1.7)*.035; }
+    b.vx*=.9; b.vy*=.9;
     b.x+=b.vx; b.y+=b.vy;
   }
   for(var it=0;it<3;it++){
     for(var a=0;a<n;a++){ var A=B[a];
-      for(var c=a+1;c<n;c++){ var C=B[c], dx=C.x-A.x, dy=C.y-A.y, rr=A.r+C.r+1.5, d2=dx*dx+dy*dy;
+      for(var c=a+1;c<n;c++){ var C=B[c], dx=C.x-A.x, dy=C.y-A.y, rr=A.r+C.r+GAP, d2=dx*dx+dy*dy;
         if(d2<rr*rr){ var d=Math.sqrt(d2)||.01, o=(rr-d)/2, ux=dx/d, uy=dy/d;
           var wa=A===drag?0:C===drag?1:.5, wc=1-wa; if(A===drag){wa=0;wc=1;}
           A.x-=ux*o*2*wa; A.y-=uy*o*2*wa; C.x+=ux*o*2*wc; C.y+=uy*o*2*wc; } } }

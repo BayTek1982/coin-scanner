@@ -99,7 +99,7 @@
 <div class="cs">Helligkeit <b>${st.br > 0 ? "+" : ""}${st.br}</b></div><div class="cr"><span>dunkler</span><input type="range" min="-60" max="60" step="5" value="${st.br}" data-br="1"><span>heller</span></div>
 <div class="cs">Einzelne Farben</div><div class="cg">${COLORS.map(([k, t]) => `<label class="${st.c[k] ? "set" : ""}"><input type="color" data-c="${k}" value="${cur(k)}"><span>${t}</span>${st.c[k] ? `<button data-r="${k}" title="Zurück auf Standard">↺</button>` : ""}</label>`).join("")}</div>
 <button class="crs" data-reset="1">Alles zurücksetzen</button>
-<div class="nt">Gilt für Scanner, Golden Zone, Futures und Chart-Bot. Wird nur auf diesem Gerät gespeichert. Auto = wie dein Handy/PC.</div>`;
+<div class="nt">Gilt für Scanner, Golden Zone, Futures und die anderen Scanner-Seiten. Wird nur auf diesem Gerät gespeichert. Auto = wie dein Handy/PC.</div>`;
     };
     draw();
     const r = btn.getBoundingClientRect();

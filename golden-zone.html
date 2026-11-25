@@ -115,6 +115,9 @@ select{font:600 .9rem var(--f-body);background:var(--chip);color:var(--fg);borde
 .empty{padding:30px;text-align:center;color:var(--muted)}
 dialog{width:min(1100px,96vw);max-width:none;max-height:92vh;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--fg);padding:16px;box-sizing:border-box}
 dialog::backdrop{background:rgba(0,0,0,.65)}
+.xwrap{position:relative;touch-action:pan-y}.xwrap svg{cursor:crosshair}
+.xtip{position:absolute;top:2px;z-index:3;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font:500 11.5px var(--f-num);white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.xptag{position:absolute;z-index:3;pointer-events:none;background:var(--fg);color:var(--bg);border-radius:4px;padding:2px 6px;font:600 11px var(--f-num)}
 .dhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.dhead>div{flex:1;min-width:180px}
 .x{font-size:1.2rem;background:var(--chip);border:0;color:var(--fg);width:38px;height:38px;border-radius:9px;cursor:pointer}
 .ltab{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:8px}
@@ -198,7 +201,7 @@ footer{font-size:.76rem;color:var(--muted);display:grid;gap:4px}
   </footer>
 </div>
 
-<dialog id="dlg"><div class="dhead"><div id="dTitle"></div><a class="btn" id="dCb">✦ Chart-Bot</a><a class="btn ghost" id="dLc" target="_blank" rel="noopener">📈 Live-Chart</a><a class="btn ghost" id="dTv" target="_blank" rel="noopener">TradingView</a><button class="x" data-close>✕</button></div><div id="dBody"></div></dialog>
+<dialog id="dlg"><div class="dhead"><div id="dTitle"></div><a class="btn" id="dLc">📈 Live-Chart</a><a class="btn ghost" id="dTv" target="_blank" rel="noopener">TradingView</a><button class="x" data-close>✕</button></div><div id="dBody"></div></dialog>
 
 <dialog id="how" class="how"><div class="dhead"><div><div class="label" style="color:var(--gold)">Dein Chart. Kurz erklärt.</div><h2 style="margin:4px 0 0">Wie es funktioniert</h2></div><button class="x" data-close>✕</button></div>
 <h3>◎ Golden Zone (Smart-Money-Ansatz)</h3>
@@ -356,6 +359,22 @@ function levelsFor(a,mode,dir){const L=[],B=[];if(!a||!a.lv)return{L,B};
       L.push({y:a.lv[0.786],c:"var(--down)",w:1.3,d:"5 3",fr,lab:"SL",inc:1},{y:a.lv[0.886],c:"var(--grey)",w:1,d:"2 3",fr,lab:"88,6"});
       if(!a.goal)L.push({y:a.t161,c:"var(--blue)",w:1.4,fr:ix.brk,lab:"Ziel",inc:2},{y:a.t200,c:"var(--blue)",w:1.1,d:"5 4",fr:ix.brk,lab:"200%",inc:2})}}
   return{L,B}}
+let GZX=null;
+const fD=t=>{const d=new Date(t>1e12?t:t*1000);return ["1h","4h"].includes(S.tf)?d.toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}):d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"2-digit"})};
+// Fadenkreuz im großen Chart: senkrechte + waagerechte Linie, Preis an der Maus/Fingerposition, Kerze mit Datum und O/H/T/S
+function initCross(){const box=document.querySelector("#dBody .xwrap"),svg=box&&box.querySelector("svg");if(!svg||!GZX)return;const G=GZX;
+  const NS="http://www.w3.org/2000/svg",g=document.createElementNS(NS,"g");g.style.pointerEvents="none";svg.appendChild(g);
+  const tip=document.createElement("div");tip.className="xtip";tip.hidden=true;box.appendChild(tip);
+  const ptag=document.createElement("div");ptag.className="xptag";ptag.hidden=true;box.appendChild(ptag);
+  const move=e=>{const r=svg.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*G.W,vy=(e.clientY-r.top)/r.height*G.H;
+    if(vx<0||vx>G.W-G.padR||vy<0||vy>G.H){hide();return}
+    const i=Math.max(0,Math.min(G.ks.length-1,Math.floor(vx/G.cw))),x=G.ks[i],cx=i*G.cw+G.cw/2,price=G.lo+(G.H-vy)/G.H*(G.hi-G.lo);
+    g.innerHTML=`<line x1="${cx}" x2="${cx}" y1="0" y2="${G.H}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/><line x1="0" x2="${G.W-G.padR}" y1="${vy}" y2="${vy}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`;
+    const ch=(x.c/x.o-1)*100;tip.innerHTML=`<b>${fD(x.t)}</b> · O ${fP(x.o)} · H ${fP(x.h)} · T ${fP(x.l)} · S ${fP(x.c)} <span style="color:${ch>=0?"var(--up)":"var(--down)"}">${ch>=0?"+":""}${ch.toFixed(2).replace(".",",")} %</span>`;tip.hidden=false;
+    const px=(cx/G.W)*r.width;tip.style.left=Math.max(0,Math.min(px-tip.offsetWidth/2,r.width-tip.offsetWidth))+"px";
+    ptag.textContent=fP(price);ptag.hidden=false;ptag.style.top=((vy/G.H)*r.height-10)+"px";ptag.style.left=(((G.W-G.padR)/G.W)*r.width+2)+"px"};
+  const hide=()=>{g.innerHTML="";tip.hidden=true;ptag.hidden=true};
+  svg.addEventListener("pointermove",move);svg.addEventListener("pointerdown",move);svg.addEventListener("pointerleave",hide)}
 function svgChart(k,a,mode,big){if(!k||!k.length)return"";
   const W=big?1000:320,H=big?440:118,padR=big?150:4,N=big?160:90,s=Math.max(0,k.length-N),ks=k.slice(s);
   const {L,B}=levelsFor(a,mode,a&&a.dir);
@@ -372,7 +391,15 @@ function svgChart(k,a,mode,big){if(!k||!k.length)return"";
   if(big){labs.sort((p,q)=>p.y-q.y);let prev=-99;labs.forEach(t=>{const y=Math.max(t.y,prev+15);prev=y;o+=`<text x="${W-padR+6}" y="${y+4}" fill="${t.c}" font-size="13" font-family="JetBrains Mono,monospace">${esc(t.t)}</text>`})}
   if(big){ks.forEach((x,i)=>{const cx=X(i+s),up=x.c>=x.o,col=up?"var(--up)":"var(--fg)",bw=Math.max(1,cw*0.62);
       o+=`<line x1="${cx}" x2="${cx}" y1="${Y(x.h)}" y2="${Y(x.l)}" stroke="${col}" stroke-width="1"/><rect x="${cx-bw/2}" y="${Y(Math.max(x.o,x.c))}" width="${bw}" height="${Math.max(1,Math.abs(Y(x.o)-Y(x.c)))}" fill="${col}"/>`});
-    const p=ks[ks.length-1].c;o+=`<line x1="0" x2="${W-padR}" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--fg)" stroke-width="1" stroke-dasharray="1 3"/>`}
+    const p=ks[ks.length-1].c;o+=`<line x1="0" x2="${W-padR}" y1="${Y(p)}" y2="${Y(p)}" stroke="var(--fg)" stroke-width="1" stroke-dasharray="1 3"/>`;
+    // Markierung: an welcher Kerze die Bewegung ihr Hoch und ihr Tief hatte (0 und 1,0 der Golden Zone)
+    if(a&&a.lv&&mode==="std"){const fr=Math.max(s,(a.from==null?s:a.from)-2),mk=(P)=>{let bi=-1,bd=Infinity,top=true;
+        for(let i=fr;i<k.length;i++){const x=k[i],dh=Math.abs(x.h-P),dl=Math.abs(x.l-P);if(dh<bd){bd=dh;bi=i;top=true}if(dl<bd){bd=dl;bi=i;top=false}}
+        if(bi<0||bd>Math.abs(P)*0.01)return;const x=k[bi],cx=X(bi),y=Y(top?x.h:x.l),tx=`${top?"Hoch":"Tief"} ${fP(top?x.h:x.l)} · ${fD(x.t)}`,tw=tx.length*7.2+12;
+        const bx=Math.min(Math.max(4,cx-tw/2),W-padR-tw-4),by=top?Math.max(2,y-30):Math.min(H-22,y+10);
+        o+=`<path d="M${cx} ${y+(top?-3:3)} l-5 ${top?-8:8} h10 z" fill="var(--accent)"/><rect x="${bx}" y="${by}" width="${tw}" height="18" rx="5" fill="var(--panel)" stroke="var(--accent)" stroke-width="1" vector-effect="non-scaling-stroke"/><text x="${bx+6}" y="${by+13}" fill="var(--fg)" font-size="11.5" font-family="JetBrains Mono,monospace">${esc(tx)}</text>`};
+      mk(a.lv.h);mk(a.lv.l)}
+    GZX={s,cw,lo,hi,W,H,padR,ks}}
   else{o+=`<polyline fill="none" stroke="var(--fg)" stroke-width="1.4" vector-effect="non-scaling-stroke" points="${ks.map((x,i)=>X(i+s).toFixed(1)+","+Y(x.c).toFixed(1)).join(" ")}"/>`;
     const lx=X(k.length-1),ly=Y(ks[ks.length-1].c);o+=`<circle cx="${lx}" cy="${ly}" r="2.6" fill="var(--fg)"/>`}
   return o+"</svg>"}
@@ -461,7 +488,6 @@ function card(c,st){CUR=c.cur??"$";const d=c.d[S.tf],a=cur(c),k=d.k,p=k[k.length
     ${svgChart(k,a,S.mode,false)}<div class="dist">${boxes}</div></article>`}
 
 async function openCoin(id){const c=LIST().find(x=>x.id===id);if(!c)return;CUR=c.cur??"$";let d=c.d[S.tf];
-  $("dCb").href=`chart.html#m=${isStk()?"a":"k"}&s=${encodeURIComponent(isStk()?c.y:c.sym)}&tf=${S.tf}`;
   $("dLc").href=`https://chart.kompassapps.de/#m=${isStk()?"a":"k"}&s=${encodeURIComponent(isStk()?c.y:c.sym)}&tf=${S.tf}`;
   const tv=isStk()?ySym(c.y):(c.src==="OKX"||!c.bin?"OKX:":"BINANCE:")+c.sym+"USDT";
   if(isStk()&&d){try{const j=await getJSON(RAW+"c/"+safeY(c.y)+".json?t="+Math.floor(Date.now()/3e5),20000);const raw=j[S.tf]||[];const n=d.k.length;const k=new Array(n);
@@ -483,7 +509,7 @@ async function openCoin(id){const c=LIST().find(x=>x.id===id);if(!c)return;CUR=c
   rows.forEach(([n,v])=>{if(!put&&p>=v){tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);put=true}tr.push(`<tr><td>${n}</td><td>${fP(v)}</td><td>${dist(v,p)}</td></tr>`)});
   if(!put)tr.push(`<tr class="now"><td>Kurs jetzt</td><td>${fP(p)}</td><td></td></tr>`);
   if(isStk()){const eb=evBadges(c,true);if(eb)info+=`<div class="badges" style="margin:0 0 8px">${eb}</div>`}
-  const big=!isStk()||!!d.full;$("dBody").innerHTML=info+(a&&a.dir?svgChart(d.k,a,S.mode,big):svgChart(d.k,null,S.mode,big))+(rows.length?`<table class="ltab"><tbody>${tr.join("")}</tbody></table>`:"");
+  const big=!isStk()||!!d.full;GZX=null;$("dBody").innerHTML=info+`<div class="${big?"xwrap":""}">`+(a&&a.dir?svgChart(d.k,a,S.mode,big):svgChart(d.k,null,S.mode,big))+`</div>`+(rows.length?`<table class="ltab"><tbody>${tr.join("")}</tbody></table>`:"");initCross();
   if(!isStk()&&S.fut[c.sym]&&a&&a.dir){const x=S.fut[c.sym],f=FUT.forDir(x,a.dir);
     $("dBody").insertAdjacentHTML("beforeend",`<div class="fut ${f.cls}" style="margin-top:12px;font-size:.85rem;padding:10px 12px"><span>Futures 1H: Crowd ${x.crowd.toFixed(1).replace(".",",")} % long · Top-Position ${x.topPos!=null?x.topPos.toFixed(1).replace(".",","):"–"} % · Funding ${fPct(x.fundAPR)} p. a. · OI ${fPct(x.oiD)} (24h) · ${x.lage.t}</span><b>${f.t}</b></div><p class="hint" style="margin-top:6px"><a href="futures.html" style="color:var(--gold)">Alle Futures-Werte und Lagebild →</a></p>`)}
   $("dlg").showModal()}
